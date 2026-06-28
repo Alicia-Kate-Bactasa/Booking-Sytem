@@ -92,7 +92,7 @@
                                 </tr>
                             </thead>
                             <tbody id="appointmentsTableBody" class="divide-y divide-neutral-100 font-medium text-neutral-700">
-                                </tbody>
+                            </tbody>
                         </table>
                     </div>
                 </div>
@@ -132,22 +132,38 @@
                     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                         
                         <div class="lg:col-span-7 space-y-8 bg-white border border-neutral-200 p-8 rounded-[2rem] shadow-sm">
-                            <div>
+                            
+                            <div class="relative z-30">
                                 <label class="block text-xs font-bold uppercase tracking-wider text-neutral-400 mb-3">1. Select Intended Service Treatment</label>
-                                <div class="relative">
-                                    <select id="selectedService" class="w-full appearance-none bg-white border border-neutral-200 p-4 rounded-full text-sm font-semibold focus:outline-none focus:border-dark transition-all pr-10" onchange="updateSummary()">
-                                        <optgroup label="Basic Car Care (Subscribers: Fully Covered)">
-                                            <option value="Standard Car Wash" data-duration="45 Mins">Standard Car Wash — Covered by Subscription</option>
-                                            <option value="Deluxe Car Wash" data-duration="1 Hour">Deluxe Car Wash — Covered by Subscription</option>
-                                            <option value="Premium Car Wash" data-duration="1.5 Hours">Premium Car Wash — Covered by Subscription</option>
-                                            <option value="Light Claying Service" data-duration="1 Hour">Light Claying Service — Covered by Subscription</option>
-                                        </optgroup>
-                                        <optgroup label="Advanced Detailing & Protection (Subscribers: Fully Covered)">
-                                            <option value="Complete Interior Detailing" data-duration="3 Hours">Complete Interior Detailing — Covered by Subscription</option>
-                                            <option value="Paint Correction Process" data-duration="3.5 Hours">Paint Correction Process — Covered by Subscription</option>
-                                        </optgroup>
-                                    </select>
-                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-neutral-500 text-xs">▼</div>
+                                <button type="button" onclick="toggleDashboardDropdown('dashServiceDropdownMenu')" class="w-full bg-white border border-neutral-200 p-4 rounded-full text-sm font-semibold text-left flex justify-between items-center focus:outline-none focus:border-dark transition-all px-6 shadow-sm hover:border-neutral-400">
+                                    <span id="customDashServiceDisplay">Standard Car Wash — Covered by Subscription</span>
+                                    <span class="text-neutral-500 text-[10px]">▼</span>
+                                </button>
+                                <div id="dashServiceDropdownMenu" class="absolute left-0 right-0 mt-2 bg-white border border-neutral-200 rounded-[2rem] shadow-xl overflow-hidden hidden z-50 max-h-[280px] overflow-y-auto">
+                                    <div class="bg-neutral-50/60 px-5 py-2.5 border-b border-neutral-100 text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Basic Car Care (Subscribers: Fully Covered)</div>
+                                    <div class="divide-y divide-neutral-100">
+                                        <button type="button" onclick="selectDashboardServiceItem('Standard Car Wash', '45 Mins', 'Standard Car Wash — Covered by Subscription')" class="w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors flex justify-between items-center">
+                                            <span>Standard Car Wash</span><span class="text-emerald-600 font-bold text-[11px] uppercase tracking-wider">VIP Covered</span>
+                                        </button>
+                                        <button type="button" onclick="selectDashboardServiceItem('Deluxe Car Wash', '1 Hour', 'Deluxe Car Wash — Covered by Subscription')" class="w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors flex justify-between items-center">
+                                            <span>Deluxe Car Wash</span><span class="text-emerald-600 font-bold text-[11px] uppercase tracking-wider">VIP Covered</span>
+                                        </button>
+                                        <button type="button" onclick="selectDashboardServiceItem('Premium Car Wash', '1.5 Hours', 'Premium Car Wash — Covered by Subscription')" class="w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors flex justify-between items-center">
+                                            <span>Premium Car Wash</span><span class="text-emerald-600 font-bold text-[11px] uppercase tracking-wider">VIP Covered</span>
+                                        </button>
+                                        <button type="button" onclick="selectDashboardServiceItem('Light Claying Service', '1 Hour', 'Light Claying Service — Covered by Subscription')" class="w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors flex justify-between items-center">
+                                            <span>Light Claying Service</span><span class="text-emerald-600 font-bold text-[11px] uppercase tracking-wider">VIP Covered</span>
+                                        </button>
+                                    </div>
+                                    <div class="bg-neutral-50/60 px-5 py-2.5 border-y border-neutral-100 text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Advanced Detailing & Protection (Subscribers: Fully Covered)</div>
+                                    <div class="divide-y divide-neutral-100">
+                                        <button type="button" onclick="selectDashboardServiceItem('Complete Interior Detailing', '3 Hours', 'Complete Interior Detailing — Covered by Subscription')" class="w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors flex justify-between items-center">
+                                            <span>Complete Interior Detailing</span><span class="text-emerald-600 font-bold text-[11px] uppercase tracking-wider">VIP Covered</span>
+                                        </button>
+                                        <button type="button" onclick="selectDashboardServiceItem('Paint Correction Process', '3.5 Hours', 'Paint Correction Process — Covered by Subscription')" class="w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors flex justify-between items-center">
+                                            <span>Paint Correction Process</span><span class="text-emerald-600 font-bold text-[11px] uppercase tracking-wider">VIP Covered</span>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 
@@ -157,16 +173,16 @@
                                     <div>
                                         <input type="date" id="bookingDate" required class="w-full bg-white border border-neutral-200 p-4 rounded-full text-sm font-semibold focus:outline-none focus:border-dark transition-all px-6" onchange="handleDateChange('capacityWarning')">
                                     </div>
-                                    <div>
-                                        <div class="relative">
-                                            <select id="bookingTime" required class="w-full appearance-none bg-white border border-neutral-200 p-4 rounded-full text-sm font-semibold focus:outline-none focus:border-dark transition-all pr-10" onchange="updateSummary()">
-                                                <option value="">Select Target Window...</option>
-                                                <option value="09:00 AM">09:00 AM - 10:00 AM</option>
-                                                <option value="10:00 AM">10:00 AM - 11:00 AM</option>
-                                                <option value="11:00 AM">11:00 AM - 12:00 PM</option>
-                                                <option value="02:00 PM">02:00 PM - 03:00 PM</option>
-                                            </select>
-                                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-neutral-500 text-xs">▼</div>
+                                    <div class="relative z-20">
+                                        <button type="button" onclick="toggleDashboardDropdown('dashTimeDropdownMenu')" class="w-full bg-white border border-neutral-200 p-4 rounded-full text-sm font-semibold text-left flex justify-between items-center focus:outline-none focus:border-dark transition-all px-6 shadow-sm hover:border-neutral-400">
+                                            <span id="customDashTimeDisplay">Select Target Window...</span>
+                                            <span class="text-neutral-400 text-[10px]">▼</span>
+                                        </button>
+                                        <div id="dashTimeDropdownMenu" class="absolute left-0 right-0 mt-2 bg-white border border-neutral-200 rounded-[2rem] shadow-xl overflow-hidden hidden z-50 divide-y divide-neutral-100">
+                                            <button type="button" onclick="selectDashboardTimeItem('09:00 AM', '09:00 AM - 10:00 AM')" class="w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors uppercase tracking-wider">09:00 AM - 10:00 AM</button>
+                                            <button type="button" onclick="selectDashboardTimeItem('10:00 AM', '10:00 AM - 11:00 AM')" class="w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors uppercase tracking-wider">10:00 AM - 11:00 AM</button>
+                                            <button type="button" onclick="selectDashboardTimeItem('11:00 AM', '11:00 AM - 12:00 PM')" class="w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors uppercase tracking-wider">11:00 AM - 12:00 PM</button>
+                                            <button type="button" onclick="selectDashboardTimeItem('02:00 PM', '02:00 PM - 03:00 PM')" class="w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors uppercase tracking-wider">02:00 PM - 03:00 PM</button>
                                         </div>
                                     </div>
                                 </div>
@@ -251,7 +267,7 @@
                             <button onclick="alert('Compiling analytical statement history logs... Direct print layout reference INV-2026-06 dispatched safely.')" class="w-full bg-neutral-50 hover:bg-neutral-100 text-dark border border-neutral-200 text-xs font-bold tracking-widest uppercase py-4 rounded-full transition-all text-center">
                                 View Monthly Invoice
                             </button>
-                            <button onclick="handleCancelSubscriptionToggle()" id="cancelSubBtn" class="w-full bg-white hover:bg-red-50 text-red-600 border border-neutral-200 hover:border-red-200 text-xs font-bold tracking-widest uppercase py-4 rounded-full transition-all text-center">
+                            <button onclick="toggleModal('cancelConfirmModal')" class="w-full bg-white hover:bg-red-50 text-red-600 border border-neutral-200 hover:border-red-200 text-xs font-bold tracking-widest uppercase py-4 rounded-full transition-all text-center">
                                 Cancel Subscription Plan
                             </button>
                         </div>
@@ -277,17 +293,23 @@
                 </div>
                 <div>
                     <label class="block text-xs font-bold uppercase tracking-wider text-neutral-400 mb-2">Select Alternative Window</label>
-                    <div class="relative">
-                        <select id="reschTime" required class="w-full appearance-none bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-sm font-semibold focus:outline-none focus:border-dark transition-all px-5 pr-10">
-                            <option value="">Select Target Window...</option>
-                            <option value="09:00 AM - 10:00 AM">09:00 AM - 10:00 AM</option>
-                            <option value="10:00 AM - 11:00 AM">10:00 AM - 11:00 AM</option>
-                            <option value="11:00 AM - 12:00 PM">11:00 AM - 12:00 PM</option>
-                            <option value="01:00 PM - 02:00 PM" disabled class="bg-neutral-100 text-neutral-400">🔒 01:00 PM (Fully Allocated)</option>
-                            <option value="02:00 PM - 03:00 PM">02:00 PM - 03:00 PM</option>
-                            <option value="03:00 PM - 04:00 PM">03:00 PM - 04:00 PM</option>
-                        </select>
-                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-neutral-500 text-xs">▼</div>
+                    <div class="relative z-50">
+                        <button type="button" onclick="toggleDashboardDropdown('reschTimeDropdownMenu')" class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-sm font-semibold text-left flex justify-between items-center focus:outline-none focus:border-dark transition-all px-5 shadow-sm hover:border-neutral-400">
+                            <span id="customReschTimeDisplay">Select Target Window...</span>
+                            <span class="text-neutral-500 text-[10px]">▼</span>
+                        </button>
+                        <div id="reschTimeDropdownMenu" class="absolute left-0 right-0 mt-2 bg-white border border-neutral-200 rounded-[2rem] shadow-xl overflow-hidden hidden divide-y divide-neutral-100">
+                            <button type="button" onclick="selectModalReschTimeItem('09:00 AM', '09:00 AM - 10:00 AM')" class="w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors uppercase tracking-wider">09:00 AM - 10:00 AM</button>
+                            <button type="button" onclick="selectModalReschTimeItem('10:00 AM', '10:00 AM - 11:00 AM')" class="w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors uppercase tracking-wider">10:00 AM - 11:00 AM</button>
+                            <button type="button" onclick="selectModalReschTimeItem('11:00 AM', '11:00 AM - 12:00 PM')" class="w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors uppercase tracking-wider">11:00 AM - 12:00 PM</button>
+                            <div class="w-full text-left px-6 py-3.5 text-xs font-semibold bg-neutral-50 text-neutral-300 flex items-center justify-between cursor-not-allowed select-none">
+                                <span class="line-through tracking-wider uppercase">01:00 PM - 02:00 PM</span>
+                                <span class="text-[10px] font-bold uppercase tracking-widest bg-neutral-200/50 text-neutral-400/80 px-2.5 py-1 rounded-full">🔒 Allocated</span>
+                            </div>
+                            <button type="button" onclick="selectModalReschTimeItem('02:00 PM', '02:00 PM - 03:00 PM')" class="w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors uppercase tracking-wider">02:00 PM - 03:00 PM</button>
+                            <button type="button" onclick="selectModalReschTimeItem('03:00 PM', '03:00 PM - 04:00 PM')" class="w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors uppercase tracking-wider">03:00 PM - 04:00 PM</button>
+                        </div>
+                        <input type="hidden" id="reschTime" required>
                     </div>
                     <p id="reschCapacityWarning" class="text-[11px] text-red-500 font-semibold mt-2 ml-4 hidden">Saturday constraints limit twin-bay capacity allocation thresholds.</p>
                 </div>
@@ -301,14 +323,41 @@
         </div>
     </div>
 
+    <div id="cancelConfirmModal" class="fixed inset-0 z-50 flex items-center justify-center bg-dark/60 backdrop-blur-sm hidden">
+        <div class="bg-white p-8 w-full max-w-sm relative rounded-[2rem] shadow-2xl mx-4 border border-neutral-200">
+            <div class="text-center space-y-4">
+                <div class="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mx-auto text-red-600 font-mono text-xl font-bold">!</div>
+                <div>
+                    <h3 class="text-lg font-black uppercase tracking-tight text-dark">Terminate Membership?</h3>
+                    <p class="text-xs text-neutral-500 font-medium mt-2 leading-relaxed">
+                        Warning: Confirming cancellation will permanently delete your VIP subscription registry, wipe all pending appointment records from the tracking system, and terminate your profile space.
+                    </p>
+                    <p class="text-[11px] text-red-600 font-bold mt-2 uppercase tracking-wide">
+                        You will be logged out immediately.
+                    </p>
+                </div>
+                <div class="pt-2 flex flex-col gap-2">
+                    <button onclick="executeImmediateSubscriptionDeletion()" type="button" class="w-full bg-red-600 hover:bg-red-700 text-light text-xs font-bold tracking-widest uppercase py-3.5 rounded-full shadow-sm transition-all">
+                        Confirm & Erase Profile
+                    </button>
+                    <button onclick="toggleModal('cancelConfirmModal')" type="button" class="w-full bg-neutral-50 hover:bg-neutral-100 text-dark border border-neutral-200 text-xs font-bold tracking-widest uppercase py-3.5 rounded-full transition-all">
+                        Cancel Request
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // Array state representations
         let currentAppointments = [
             { id: "MTG-847291", service: "Standard Car Wash", date: "2026-07-14", time: "10:00 AM - 11:00 AM" }
         ];
         let baseCompletedAppointmentsCount = 14;
-        let isSubscriptionCancelled = false;
         let selectedRescheduleId = null;
+
+        let activeDashServiceState = "Standard Car Wash";
+        let activeDashServiceDuration = "45 Mins";
+        let activeDashTimeState = "";
 
         function toggleModal(modalId) {
             document.getElementById(modalId).classList.toggle('hidden');
@@ -347,12 +396,45 @@
             document.getElementById('subParamCount').innerText = `${baseCompletedAppointmentsCount + currentAppointments.length} Appointments Done`;
         }
 
-        // Inline schedule availability verification algorithm
+        function toggleDashboardDropdown(menuId) {
+            const listMenus = ['dashServiceDropdownMenu', 'dashTimeDropdownMenu', 'reschTimeDropdownMenu'];
+            listMenus.forEach(id => {
+                if (id !== menuId) {
+                    const el = document.getElementById(id);
+                    if (el) el.classList.add('hidden');
+                }
+            });
+            const targetMenu = document.getElementById(menuId);
+            if (targetMenu) targetMenu.classList.toggle('hidden');
+        }
+
+        function selectDashboardServiceItem(value, duration, displayLabel) {
+            activeDashServiceState = value;
+            activeDashServiceDuration = duration;
+            document.getElementById('customDashServiceDisplay').innerText = displayLabel;
+            document.getElementById('dashServiceDropdownMenu').classList.add('hidden');
+            updateSummary();
+        }
+
+        function selectDashboardTimeItem(value, displayLabel) {
+            activeDashTimeState = value;
+            document.getElementById('customDashTimeDisplay').innerText = displayLabel;
+            document.getElementById('dashTimeDropdownMenu').classList.add('hidden');
+            updateSummary();
+        }
+
+        function selectModalReschTimeItem(value, displayLabel) {
+            document.getElementById('customReschTimeDisplay').innerText = displayLabel;
+            document.getElementById('reschTime').value = value;
+            document.getElementById('reschTimeDropdownMenu').classList.add('hidden');
+        }
+
         function launchRescheduleWizard(appId) {
             selectedRescheduleId = appId;
             document.getElementById('rescheduleTargetId').innerText = appId;
             document.getElementById('reschDate').value = "";
             document.getElementById('reschTime').value = "";
+            document.getElementById('customReschTimeDisplay').innerText = "Select Target Window...";
             document.getElementById('reschCapacityWarning').classList.add('hidden');
             toggleModal('rescheduleModal');
         }
@@ -362,25 +444,26 @@
             const targetDate = document.getElementById('reschDate').value;
             const targetTime = document.getElementById('reschTime').value;
             
-            const dateObj = new Date(targetDate);
+            if (!targetTime) {
+                alert("Please select an alternative hourly window from the dropdown checklist matrix.");
+                return;
+            }
             
-            // SYSTEM RULE RULE: Reject any booking on a Sunday
+            const dateObj = new Date(targetDate);
             if (dateObj.getUTCDay() === 0) {
                 alert("Scheduling Constraint Violation: Montage Auto Studio operates strictly Mon-Sat. Sunday slots remain permanently unavailable.");
                 return;
             }
 
-            // SIMULATED SLOT RUNTIME CHECK: Hardlocked mockup checking for custom date values
             if (targetDate === "2026-08-01" && targetTime.startsWith("10:00 AM")) {
                 alert("Rejection Logged: Target frame has reached absolute capacity bounds across twin bays. Please assign an alternate hour matrix.");
                 return;
             }
 
-            // State Mutation mapping upon validation success
             let match = currentAppointments.find(app => app.id === selectedRescheduleId);
             if (match) {
                 match.date = targetDate;
-                match.time = targetTime;
+                match.time = targetTime.includes('-') ? targetTime : `${targetTime} - ${parseInt(targetTime)+1}:00 PM`;
             }
 
             alert(`Validation Complete: Slot available. Appointment ID ${selectedRescheduleId} modified successfully.`);
@@ -413,34 +496,41 @@
         }
 
         function updateSummary() {
-            const selectEl = document.getElementById('selectedService');
-            const selectedOption = selectEl.options[selectEl.selectedIndex];
-            
             if(document.getElementById('summaryService')) {
-                document.getElementById('summaryService').innerText = selectEl.value;
+                document.getElementById('summaryService').innerText = activeDashServiceState || '—';
                 document.getElementById('summaryDate').innerText = document.getElementById('bookingDate').value || '—';
-                document.getElementById('summaryTime').innerText = document.getElementById('bookingTime').value || '—';
-                document.getElementById('summaryDuration').innerText = selectedOption.getAttribute('data-duration') || '—';
+                document.getElementById('summaryTime').innerText = activeDashTimeState || '—';
+                document.getElementById('summaryDuration').innerText = activeDashServiceDuration || '—';
             }
         }
 
         function handleDashboardFormSubmission(event) {
             event.preventDefault();
-            const serviceName = document.getElementById('selectedService').value;
             const dateVal = document.getElementById('bookingDate').value;
-            const timeVal = document.getElementById('bookingTime').value;
+            
+            if (!activeDashTimeState) {
+                alert("Please select a target booking window before confirmation step routing.");
+                return;
+            }
             
             const referenceId = "MTG-" + Math.floor(100000 + Math.random() * 900000);
             
             currentAppointments.push({
                 id: referenceId,
-                service: serviceName,
+                service: activeDashServiceState,
                 date: dateVal,
-                time: timeVal
+                time: `${activeDashTimeState} - ${activeDashTimeState.startsWith('09') ? '10:00 AM' : activeDashTimeState.startsWith('10') ? '11:00 AM' : activeDashTimeState.startsWith('11') ? '12:00 PM' : '03:00 PM'}`
             });
             
             alert(`Reservation Authorized!\n\nBooking ID: ${referenceId}`);
             document.getElementById('dashWizardForm').reset();
+            
+            activeDashServiceState = "Standard Car Wash";
+            activeDashServiceDuration = "45 Mins";
+            activeDashTimeState = "";
+            document.getElementById('customDashServiceDisplay').innerText = "Standard Car Wash — Covered by Subscription";
+            document.getElementById('customDashTimeDisplay').innerText = "Select Target Window...";
+            
             renderAppointmentsTable();
             switchView('overview');
         }
@@ -452,25 +542,12 @@
             }
         }
 
-        function handleCancelSubscriptionToggle() {
-            const statusTag = document.getElementById('accountStatusTag');
-            const cancelBtn = document.getElementById('cancelSubBtn');
-
-            if (!isSubscriptionCancelled) {
-                if (confirm("Confirm VIP plan drop action?")) {
-                    isSubscriptionCancelled = true;
-                    statusTag.className = "text-xs bg-amber-50 text-amber-700 font-bold px-4 py-2 rounded-full border border-amber-200 flex items-center gap-1.5";
-                    statusTag.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500 inline-block"></span>CANCELLATION PENDING`;
-                    cancelBtn.innerText = "Reactivate Subscription Plan";
-                    cancelBtn.className = "w-full bg-dark text-light text-xs font-bold tracking-widest uppercase py-4 rounded-full transition-all text-center hover:bg-neutral-800";
-                }
-            } else {
-                isSubscriptionCancelled = false;
-                statusTag.className = "text-xs bg-emerald-50 text-emerald-700 font-bold px-4 py-2 rounded-full border border-emerald-200 flex items-center gap-1.5";
-                statusTag.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>VIP STATUS ACTIVE`;
-                cancelBtn.innerText = "Cancel Subscription Plan";
-                cancelBtn.className = "w-full bg-white hover:bg-red-50 text-red-600 border border-neutral-200 hover:border-red-200 text-xs font-bold tracking-widest uppercase py-4 rounded-full transition-all text-center";
-            }
+        /* CUSTOM HANDLER TRIGGERED UPON CONFIRMED PLAN DELETION */
+        function executeImmediateSubscriptionDeletion() {
+            localStorage.removeItem('subscriber_session_active');
+            localStorage.removeItem('subscriber_name');
+            alert("Subscription terminated completely. System data logs purged.");
+            window.location.href = 'index.html';
         }
 
         function terminateSessionLogout() { 
@@ -478,6 +555,17 @@
             localStorage.removeItem('subscriber_name');
             window.location.href = 'index.html'; 
         }
+
+        window.addEventListener('click', function(e) {
+            if (!e.target.closest('#dashServiceDropdownMenu') && !e.target.closest('#dashTimeDropdownMenu') && !e.target.closest('#reschTimeDropdownMenu')) {
+                const dropmenus = document.querySelectorAll('[id$="DropdownMenu"]');
+                dropmenus.forEach(menu => {
+                    if (menu.previousElementSibling && !menu.previousElementSibling.contains(e.target)) {
+                        menu.classList.add('hidden');
+                    }
+                });
+            }
+        });
 
         window.onload = function() {
             const sessionActive = localStorage.getItem('subscriber_session_active');
