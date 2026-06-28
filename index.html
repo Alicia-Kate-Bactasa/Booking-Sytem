@@ -1,12 +1,433 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 <head>
-	<meta charset="UTF-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	<title>Montage Auto Studio</title>
-	<link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Montage Auto Studio | Premium Carwash Booking</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        dark: '#111111',
+                        light: '#FAFAFA'
+                    }
+                }
+            }
+        }
+    </script>
 </head>
-<body>
-	<p>hi!!</p>
+<body class="bg-light text-dark font-sans antialiased selection:bg-dark selection:text-light">
+
+    <header class="sticky top-0 z-50 bg-light/90 backdrop-blur-md border-b border-neutral-200/60">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <a href="#" class="text-lg font-bold tracking-tight uppercase">Montage Auto Studio</a>
+            
+            <nav class="hidden md:flex items-center space-x-8 text-xs font-semibold tracking-wider uppercase text-neutral-600">
+                <a href="#about" class="hover:text-dark transition-colors">About Us</a>
+                <a href="#menu" class="hover:text-dark transition-colors">Our Menu</a>
+                <a href="#subscription" class="hover:text-dark transition-colors">Subscription</a>
+                <a href="#contact" class="hover:text-dark transition-colors">Contact</a>
+            </nav>
+
+            <div class="flex items-center space-x-3">
+                <button onclick="toggleModal('loginModal')" class="text-xs font-bold tracking-wider uppercase border border-neutral-300 px-5 py-2.5 rounded-full hover:border-dark hover:bg-dark hover:text-light transition-all">Login / Register</button>
+                <a href="#booking-wizard" onclick="selectServiceDirectly('Standard Car Wash')" class="hidden sm:inline-block text-xs font-bold tracking-wider uppercase bg-dark text-light px-5 py-2.5 rounded-full border border-dark hover:bg-neutral-800 transition-all">Book Now</a>
+            </div>
+        </div>
+    </header>
+
+    <section class="relative min-h-[calc(100vh-5rem)] flex items-center justify-center bg-dark text-light overflow-hidden">
+        <div class="absolute inset-0 bg-neutral-900 bg-cover bg-center mix-blend-overlay opacity-30" style="background-image: url('https://images.unsplash.com/photo-1607860108855-64acf2078ed9?auto=format&fit=crop&q=80&w=1200');"></div>
+        <div class="relative max-w-4xl mx-auto px-6 text-center z-10 py-12">
+            <h1 class="text-4xl sm:text-6xl font-black tracking-tight uppercase mb-6 leading-tight">Premium Car Care,<br>Scheduled Around Your Lifestyle.</h1>
+            <p class="text-base sm:text-lg text-neutral-400 max-w-2xl mx-auto mb-6 font-light leading-relaxed">Experience meticulous automotive styling and detailing at Mandaue's premier auto studio. Secure your preferred slot instantly with guaranteed capacity management.</p>
+            <div class="text-xs tracking-widest uppercase text-neutral-400 mb-8 font-semibold bg-neutral-800/40 inline-block px-4 py-2 rounded-full backdrop-blur-sm">
+                Mon–Fri: 9:00 AM – 6:00 PM &nbsp;|&nbsp; Sat: 8:00 AM – 4:00 PM
+            </div>
+            <div>
+                <a href="#menu" class="inline-flex items-center text-xs font-bold tracking-widest uppercase bg-light text-dark px-8 py-4 rounded-full hover:bg-neutral-200 transition-all shadow-sm">
+                    Get Started &nbsp;➔
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <section id="about" class="py-24 border-b border-neutral-200/60 bg-white">
+        <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div class="aspect-[4/3] bg-neutral-100 bg-cover bg-center border border-neutral-200/60 rounded-3xl overflow-hidden shadow-inner" style="background-image: url('https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?auto=format&fit=crop&q=80&w=800');"></div>
+            <div>
+                <span class="text-xs font-bold tracking-widest uppercase text-neutral-400 block mb-2">The Studio Configuration</span>
+                <h2 class="text-3xl font-black tracking-tight uppercase mb-6">Built For Uncompromising Efficiency</h2>
+                <p class="text-neutral-600 font-light text-sm leading-relaxed mb-8">Located in Banilad, Mandaue City, our specialized facility operates a custom twin-bay setup engineered to comfortably service up to 18 vehicles a day on weekdays and 16 on Saturdays. By pre-scheduling your visit online, our crew custom-blends detailing elements and allocates manpower prior to your arrival, ensuring precision treatment without waiting lines.</p>
+                <div class="grid grid-cols-2 gap-4 text-center">
+                    <div class="border border-neutral-200 p-5 rounded-2xl bg-neutral-50/50">
+                        <div class="text-2xl font-bold tracking-tight">2 BAYS</div>
+                        <div class="text-[10px] text-neutral-400 font-semibold uppercase mt-1 tracking-wider">Live Capacity Limits</div>
+                    </div>
+                    <div class="border border-neutral-200 p-5 rounded-2xl bg-neutral-50/50">
+                        <div class="text-2xl font-bold tracking-tight">18 / Day</div>
+                        <div class="text-[10px] text-neutral-400 font-semibold uppercase mt-1 tracking-wider">Optimal Throughput</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="menu" class="py-24 border-b border-neutral-200/60">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center max-w-2xl mx-auto mb-16">
+                <span class="text-xs font-bold tracking-widest uppercase text-neutral-400 block mb-2">Service Catalog</span>
+                <h2 class="text-3xl font-black tracking-tight uppercase">Select Treatment Tier</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="border border-neutral-200/80 bg-white p-8 rounded-3xl flex flex-col justify-between hover:border-dark transition-all hover:shadow-lg group">
+                    <div>
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="text-lg font-bold uppercase tracking-tight">Basic Wash</h3>
+                            <span class="text-sm font-bold text-neutral-800">₱350</span>
+                        </div>
+                        <div class="text-[11px] font-semibold tracking-wider text-neutral-400 uppercase mb-4 bg-neutral-50 px-2.5 py-1 rounded-full inline-block">Duration: 45m – 1h</div>
+                        <p class="text-neutral-500 text-xs font-normal leading-relaxed mb-6">A precise exterior foam treatment using scratch-free microfiber wash mitts, deep wheel and arch cleaning, tire dressing conditioning, and a full interior cabin vacuuming.</p>
+                    </div>
+                    <a href="#booking-wizard" onclick="selectServiceDirectly('Basic Wash')" class="w-full text-center text-xs font-bold tracking-widest uppercase border border-dark py-3.5 rounded-full hover:bg-dark hover:text-light transition-all block">Select Service</a>
+                </div>
+
+                <div class="border border-neutral-200/80 bg-white p-8 rounded-3xl flex flex-col justify-between hover:border-dark transition-all hover:shadow-lg relative ring-1 ring-neutral-100">
+                    <div>
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="text-lg font-bold uppercase tracking-tight">Premium Wash</h3>
+                            <span class="text-sm font-bold text-neutral-800">₱750</span>
+                        </div>
+                        <div class="text-[11px] font-semibold tracking-wider text-neutral-400 uppercase mb-4 bg-neutral-50 px-2.5 py-1 rounded-full inline-block">Duration: 1h – 1.5h</div>
+                        <p class="text-neutral-500 text-xs font-normal leading-relaxed mb-6">Includes all Basic Wash treatments, enhanced with an exterior paint decontamination clay bar process, a high-gloss machine spray wax application, and protective interior dashboard conditioning.</p>
+                    </div>
+                    <a href="#booking-wizard" onclick="selectServiceDirectly('Premium Wash')" class="w-full text-center text-xs font-bold tracking-widest uppercase border border-dark py-3.5 rounded-full hover:bg-dark hover:text-light transition-all block">Select Service</a>
+                </div>
+
+                <div class="border border-dark bg-dark text-light p-8 rounded-3xl flex flex-col justify-between hover:bg-black transition-all hover:shadow-xl">
+                    <div>
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="text-lg font-bold uppercase tracking-tight">Detailing Tier</h3>
+                            <span class="text-sm font-bold text-neutral-200">₱3,500</span>
+                        </div>
+                        <div class="text-[11px] font-semibold tracking-wider text-neutral-500 uppercase mb-4 bg-neutral-800 px-2.5 py-1 rounded-full inline-block">Duration: 2h+</div>
+                        <p class="text-neutral-400 text-xs font-light leading-relaxed mb-6">Our signature multi-stage paint correction process designed to eliminate swirl marks, combined with a deep interior cabin steam cleaning, meticulous engine bay detailing, and durable ceramic coating layer protection.</p>
+                    </div>
+                    <a href="#booking-wizard" onclick="selectServiceDirectly('Detailing Specialist Tier')" class="w-full text-center text-xs font-bold tracking-widest uppercase bg-light text-dark py-3.5 rounded-full hover:bg-neutral-200 transition-all block shadow-sm">Select Service</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="subscription" class="py-24 bg-dark text-light border-b border-neutral-800">
+        <div class="max-w-4xl mx-auto px-6">
+            <div class="border border-neutral-800 p-8 sm:p-12 bg-neutral-950 rounded-[2rem] relative overflow-hidden shadow-2xl">
+                <div class="absolute top-0 right-0 transform translate-x-8 -translate-y-2 text-[10rem] font-black text-neutral-900/40 uppercase pointer-events-none select-none">VIP</div>
+                <div class="relative z-10 max-w-xl">
+                    <span class="text-xs font-bold tracking-widest text-neutral-400 block mb-2">★ JOIN THE CLUB: UNLIMITED VIP MEMBERSHIP</span>
+                    <h2 class="text-3xl font-black uppercase tracking-tight mb-4">₱1,500 <span class="text-sm font-normal text-neutral-500">/ Month</span></h2>
+                    <p class="text-neutral-400 text-sm font-light mb-8 leading-relaxed">Maximize convenience with flat-rate recurring billing designed for vehicle collectors and car care enthusiasts.</p>
+                    
+                    <ul class="space-y-3 text-xs text-neutral-300 font-normal mb-8">
+                        <li class="flex items-center">✓ Enjoy unlimited access to our signature Basic Wash package all month long</li>
+                        <li class="flex items-center">✓ Benefit from an exclusive 15% discount on all advanced Premium Detailing services</li>
+                        <li class="flex items-center">✓ Lock in priority scheduling privileges during high-demand peak weekend studio hours</li>
+                        <li class="flex items-center">✓ Arrive with confidence knowing your dedicated bay allocation is ready for drive-in</li>
+                    </ul>
+
+                    <button onclick="toggleModal('loginModal')" class="bg-light text-dark font-bold text-xs tracking-widest uppercase px-6 py-3.5 rounded-full hover:bg-neutral-200 transition-all shadow-sm">Avail Subscription Now</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="booking-wizard" class="py-24 bg-neutral-50/50 border-b border-neutral-200/60">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="max-w-2xl mx-auto text-center mb-16">
+                <span class="text-xs font-bold tracking-widest uppercase text-neutral-400 block mb-2">Core Engine</span>
+                <h2 class="text-3xl font-black tracking-tight uppercase">Interactive Scheduling Funnel</h2>
+            </div>
+
+            <form id="wizardForm" onsubmit="handleFormSubmission(event)" class="bg-white border border-neutral-200/60 p-6 sm:p-10 rounded-[2rem] shadow-sm max-w-5xl mx-auto">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
+                    
+                    <div class="lg:col-span-7 space-y-8">
+                        <div class="border-l-2 border-dark pl-4 py-1.5 text-xs text-neutral-500 font-medium">
+                            Live system constraint check configured. Fully allocated intervals display a locked status mechanism automatically.
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-neutral-400 mb-2">Step 1: Selected Service</label>
+                            <div class="relative">
+                                <select id="selectedService" class="w-full appearance-none bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-medium focus:outline-none focus:border-dark focus:bg-white transition-all pr-10" onchange="updateSummary()">
+                                    <option value="Basic Wash">Basic Wash — ₱350</option>
+                                    <option value="Premium Wash">Premium Wash — ₱750</option>
+                                    <option value="Detailing Specialist Tier">Detailing Specialist Tier — ₱3,500</option>
+                                </select>
+                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-neutral-500">
+                                    ▼
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-neutral-400 mb-2">Step 2: Operational Target Interval</label>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <input type="date" id="bookingDate" required class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-medium focus:outline-none focus:border-dark focus:bg-white transition-all" onchange="handleDateChange()">
+                                    <p class="text-[10px] text-neutral-400 font-medium mt-1.5 ml-3">Format constraint: dd/mm/yyyy</p>
+                                </div>
+                                <div>
+                                    <div class="relative">
+                                        <select id="bookingTime" required class="w-full appearance-none bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-medium focus:outline-none focus:border-dark focus:bg-white transition-all pr-10" onchange="updateSummary()">
+                                            <option value="">Choose Time Slot...</option>
+                                            <option value="09:00 AM">09:00 AM - 10:00 AM</option>
+                                            <option value="10:00 AM">10:00 AM - 11:00 AM</option>
+                                            <option value="11:00 AM">11:00 AM - 12:00 PM</option>
+                                            <option value="01:00 PM" disabled class="bg-neutral-100 text-neutral-400">🔒 01:00 PM (Fully Booked)</option>
+                                            <option value="02:00 PM">02:00 PM - 03:00 PM</option>
+                                            <option value="03:00 PM">03:00 PM - 04:00 PM</option>
+                                            <option value="04:00 PM">04:00 PM - 05:00 PM</option>
+                                            <option value="05:00 PM">05:00 PM - 06:00 PM</option>
+                                        </select>
+                                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-neutral-500">
+                                            ▼
+                                        </div>
+                                    </div>
+                                    <p id="capacityWarning" class="text-[10px] text-red-500 font-semibold mt-1.5 ml-3 hidden">Selected slot has reached peak capacity. Please choose an alternate time block.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4 pt-6 border-t border-neutral-100">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-neutral-400 mb-1">Customer Identification Metadata</label>
+                            <div>
+                                <input type="text" id="custName" placeholder="Full Legal Name" required class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-medium focus:outline-none focus:border-dark focus:bg-white transition-all px-5">
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <input type="tel" id="custPhone" placeholder="Contact Number (Mandatory)" required class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-medium focus:outline-none focus:border-dark focus:bg-white transition-all px-5">
+                                    <p id="phoneError" class="text-[10px] text-red-500 font-semibold mt-1.5 ml-3 hidden">Mobile number is required for transaction confirmation text alerts.</p>
+                                </div>
+                                <div>
+                                    <input type="email" id="custEmail" placeholder="Email Address (Optional for Walk-Ins)" class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-medium focus:outline-none focus:border-dark focus:bg-white transition-all px-5">
+                                </div>
+                            </div>
+                            <div>
+                                <div class="relative">
+                                    <select id="paymentMethod" required class="w-full appearance-none bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-medium focus:outline-none focus:border-dark focus:bg-white transition-all pr-10" onchange="updateSummary()">
+                                        <option value="Cash on Site">Cash on Site</option>
+                                        <option value="E-Wallet">E-Wallet (GCash / Maya)</option>
+                                        <option value="Credit/Debit Card">Credit/Debit Card</option>
+                                        <option value="Online Banking">Online Banking</option>
+                                    </select>
+                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-neutral-500">
+                                        ▼
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-5 bg-neutral-50 p-6 sm:p-8 rounded-2xl border border-neutral-200/60 flex flex-col justify-between">
+                        <div>
+                            <div class="text-xs font-bold uppercase tracking-wider text-neutral-400 mb-6 pb-2 border-b border-neutral-200">Step 3: Receipt Summary</div>
+                            
+                            <div class="space-y-4 text-xs">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-neutral-500 font-medium">Service Selection:</span>
+                                    <span id="summaryService" class="font-bold text-right text-dark">Basic Wash</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-neutral-500 font-medium">Target Date:</span>
+                                    <span id="summaryDate" class="font-bold text-dark">—</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-neutral-500 font-medium">Scheduled Time:</span>
+                                    <span id="summaryTime" class="font-bold text-dark">—</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-neutral-500 font-medium">Estimated Duration:</span>
+                                    <span id="summaryDuration" class="font-bold text-dark">~ 1 Hour</span>
+                                </div>
+                                <div class="border-t border-dashed border-neutral-300 my-4 pt-4 flex justify-between items-center text-sm font-bold">
+                                    <span class="text-neutral-800">Total Amount Due:</span>
+                                    <span id="summaryTotal" class="text-base text-dark">₱350.00</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-8">
+                            <button type="submit" class="w-full bg-dark text-light text-xs font-bold tracking-widest uppercase py-4 rounded-full border border-dark hover:bg-neutral-800 transition-all shadow-sm">
+                                Confirm & Finalize Booking
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <footer id="contact" class="bg-dark text-light pt-16 pb-8 border-t border-neutral-900">
+        <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-12 text-xs font-normal mb-12">
+            <div>
+                <div class="text-base font-bold uppercase tracking-tight mb-4 text-white">Montage Auto Studio</div>
+                <p class="text-neutral-400 text-xs leading-relaxed font-light">Premium Car Care, Scheduled Around Your Lifestyle. Meticulous automotive styling, detailing, and protective coating treatments custom-tailored to protect your vehicle.</p>
+            </div>
+            <div>
+                <div class="text-[11px] font-bold tracking-widest uppercase text-neutral-500 mb-4">Quick Links</div>
+                <ul class="space-y-2.5 font-medium text-neutral-400 uppercase tracking-wider text-[11px]">
+                    <li><a href="#about" class="hover:text-light transition-colors">About Our Studio</a></li>
+                    <li><a href="#menu" class="hover:text-light transition-colors">Services & Pricing</a></li>
+                    <li><a href="#subscription" class="hover:text-light transition-colors">VIP Membership Plan</a></li>
+                    <li><a href="#booking-wizard" class="hover:text-light transition-colors">Interactive Booking Portal</a></li>
+                </ul>
+            </div>
+            <div>
+                <div class="text-[11px] font-bold tracking-widest uppercase text-neutral-500 mb-4">Operating Hours</div>
+                <ul class="space-y-2 text-neutral-400 font-light">
+                    <li>Monday – Friday: <span class="font-semibold text-neutral-300">9:00 AM – 6:00 PM</span></li>
+                    <li>Saturday: <span class="font-semibold text-neutral-300">8:00 AM – 4:00 PM</span></li>
+                    <li class="text-neutral-600 font-medium">Closed on Sundays</li>
+                    <li class="pt-2 text-neutral-200 font-semibold">📞 +63 (032) 345-XXXX</li>
+                </ul>
+            </div>
+            <div>
+                <div class="text-[11px] font-bold tracking-widest uppercase text-neutral-500 mb-4">Location & Socials</div>
+                <p class="text-neutral-400 font-light mb-4 leading-relaxed">📍 Near Mago Green Village, Banilad, Mandaue City, Cebu, Philippines</p>
+                <div class="flex space-x-3 text-[11px] font-bold tracking-wider uppercase text-neutral-400">
+                    <a href="#" class="hover:text-light transition-colors">[Facebook]</a>
+                    <a href="#" class="hover:text-light transition-colors">[TikTok]</a>
+                </div>
+            </div>
+        </div>
+        <div class="max-w-7xl mx-auto px-6 pt-8 border-t border-neutral-800/60 flex flex-col sm:flex-row items-center justify-between text-[11px] text-neutral-500 font-medium">
+            <div>© 2026 Montage Auto Studio. All Rights Reserved.</div>
+            <div class="flex space-x-4 mt-4 sm:mt-0">
+                <a href="#" class="hover:text-neutral-400">[Privacy Policy]</a>
+                <a href="#" class="hover:text-neutral-400">[Terms of Service]</a>
+            </div>
+        </div>
+    </footer>
+
+    <div id="loginModal" class="fixed inset-0 z-50 flex items-center justify-center bg-dark/60 backdrop-blur-sm hidden animate-fade-in">
+        <div class="bg-white border border-neutral-200/80 p-8 w-full max-w-sm relative rounded-[2rem] shadow-2xl mx-4">
+            <button onclick="toggleModal('loginModal')" class="absolute top-5 right-5 text-neutral-400 hover:text-dark text-xs font-bold">✕</button>
+            <div class="text-center mb-6">
+                <h3 class="text-lg font-bold uppercase tracking-tight">Subscriber Access Portal</h3>
+                <p class="text-xs text-neutral-400 font-normal mt-1">Authenticate your membership account below</p>
+            </div>
+            <form onsubmit="simulateSubscriberLogin(event)" class="space-y-4">
+                <div>
+                    <input type="email" placeholder="Email Address" required class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-medium focus:outline-none focus:border-dark focus:bg-white transition-all px-5">
+                </div>
+                <div>
+                    <input type="password" placeholder="Password" required class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-medium focus:outline-none focus:border-dark focus:bg-white transition-all px-5">
+                </div>
+                <button type="submit" class="w-full bg-dark text-light text-xs font-bold tracking-widest uppercase py-3.5 rounded-full border border-dark hover:bg-neutral-800 transition-all shadow-sm">Sign In</button>
+                <div class="text-center text-[11px] font-semibold text-neutral-400 pt-2">
+                    <a href="#" class="hover:underline hover:text-dark">Forgot Password?</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Modal State Controller
+        function toggleModal(modalId) {
+            const target = document.getElementById(modalId);
+            if (target.classList.contains('hidden')) {
+                target.classList.remove('hidden');
+            } else {
+                target.classList.add('hidden');
+            }
+        }
+
+        // Direct selection pathway logic coming from product grid view cards
+        function selectServiceDirectly(serviceName) {
+            const menuSelect = document.getElementById('selectedService');
+            menuSelect.value = serviceName;
+            updateSummary();
+        }
+
+        // Simulating the multi-bay capacity checking criteria rule
+        function handleDateChange() {
+            const dateInput = document.getElementById('bookingDate').value;
+            const warningElement = document.getElementById('capacityWarning');
+            const dateObj = new Date(dateInput);
+            const dayOfWeek = dateObj.getUTCDay(); // 0 is Sunday, 6 is Saturday
+
+            // Custom scenario simulation logic for Saturday limits
+            if (dayOfWeek === 6) {
+                warningElement.classList.remove('hidden');
+            } else {
+                warningElement.classList.add('hidden');
+            }
+            updateSummary();
+        }
+
+        // Reactive Summary mapping execution
+        function updateSummary() {
+            const service = document.getElementById('selectedService').value;
+            const date = document.getElementById('bookingDate').value || '—';
+            const time = document.getElementById('bookingTime').value || '—';
+            
+            document.getElementById('summaryService').innerText = service;
+            document.getElementById('summaryDate').innerText = date;
+            document.getElementById('summaryTime').innerText = time;
+
+            // Simple Price & Duration Matrix Calculation Logic
+            let price = '₱350.00';
+            let duration = '~ 1 Hour';
+            if (service === 'Premium Wash') {
+                price = '₱750.00';
+                duration = '1 to 1.5 Hours';
+            } else if (service === 'Detailing Specialist Tier') {
+                price = '₱3,500.00';
+                duration = '2+ Hours';
+            }
+
+            document.getElementById('summaryDuration').innerText = duration;
+            document.getElementById('summaryTotal').innerText = price;
+        }
+
+        // Core submission validator checking parameters prior to deployment
+        function handleFormSubmission(event) {
+            event.preventDefault();
+            const phone = document.getElementById('custPhone').value;
+            const errorElement = document.getElementById('phoneError');
+
+            if (!phone || phone.trim() === '') {
+                errorElement.classList.remove('hidden');
+                document.getElementById('custPhone').focus();
+                return false;
+            } else {
+                errorElement.classList.add('hidden');
+            }
+
+            // Generate structural unique transaction identification signature data
+            const referenceId = "MTG-" + Math.floor(100000 + Math.random() * 900000);
+            alert(`Booking Successfully Generated into Database Engine!\n\nReference Receipt ID: ${referenceId}\nConfirmation alerts dispatched via SMS tracking pipelines.`);
+            document.getElementById('wizardForm').reset();
+            updateSummary();
+        }
+
+        // User role routing tracking pipeline behavior simulation
+        function simulateSubscriberLogin(event) {
+            event.preventDefault();
+            toggleModal('loginModal');
+            alert("Security Authentication Approved: Routing profile matrix information directly to private split-panel Customer Dashboard environment views.");
+        }
+    </script>
 </body>
 </html>
