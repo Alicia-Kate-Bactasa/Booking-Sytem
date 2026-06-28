@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Montage Auto Studio | Member Workspace</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] }, colors: { dark: '#111111', light: '#FAFAFA' } } }
+        }
+    </script>
+</head>
+<body class="bg-neutral-100 text-dark font-sans antialiased">
+
+    <div class="min-h-screen flex flex-col md:flex-row">
+        <aside class="w-full md:w-64 bg-dark text-light flex flex-col justify-between p-6 border-r border-neutral-800">
+            <div class="space-y-8">
+                <div class="pb-4 border-b border-neutral-800">
+                    <div class="text-sm font-bold uppercase tracking-wider text-white">Montage Member Hub</div>
+                    <div class="text-[10px] text-neutral-400 tracking-widest uppercase font-mono mt-1">Subscriber View</div>
+                </div>
+                <nav class="space-y-2 text-xs font-medium uppercase tracking-wider text-neutral-400">
+                    <a href="#" class="flex items-center space-x-3 bg-neutral-900 text-white p-3 rounded-full transition-all"><span>●</span> <span class="font-bold">Dashboard/Home</span></a>
+                    <button onclick="routeToPublicBooking()" class="w-full text-left flex items-center space-x-3 hover:bg-neutral-900 hover:text-white p-3 rounded-full transition-all"><span>○</span> <span>Book a Service</span></button>
+                    <a href="#" class="flex items-center space-x-3 hover:bg-neutral-900 hover:text-white p-3 rounded-full transition-all"><span>○</span> <span>Active Reservations</span></a>
+                    <a href="#" class="flex items-center space-x-3 hover:bg-neutral-900 hover:text-white p-3 rounded-full transition-all"><span>○</span> <span>Membership Parameters</span></a>
+                </nav>
+            </div>
+            <div class="pt-6 border-t border-neutral-800">
+                <button onclick="terminateSessionLogout()" class="w-full text-center text-xs font-bold bg-neutral-900 hover:bg-red-950 hover:text-red-200 border border-neutral-800 text-neutral-400 py-3 rounded-full tracking-widest uppercase transition-all">
+                    Secure Logout
+                </button>
+            </div>
+        </aside>
+
+        <main class="flex-1 p-6 md:p-10 space-y-10 overflow-y-auto max-h-screen">
+            
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-neutral-200">
+                <div>
+                    <h2 class="text-2xl font-black uppercase tracking-tight text-dark">Member Workspace</h2>
+                    <p class="text-xs text-neutral-500 font-medium mt-1">Welcome back, <span id="dashWelcomeName" class="font-bold text-neutral-800">VIP Collective Client</span></p>
+                </div>
+                <div class="text-xs bg-white border border-neutral-200 px-4 py-2 rounded-full font-semibold text-neutral-500 shadow-sm">
+                    Location Profile: Banilad Studio
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                <div class="bg-white border border-neutral-200 p-6 rounded-2xl shadow-sm flex flex-col justify-between">
+                    <span class="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Membership Plan</span>
+                    <div class="text-lg font-black uppercase text-dark mt-2">VIP Club Subscriber</div>
+                    <div class="text-[11px] text-neutral-500 font-medium mt-1">Unlimited Basic Wash Balance [cite: 1695]</div>
+                </div>
+                <div class="bg-white border border-neutral-200 p-6 rounded-2xl shadow-sm flex flex-col justify-between">
+                    <span class="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Account Status Indicator</span>
+                    <div class="flex items-center mt-2">
+                        <span id="dashStatusTag" class="text-xs bg-emerald-50 text-emerald-700 font-bold px-3 py-1 rounded-full border border-emerald-200 flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>🟢 ACTIVE
+                        </span>
+                    </div>
+                    <div class="text-[10px] text-neutral-400 font-semibold mt-1">Next Cycle Invoice: July 24, 2026</div>
+                </div>
+                <div class="bg-white border border-neutral-200 p-6 rounded-2xl shadow-sm flex flex-col justify-between">
+                    <span class="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Plan Operational Toggle</span>
+                    <div class="mt-2 flex items-center justify-between">
+                        <span class="text-xs font-semibold text-neutral-600">Auto-Renew Status</span>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="renewToggle" checked class="sr-only peer" onchange="toggleSubscriptionStatusState()">
+                            <div class="w-11 h-6 bg-neutral-200 rounded-full peer peer-focus:ring-2 peer-focus:ring-neutral-300 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-dark"></div>
+                        </label>
+                    </div>
+                    <div class="text-[10px] text-neutral-400 font-semibold mt-1">Toggle to adjust automated parameters</div>
+                </div>
+            </div>
+
+            <div class="bg-white border border-neutral-200 rounded-2xl shadow-sm overflow-hidden">
+                <div class="p-5 border-b border-neutral-100 bg-neutral-50/50 flex items-center justify-between">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-neutral-500">Active Bookings Log</h3>
+                    <span class="text-[10px] bg-dark text-light px-2.5 py-1 rounded-full font-bold">1 Reserved</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs border-collapse">
+                        <thead>
+                            <tr class="border-b border-neutral-200 bg-neutral-50 font-semibold text-neutral-500 uppercase tracking-wider text-[10px]">
+                                <th class="p-4">Booking ID</th>
+                                <th class="p-4">Service Selection</th>
+                                <th class="p-4">Date</th>
+                                <th class="p-4">Scheduled Time</th>
+                                <th class="p-4 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-neutral-100 font-medium">
+                            <tr>
+                                <td class="p-4 text-dark font-bold font-mono">MTG-847291</td>
+                                <td class="p-4 text-neutral-700">Deluxe Car Wash Package</td>
+                                <td class="p-4 text-neutral-600">07/14/2026</td>
+                                <td class="p-4 text-neutral-600">10:00 AM - 11:00 AM</td>
+                                <td class="p-4 text-right space-x-2">
+                                    <button onclick="alert('Routing profile context to active calendar mapping matrix for time slot adjustment.')" class="bg-neutral-100 border border-neutral-200 px-3 py-1.5 rounded-full font-semibold text-[11px] transition-all">Reschedule</button>
+                                    <button onclick="triggerAppointmentCancellation()" class="bg-neutral-50 text-neutral-600 hover:text-red-600 border border-neutral-200 px-3 py-1.5 rounded-full font-semibold text-[11px] transition-all">Cancel</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="bg-white border border-neutral-200 rounded-2xl shadow-sm overflow-hidden">
+                <div class="p-5 border-b border-neutral-100 bg-neutral-50/50">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-neutral-500">Historical Studio Ledger</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs border-collapse">
+                        <thead>
+                            <tr class="border-b border-neutral-200 bg-neutral-50 font-semibold text-neutral-500 uppercase tracking-wider text-[10px]">
+                                <th class="p-4">Past Reference</th>
+                                <th class="p-4">Completed Treatment</th>
+                                <th class="p-4">Date Completed</th>
+                                <th class="p-4">Receipt Data</th>
+                                <th class="p-4 text-right">Quality Review</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-neutral-100 font-medium text-neutral-600">
+                            <tr>
+                                <td class="p-4 font-mono font-semibold text-dark">MTG-219503</td>
+                                <td class="p-4">Standard Car Wash</td>
+                                <td class="p-4">06/18/2026</td>
+                                <td class="p-4"><button onclick="alert('Downloading transaction receipt document...')" class="text-dark underline font-semibold">[Download PDF]</button></td>
+                                <td class="p-4 text-right"><button onclick="openFeedbackWizardModal('MTG-219503')" class="bg-dark text-light px-3 py-1.5 rounded-full font-bold text-[11px] hover:bg-neutral-800 transition-all">Leave Feedback</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="feedbackModal" class="fixed inset-0 z-50 flex items-center justify-center bg-dark/60 backdrop-blur-sm hidden">
+        <div class="bg-white p-8 w-full max-w-sm relative rounded-[2rem] shadow-2xl mx-4">
+            <button onclick="closeModal('feedbackModal')" class="absolute top-5 right-5 text-neutral-400 hover:text-dark text-xs font-bold">✕</button>
+            <div class="text-center mb-6">
+                <h3 class="text-lg font-bold uppercase tracking-tight">Service Quality Review</h3>
+                <p class="text-xs text-neutral-400 font-normal mt-1">Booking Link ID target: <span id="feedbackTargetID" class="font-bold font-mono text-dark">#MTG</span></p>
+            </div>
+            <form onsubmit="submitCustomerFeedbackLog(event)" class="space-y-5">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-neutral-400 mb-2 text-center">Rate treatment execution accuracy</label>
+                    <div class="grid grid-cols-4 gap-2 text-[10px] text-center font-bold">
+                        <label class="border border-neutral-200 p-2 rounded-xl cursor-pointer block hover:border-dark"><input type="radio" name="likertScale" value="1" required class="mb-1 block mx-auto">1 - Poor</label>
+                        <label class="border border-neutral-200 p-2 rounded-xl cursor-pointer block hover:border-dark"><input type="radio" name="likertScale" value="2" class="mb-1 block mx-auto">2 - Fair</label>
+                        <label class="border border-neutral-200 p-2 rounded-xl cursor-pointer block hover:border-dark"><input type="radio" name="likertScale" value="3" class="mb-1 block mx-auto">3 - Good</label>
+                        <label class="border border-neutral-200 p-2 rounded-xl cursor-pointer block hover:border-dark"><input type="radio" name="likertScale" value="4" class="mb-1 block mx-auto">4 - Premier</label>
+                    </div>
+                </div>
+                <div><textarea placeholder="Provide additional optional evaluation notes here..." rows="3" class="w-full bg-neutral-50 border border-neutral-200 p-3 rounded-2xl text-xs font-medium focus:outline-none focus:border-dark"></textarea></div>
+                <button type="submit" class="w-full bg-dark text-light text-xs font-bold tracking-widest uppercase py-3.5 rounded-full shadow-sm">Submit Review Metric</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function routeToPublicBooking() { window.location.href = 'index.html#booking-wizard'; }
+        
+        function terminateSessionLogout() { 
+            localStorage.removeItem('subscriber_session_active');
+            localStorage.removeItem('subscriber_name');
+            window.location.href = 'index.html'; 
+        }
+
+        function openFeedbackWizardModal(bookingID) { 
+            document.getElementById('feedbackTargetID').innerText = "#" + bookingID; 
+            document.getElementById('feedbackModal').classList.remove('hidden'); 
+        }
+
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+        function submitCustomerFeedbackLog(e) { event.preventDefault(); alert("Feedback committed into analytical tracking systems. Thank you!"); closeModal('feedbackModal'); }
+        function triggerAppointmentCancellation() { if (confirm("Confirm session drop request?")) alert("Appointment structural record dropped safely."); }
+        
+        function toggleSubscriptionStatusState() {
+            const check = document.getElementById('renewToggle').checked;
+            const tag = document.getElementById('dashStatusTag');
+            if (check) {
+                tag.className = "text-xs bg-emerald-50 text-emerald-700 font-bold px-3 py-1 rounded-full border border-emerald-200 flex items-center gap-1.5";
+                tag.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>🟢 ACTIVE`;
+            } else {
+                tag.className = "text-xs bg-amber-50 text-amber-700 font-bold px-3 py-1 rounded-full border border-amber-200 flex items-center gap-1.5";
+                tag.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500 inline-block"></span>🟡 INACTIVE`;
+                alert("Subscription set to terminate at end of paid period.");
+            }
+        }
+
+        // Dynamically pull simulated login context state metrics across components
+        window.onload = function() {
+            const sessionActive = localStorage.getItem('subscriber_session_active');
+            if (sessionActive !== 'true') {
+                // Securely bounce non-authenticated entry workflows back to landing pool index
+                window.location.href = 'index.html';
+                return;
+            }
+            const activeProfileName = localStorage.getItem('subscriber_name') || 'VIP Collective Client';
+            document.getElementById('dashWelcomeName').innerText = activeProfileName;
+        };
+    </script>
+</body>
+</html>
