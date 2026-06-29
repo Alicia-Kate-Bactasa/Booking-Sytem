@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Montage Auto Studio - Admin Engine</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #ffffff; }
+        ::-webkit-scrollbar-thumb { background: #000000; border-radius: 2rem; }
+    </style>
+</head>
+<body class="bg-neutral-50 text-neutral-900 selection:bg-neutral-900 selection:text-white">
+
+    <div class="flex h-screen overflow-hidden">
+        <aside class="w-80 bg-white border-r border-neutral-200 flex flex-col justify-between p-8 z-10">
+            <div class="space-y-12">
+                <div>
+                    <h1 class="font-bold text-xs uppercase tracking-widest text-neutral-400">Management Platform</h1>
+                    <p class="text-lg font-bold tracking-tight mt-1 text-black">Montage Auto Studio</p>
+                </div>
+                
+                <nav class="space-y-2">
+                    <button onclick="switchTab('assignment')" id="btn-assignment" class="w-full text-left flex items-center gap-3 px-4 py-3 rounded-full text-sm font-semibold tracking-wide uppercase transition-all bg-black text-white">
+                        <span>Staff Assignment</span>
+                    </button>
+                    <button onclick="switchTab('services')" id="btn-services" class="w-full text-left flex items-center gap-3 px-4 py-3 rounded-full text-sm font-semibold tracking-wide uppercase transition-all text-neutral-500 hover:bg-neutral-100 hover:text-black">
+                        <span>Service Catalog Editor</span>
+                    </button>
+                    <button onclick="switchTab('feedbacks')" id="btn-feedbacks" class="w-full text-left flex items-center gap-3 px-4 py-3 rounded-full text-sm font-semibold tracking-wide uppercase transition-all text-neutral-500 hover:bg-neutral-100 hover:text-black">
+                        <span>Customer Feedback History</span>
+                    </button>
+                </nav>
+            </div>
+
+            <div class="border-t border-neutral-100 pt-6 space-y-4">
+                <div class="flex items-center gap-3 px-2">
+                    <div class="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center font-bold text-sm">A</div>
+                    <div>
+                        <p class="text-sm font-bold text-black">System Admin</p>
+                        <p class="text-xs text-neutral-400 font-medium tracking-wider uppercase">Studio Manager</p>
+                    </div>
+                </div>
+                <button onclick="adminLogout()" class="w-full text-center border border-neutral-200 text-neutral-600 px-4 py-3 rounded-full text-xs font-bold tracking-wider uppercase hover:bg-black hover:text-white hover:border-black transition-all">
+                    Secure Logout
+                </button>
+            </div>
+        </aside>
+
+        <main class="flex-1 bg-neutral-50 overflow-y-auto p-12">
+            
+            <section id="tab-assignment" class="space-y-8">
+                <div class="border-b border-neutral-200 pb-6">
+                    <h2 class="text-3xl font-bold tracking-tight text-black">Staff Assignment</h2>
+                    <p class="text-neutral-500 text-sm mt-2">Map unassigned vehicle service tickets to detailing specialists currently on rotation shifts.</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="bg-white border border-neutral-200 rounded-[2rem] p-8 space-y-6">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-sm font-bold tracking-wider uppercase text-neutral-400">Unassigned Live Bookings</h3>
+                            <span class="bg-neutral-100 text-black px-3 py-1 text-xs font-bold rounded-full" id="unassigned-count">1</span>
+                        </div>
+                        
+                        <div class="space-y-4" id="unassigned-container">
+                            <div id="ticket-849" onclick="selectTicket('MTG-849201', 'Complete Interior Detailing')" class="p-6 border-2 border-neutral-200 rounded-[1.5rem] bg-white flex justify-between items-center group cursor-pointer hover:border-black transition-all">
+                                <div>
+                                    <span class="text-[10px] font-mono font-bold bg-neutral-100 px-2 py-1 rounded tracking-wide text-neutral-600">ID: MTG-849201</span>
+                                    <h4 class="font-bold text-black mt-2 text-base">Complete Interior Detailing</h4>
+                                    <p class="text-xs text-neutral-500 mt-1">Scheduled Date: June 30, 2026 | Time Slot: 09:00 AM</p>
+                                    <p class="text-xs text-neutral-400 font-medium mt-1">Client: Alicia Kate Bactasa</p>
+                                </div>
+                                <div class="text-right">
+                                    <span id="ticket-status-badge" class="text-[10px] font-bold tracking-wider uppercase bg-neutral-100 text-neutral-800 px-3 py-1.5 rounded-full block text-center">Pending Crew</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white border border-neutral-200 rounded-[2rem] p-8 space-y-6">
+                        <h3 class="text-sm font-bold tracking-wider uppercase text-neutral-400">Active Duty Detailing Specialists</h3>
+                        
+                        <div class="p-5 border border-neutral-200 rounded-[1.5rem] bg-neutral-50">
+                            <p class="text-xs font-bold uppercase tracking-wider text-neutral-400 mb-1">Active Ticket Focus</p>
+                            <p class="text-sm font-bold text-black" id="active-selection-label">None Selected — Click an unassigned booking ticket first</p>
+                        </div>
+
+                        <div class="space-y-3">
+                            <div class="p-4 border border-neutral-200 rounded-[1.5rem] flex justify-between items-center bg-white">
+                                <div>
+                                    <p class="font-bold text-black">Mark Santos</p>
+                                    <p class="text-xs text-neutral-500">Bay Allocation: Bay Alpha | Shift: 08:00 AM - 05:00 PM</p>
+                                </div>
+                                <button onclick="assignStaff('Mark Santos')" class="bg-black text-white border border-black px-4 py-2 rounded-full text-xs font-bold tracking-wider uppercase hover:bg-neutral-800 transition-all">Assign To Ticket</button>
+                            </div>
+                            <div class="p-4 border border-neutral-200 rounded-[1.5rem] flex justify-between items-center bg-white">
+                                <div>
+                                    <p class="font-bold text-black">John Doe</p>
+                                    <p class="text-xs text-neutral-500">Bay Allocation: Bay Beta | Shift: 10:00 AM - 07:00 PM</p>
+                                </div>
+                                <button onclick="assignStaff('John Doe')" class="bg-black text-white border border-black px-4 py-2 rounded-full text-xs font-bold tracking-wider uppercase hover:bg-neutral-800 transition-all">Assign To Ticket</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="tab-services" class="space-y-8 hidden">
+                <div class="border-b border-neutral-200 pb-6">
+                    <h2 class="text-3xl font-bold tracking-tight text-black">Service Catalog Editor</h2>
+                    <p class="text-neutral-500 text-sm mt-2">Modify service prices and descriptions. Modifications immediately reflect across public index layouts and user dashboards.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="services-crud-grid">
+                    </div>
+            </section>
+
+            <section id="tab-feedbacks" class="space-y-8 hidden">
+                <div class="border-b border-neutral-200 pb-6">
+                    <h2 class="text-3xl font-bold tracking-tight text-black">Customer Feedback History</h2>
+                    <p class="text-neutral-500 text-sm mt-2">Comprehensive chronological records of reviews and service scores submitted by clients.</p>
+                </div>
+
+                <div class="bg-white border border-neutral-200 rounded-[2rem] overflow-hidden shadow-sm">
+                    <div class="p-8 border-b border-neutral-100 bg-neutral-50/50">
+                        <h3 class="text-sm font-bold tracking-wider uppercase text-neutral-400">All Client Submission Entries</h3>
+                    </div>
+                    <div class="divide-y divide-neutral-200" id="feedback-entries-container">
+                        <div class="p-8 space-y-3">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h4 class="font-bold text-base text-black">Alicia Kate Bactasa</h4>
+                                    <p class="text-xs font-mono text-neutral-400 mt-0.5">Booking Reference: #MTG-841103 • Service Type: Complete Interior Detailing</p>
+                                </div>
+                                <div class="bg-neutral-900 text-white px-3 py-1 rounded-full text-xs font-bold tracking-wider uppercase">
+                                    Rating Score: 4 / 4
+                                </div>
+                            </div>
+                            <p class="text-sm text-neutral-600 font-medium leading-relaxed">"The level of precision on the interior cleaning was elite. Every single speck of dirt was cleared away from the center console tracks. Will use my monthly VIP sessions exclusively here."</p>
+                        </div>
+
+                        <div class="p-8 space-y-3">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h4 class="font-bold text-base text-black">June Culanag</h4>
+                                    <p class="text-xs font-mono text-neutral-400 mt-0.5">Booking Reference: #MTG-102941 • Service Type: Basic Car Wash</p>
+                                </div>
+                                <div class="bg-neutral-900 text-white px-3 py-1 rounded-full text-xs font-bold tracking-wider uppercase">
+                                    Rating Score: 3 / 4
+                                </div>
+                            </div>
+                            <p class="text-sm text-neutral-600 font-medium leading-relaxed">"Fast standard exterior foam wash. Good processing speeds, though wait lines can occasionally spill over the entryway."</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // Enforce Login Guard
+        window.onload = function() {
+            if (localStorage.getItem('isAdminAuthenticated') !== 'true') {
+                alert('Access Denied. Redirecting to landing page authentication.');
+                window.location.href = 'index.html';
+            }
+            initializeServiceCatalogData();
+            renderAdminServices();
+        };
+
+        // Tab Switcher Controller
+        function switchTab(tabId) {
+            ['assignment', 'services', 'feedbacks'].forEach(tab => {
+                document.getElementById(`tab-${tab}`).classList.add('hidden');
+                document.getElementById(`btn-${tab}`).classList.remove('bg-black', 'text-white');
+                document.getElementById(`btn-${tab}`).classList.add('text-neutral-500', 'hover:bg-neutral-100');
+            });
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            document.getElementById(`btn-${tabId}`).classList.add('bg-black', 'text-white');
+            document.getElementById(`btn-${tabId}`).classList.remove('text-neutral-500', 'hover:bg-neutral-100');
+        }
+
+        // Staff Assignment Sub-System State Matrix
+        let selectedTicketId = null;
+        function selectTicket(ticketId, serviceName) {
+            selectedTicketId = ticketId;
+            document.getElementById('ticket-849').classList.remove('border-neutral-200');
+            document.getElementById('ticket-849').classList.add('border-black', 'bg-neutral-50');
+            document.getElementById('active-selection-label').innerText = `Selected: ${ticketId} (${serviceName})`;
+        }
+
+        function assignStaff(staffName) {
+            if (!selectedTicketId) {
+                alert('Please select an unassigned ticket booking stack card from the left side panel first.');
+                return;
+            }
+            alert(`Success: ${staffName} assigned to Ticket ${selectedTicketId}`);
+            document.getElementById('ticket-status-badge').className = "text-[10px] font-bold tracking-wider uppercase bg-neutral-900 text-white px-3 py-1.5 rounded-full block text-center";
+            document.getElementById('ticket-status-badge').innerText = staffName;
+            document.getElementById('unassigned-count').innerText = "0";
+        }
+
+        // Shared LocalStorage Service Catalog Mock Database Seed
+        const defaultServices = [
+            { id: "srv-wash", name: "Standard Car Wash", price: 250, duration: "45 Mins", desc: "Essential exterior foam wash treatment using premium scratch-free microfiber cleaning tools." },
+            { id: "srv-detail", name: "Complete Interior Detailing", price: 1500, duration: "120 Mins", desc: "Deep interior vacuuming, leather conditioning, dashboard sterilization, and odor extraction treatment." },
+            { id: "srv-wax", name: "Premium Wax & Polish", price: 850, duration: "60 Mins", desc: "Advanced hand-applied protective paste wax layer giving deep gloss reflections and exterior shield." }
+        ];
+
+        function initializeServiceCatalogData() {
+            if (!localStorage.getItem('montage_services')) {
+                localStorage.setItem('montage_services', JSON.stringify(defaultServices));
+            }
+        }
+
+        function renderAdminServices() {
+            const services = JSON.parse(localStorage.getItem('montage_services'));
+            const container = document.getElementById('services-crud-grid');
+            container.innerHTML = '';
+
+            services.forEach((service, index) => {
+                container.innerHTML += `
+                    <div class="bg-white border border-neutral-200 rounded-[2rem] p-6 flex flex-col justify-between space-y-6">
+                        <div>
+                            <span class="text-[10px] font-bold tracking-widest uppercase text-neutral-400">${service.duration}</span>
+                            <div class="mt-1">
+                                <label class="block text-[10px] uppercase font-bold tracking-wider text-neutral-400">Service Name</label>
+                                <input type="text" id="edit-name-${index}" value="${service.name}" class="w-full font-bold text-black bg-transparent border-b border-transparent hover:border-neutral-300 focus:border-black py-1 focus:outline-none transition-all">
+                            </div>
+                            <div class="mt-4">
+                                <label class="block text-[10px] uppercase font-bold tracking-wider text-neutral-400">Description</label>
+                                <textarea id="edit-desc-${index}" class="w-full text-xs text-neutral-600 bg-transparent border border-transparent hover:border-neutral-300 focus:border-black rounded p-1 h-16 resize-none focus:outline-none transition-all">${service.desc}</textarea>
+                            </div>
+                        </div>
+                        <div class="border-t border-neutral-100 pt-4 flex justify-between items-center">
+                            <div>
+                                <label class="block text-[10px] uppercase font-bold tracking-wider text-neutral-400">Price (PHP)</label>
+                                <input type="number" id="edit-price-${index}" value="${service.price}" class="w-24 font-bold text-sm bg-transparent border-b border-transparent hover:border-neutral-300 focus:border-black focus:outline-none transition-all">
+                            </div>
+                            <button onclick="saveServiceModifications(${index})" class="bg-neutral-900 text-white text-[10px] font-bold tracking-wider uppercase px-4 py-2 rounded-full hover:bg-black transition-all">
+                                Save Changes
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function saveServiceModifications(index) {
+            const services = JSON.parse(localStorage.getItem('montage_services'));
+            
+            services[index].name = document.getElementById(`edit-name-${index}`).value;
+            services[index].desc = document.getElementById(`edit-desc-${index}`).value;
+            services[index].price = parseFloat(document.getElementById(`edit-price-${index}`).value);
+
+            localStorage.setItem('montage_services', JSON.stringify(services));
+            alert('Catalog configuration modifications saved. Changes will immediately reflect across user interfaces.');
+            renderAdminServices();
+        }
+
+        function adminLogout() {
+            localStorage.removeItem('isAdminAuthenticated');
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>

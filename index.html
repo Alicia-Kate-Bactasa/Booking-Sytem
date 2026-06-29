@@ -74,48 +74,16 @@
     </section>
 
     <section id="menu" class="py-24 border-b border-neutral-200/60">
-        <div class="max-w-7xl mx-auto px-6">
-            <div class="text-center max-w-2xl mx-auto mb-16">
-                <span class="text-xs font-bold tracking-widest uppercase text-neutral-400 block mb-2">Service Selection</span>
-                <h2 class="text-3xl font-black tracking-tight uppercase">Select Treatment Tier</h2>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div class="border border-neutral-200/80 bg-white p-8 rounded-3xl flex flex-col justify-between hover:border-dark transition-all hover:shadow-lg">
-                    <div>
-                        <div class="flex justify-between items-start mb-4">
-                            <h3 class="text-lg font-bold uppercase tracking-tight">Standard Wash</h3>
-                            <span class="text-sm font-bold text-neutral-800">₱250</span>
-                        </div>
-                        <div class="text-[11px] font-semibold tracking-wider text-neutral-400 uppercase mb-4 bg-neutral-50 px-2.5 py-1 rounded-full inline-block">Duration: 45m</div>
-                        <p class="text-neutral-500 text-xs font-normal leading-relaxed mb-6">An essential exterior foam cleaning treatment utilizing scratch-free microfiber wash mitts and deep wheel cleaning.</p>
-                    </div>
-                    <button type="button" onclick="selectServiceDirectly('Standard Car Wash', 250, '45 Mins', 'Standard Car Wash — ₱250')" class="w-full text-center text-xs font-bold tracking-widest uppercase border border-dark py-3.5 rounded-full hover:bg-dark hover:text-light transition-all block">Select Service</button>
-                </div>
-                <div class="border border-neutral-200/80 bg-white p-8 rounded-3xl flex flex-col justify-between hover:border-dark transition-all hover:shadow-lg relative ring-1 ring-neutral-100">
-                    <div>
-                        <div class="flex justify-between items-start mb-4">
-                            <h3 class="text-lg font-bold uppercase tracking-tight">Interior Detailing</h3>
-                            <span class="text-sm font-bold text-neutral-800">₱2,500</span>
-                        </div>
-                        <div class="text-[11px] font-semibold tracking-wider text-neutral-400 uppercase mb-4 bg-neutral-50 px-2.5 py-1 rounded-full inline-block">Duration: 3h</div>
-                        <p class="text-neutral-500 text-xs font-normal leading-relaxed mb-6">Full cabin deep cleaning, sterilization, leather restoration, fabric stain extraction, and anti-bac odor elimination treatments.</p>
-                    </div>
-                    <button type="button" onclick="selectServiceDirectly('Complete Interior Detailing', 2500, '3 Hours', 'Complete Interior Detailing — ₱2,500')" class="w-full text-center text-xs font-bold tracking-widest uppercase border border-dark py-3.5 rounded-full hover:bg-dark hover:text-light transition-all block">Select Service</button>
-                </div>
-                <div class="border border-dark bg-dark text-light p-8 rounded-3xl flex flex-col justify-between hover:bg-black transition-all hover:shadow-xl">
-                    <div>
-                        <div class="flex justify-between items-start mb-4">
-                            <h3 class="text-lg font-bold uppercase tracking-tight">Showroom Tier</h3>
-                            <span class="text-sm font-bold text-neutral-200">₱18,500</span>
-                        </div>
-                        <div class="text-[11px] font-semibold tracking-wider text-neutral-500 uppercase mb-4 bg-neutral-800 px-2.5 py-1 rounded-full inline-block">Duration: 12h</div>
-                        <p class="text-neutral-400 text-xs font-light leading-relaxed mb-6">Our ultimate preservation suite incorporating full body glass coating protection layers, professional rustproofing, and premium window tint applications.</p>
-                    </div>
-                    <button type="button" onclick="selectServiceDirectly('Body Glass Coating', 12000, '8 Hours', 'Body Glass Coating — ₱12,000')" class="w-full text-center text-xs font-bold tracking-widest uppercase bg-light text-dark py-3.5 rounded-full hover:bg-neutral-200 transition-all block shadow-sm">Select Service</button>
-                </div>
-            </div>
+    <div class="max-w-7xl mx-auto px-6">
+        <div class="text-center max-w-2xl mx-auto mb-16">
+            <span class="text-xs font-bold tracking-widest uppercase text-neutral-400 block mb-2">Service Selection</span>
+            <h2 class="text-3xl font-black tracking-tight uppercase">Select Treatment Tier</h2>
         </div>
-    </section>
+        
+        <div id="index-services-container" class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            </div>
+    </div>
+</section>
 
     <section id="subscription" class="py-24 bg-dark text-light border-t border-b border-neutral-800">
         <div class="max-w-4xl mx-auto px-6">
@@ -468,15 +436,36 @@
         }
 
         function simulateLoginRedirect(event) {
-            event.preventDefault();
-            toggleModal('loginModal');
-            const emailInput = document.getElementById('loginEmail').value;
-            const fallbackName = emailInput.split('@')[0].toUpperCase();
-            
-            localStorage.setItem('subscriber_session_active', 'true');
-            localStorage.setItem('subscriber_name', fallbackName);
-            window.location.href = 'dashboard.html';
-        }
+    event.preventDefault();
+    
+    // Captures the form element dynamically 
+    const form = event.target.closest('form') || document.querySelector('#loginModal form');
+    
+    const emailInput = document.getElementById('loginEmail').value;
+    
+    // Fallback password reader: checks id="loginPassword", then name="password", then type="password"
+    const passwordField = document.getElementById('loginPassword') || 
+                          (form ? form.querySelector('input[type="password"]') : null);
+    
+    const passwordInput = passwordField ? passwordField.value : '';
+    
+    // 1. ADMINISTRATIVE GATEKEEPER BYPASS
+    if (emailInput === 'admin@gmail.com' && passwordInput === 'montage2026') {
+        localStorage.setItem('isAdminAuthenticated', 'true');
+        window.location.href = 'admin.html';
+        return; 
+    }
+    
+    // 2. STANDARD CUSTOMER / SUBSCRIBER SESSION LOGIC
+    toggleModal('loginModal');
+    
+    // Safeguard if a non-email string or plain username is used
+    const fallbackName = emailInput.includes('@') ? emailInput.split('@')[0].toUpperCase() : emailInput.toUpperCase();
+    
+    localStorage.setItem('subscriber_session_active', 'true');
+    localStorage.setItem('subscriber_name', fallbackName);
+    window.location.href = 'dashboard.html';
+}
 
         function handleRegistrationStep(event) {
             event.preventDefault();
@@ -511,6 +500,63 @@
         window.onload = function() {
             updateSummary();
         };
+
+        function renderLivePublicServices() {
+            // Seed defaults matching your exact provided content if admin hasn't configured localStorage yet
+            const defaultServices = [
+                { id: "srv-wash", name: "Standard Wash", price: 250, duration: "45m", desc: "An essential exterior foam cleaning treatment utilizing scratch-free microfiber wash mitts and deep wheel cleaning.", isPremium: false },
+                { id: "srv-detail", name: "Interior Detailing", price: 2500, duration: "3h", desc: "Full cabin deep cleaning, sterilization, leather restoration, fabric stain extraction, and anti-bac odor elimination treatments.", isPremium: false },
+                { id: "srv-showroom", name: "Showroom Tier", price: 18500, duration: "12h", desc: "Our ultimate preservation suite incorporating full body glass coating protection layers, professional rustproofing, and premium window tint applications.", isPremium: true }
+            ];
+            
+            const services = JSON.parse(localStorage.getItem('montage_services')) || defaultServices;
+            const container = document.getElementById('index-services-container');
+            if (!container) return;
+            
+            container.innerHTML = '';
+            
+            services.forEach((service, index) => {
+                // If price is 15,000+ or marked premium, auto-style with your black luxury card variant aesthetic
+                const isPremiumTier = service.price >= 15000 || service.isPremium;
+                
+                let cardHTML = '';
+                
+                if (isPremiumTier) {
+                    cardHTML = `
+                        <div class="border border-dark bg-dark text-light p-8 rounded-3xl flex flex-col justify-between hover:bg-black transition-all hover:shadow-xl">
+                            <div>
+                                <div class="flex justify-between items-start mb-4">
+                                    <h3 class="text-lg font-bold uppercase tracking-tight">${service.name}</h3>
+                                    <span class="text-sm font-bold text-neutral-200">₱${Number(service.price).toLocaleString()}</span>
+                                </div>
+                                <div class="text-[11px] font-semibold tracking-wider text-neutral-500 uppercase mb-4 bg-neutral-800 px-2.5 py-1 rounded-full inline-block">Duration: ${service.duration}</div>
+                                <p class="text-neutral-400 text-xs font-light leading-relaxed mb-6">${service.desc}</p>
+                            </div>
+                            <button type="button" onclick="selectServiceDirectly('${service.name}', ${service.price}, '${service.duration}', '${service.name} — ₱${Number(service.price).toLocaleString()}')" class="w-full text-center text-xs font-bold tracking-widest uppercase bg-light text-dark py-3.5 rounded-full hover:bg-neutral-200 transition-all block shadow-sm">Select Service</button>
+                        </div>
+                    `;
+                } else {
+                    cardHTML = `
+                        <div class="border border-neutral-200/80 bg-white p-8 rounded-3xl flex flex-col justify-between hover:border-dark transition-all hover:shadow-lg ${index === 1 ? 'relative ring-1 ring-neutral-100' : ''}">
+                            <div>
+                                <div class="flex justify-between items-start mb-4">
+                                    <h3 class="text-lg font-bold uppercase tracking-tight">${service.name}</h3>
+                                    <span class="text-sm font-bold text-neutral-800">₱${Number(service.price).toLocaleString()}</span>
+                                </div>
+                                <div class="text-[11px] font-semibold tracking-wider text-neutral-400 uppercase mb-4 bg-neutral-50 px-2.5 py-1 rounded-full inline-block">Duration: ${service.duration}</div>
+                                <p class="text-neutral-500 text-xs font-normal leading-relaxed mb-6">${service.desc}</p>
+                            </div>
+                            <button type="button" onclick="selectServiceDirectly('${service.name}', ${service.price}, '${service.duration}', '${service.name} — ₱${Number(service.price).toLocaleString()}')" class="w-full text-center text-xs font-bold tracking-widest uppercase border border-dark py-3.5 rounded-full hover:bg-dark hover:text-light transition-all block">Select Service</button>
+                        </div>
+                    `;
+                }
+                
+                container.innerHTML += cardHTML;
+            });
+        }
+
+        // Attach event listener execution
+        window.addEventListener('DOMContentLoaded', renderLivePublicServices);
     </script>
 </body>
 </html>
