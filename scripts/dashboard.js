@@ -17,12 +17,12 @@
             let allAppointments = [];
             
             const initialApps = [
-                { id: "MTG-849201", type: "pending", service: "Complete Interior Detailing", date: "2026-07-06", time: "09:00 AM", client: "Alicia Kate Bactasa", staff: "Unassigned", userType: "subscriber" },
-                { id: "MTG-102554", type: "pending", service: "Standard Car Wash", date: "2026-07-06", time: "11:00 AM", client: "Roberto Gomez", staff: "Mark Santos", userType: "regular" },
-                { id: "MTG-736215", type: "completed", service: "Premium Car Wash", date: "2026-06-18", time: "09:00 AM", client: "VIP Member", staff: "John Doe", userType: "subscriber" },
-                { id: "MTG-412985", type: "completed", service: "Standard Car Wash", date: "2026-05-12", time: "02:00 PM", client: "VIP Member", staff: "Mark Santos", userType: "subscriber" },
-                { id: "MTG-903821", type: "cancelled", service: "Deluxe Car Wash", date: "2026-06-25", time: "03:00 PM", client: "Kyle Kenner", staff: "Cancelled", userType: "regular" },
-                { id: "MTG-847291", type: "pending", service: "Standard Car Wash", date: "2026-07-14", time: "10:00 AM - 11:00 AM", client: "Alicia Kate Bactasa", staff: "John Doe", userType: "subscriber" }
+                { id: "MTG-849201", type: "pending", service: "Complete Interior Detailing", date: "2026-07-06", time: "09:00 AM", client: "Alicia Kate Bactasa", userType: "subscriber" },
+                { id: "MTG-102554", type: "pending", service: "Standard Car Wash", date: "2026-07-06", time: "11:00 AM", client: "Roberto Gomez", userType: "regular" },
+                { id: "MTG-736215", type: "completed", service: "Premium Car Wash", date: "2026-06-18", time: "09:00 AM", client: "VIP Member", userType: "subscriber" },
+                { id: "MTG-412985", type: "completed", service: "Standard Car Wash", date: "2026-05-12", time: "02:00 PM", client: "VIP Member", userType: "subscriber" },
+                { id: "MTG-903821", type: "cancelled", service: "Deluxe Car Wash", date: "2026-06-25", time: "03:00 PM", client: "Kyle Kenner", userType: "regular" },
+                { id: "MTG-847291", type: "pending", service: "Standard Car Wash", date: "2026-07-14", time: "10:00 AM - 11:00 AM", client: "Alicia Kate Bactasa", userType: "subscriber" }
             ];
 
             if (!data) {
@@ -132,6 +132,14 @@
                     return;
                 }
                 historyAppointments.forEach(app => {
+                    const statusBadge = app.type === 'completed'
+                        ? `<span class="inline-flex items-center text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">✓ Completed</span>`
+                        : `<span class="inline-flex items-center text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-red-50 text-red-600 border border-red-100">✕ Cancelled</span>`;
+
+                    const actionBtn = app.type === 'completed'
+                        ? `<button onclick="openFeedbackForBooking('${app.id}', '${app.service}')" class="bg-neutral-100 border border-neutral-200 px-4 py-2 rounded-full font-bold text-xs hover:bg-dark hover:text-light transition-all">Leave Feedback</button>`
+                        : `<span class="text-neutral-400 text-xs font-semibold">—</span>`;
+
                     tbody.innerHTML += `
                         <tr>
                             <td class="p-5 text-neutral-400 font-bold font-mono text-base">${app.id}</td>
@@ -139,12 +147,10 @@
                             <td class="p-5 text-neutral-500 text-base">${app.date}</td>
                             <td class="p-5 text-neutral-500 text-base">${app.time}</td>
                             <td class="p-5">
-                                <span class="inline-flex items-center text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">
-                                    ✓ Completed
-                                </span>
+                                ${statusBadge}
                             </td>
                             <td class="p-5 text-right space-x-2">
-                                <button onclick="openFeedbackForBooking('${app.id}', '${app.service}')" class="bg-neutral-100 border border-neutral-200 px-4 py-2 rounded-full font-bold text-xs hover:bg-dark hover:text-light transition-all">Leave Feedback</button>
+                                ${actionBtn}
                             </td>
                         </tr>`;
                 });
@@ -303,7 +309,6 @@
                 date: dateVal,
                 time: timeSlotText,
                 client: activeProfileName,
-                staff: 'Unassigned',
                 userType: 'subscriber'
             };
             appointments.unshift(newBooking);
@@ -459,6 +464,21 @@
             if (event.key === 'montage_services') {
                 masterCatalogPayload = JSON.parse(event.newValue || '[]');
                 renderSynchronizedComponents();
+            } else if (event.key === 'montage_appointments') {
+                const activeProfileName = localStorage.getItem('subscriber_name') || 'VIP Member';
+                loadSubscriberAppointments(activeProfileName);
+            } else if (event.key === 'montage_approved_subscribers') {
+                const email = localStorage.getItem('subscriber_email');
+                const approvedAccounts = JSON.parse(event.newValue || '[]');
+                const activeAccount = approvedAccounts.find(acc => acc.email && acc.email.toLowerCase() === (email || '').toLowerCase());
+                if (activeAccount) {
+                    userProfileSession.next_billing_date = activeAccount.next_billing_date || 'July 15, 2026';
+                    userProfileSession.customer_type = activeAccount.status === 'Verified' ? 'Subscriber' : 'Inactive Member';
+                    const nextBillingEl = document.getElementById('subParamNextBilling');
+                    if (nextBillingEl) nextBillingEl.innerText = userProfileSession.next_billing_date;
+                    const customerTypeEl = document.getElementById('subParamType');
+                    if (customerTypeEl) customerTypeEl.innerText = userProfileSession.customer_type;
+                }
             }
         });
 

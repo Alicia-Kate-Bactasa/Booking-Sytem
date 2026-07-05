@@ -12,30 +12,20 @@ const defaultServices = [
         ];
 
         /* ===================== ADMIN DATA / STATE =====================
-           Feature: Technician roster, appointment registry, invoice ledger, and subscriber account records.
+           Feature: Appointment registry, invoice ledger, and subscriber account records.
            Purpose: Serves as the central data source for all admin panel modules.
         */
         const APPOINTMENTS_KEY = 'montage_appointments';
         const INVOICES_KEY = 'montage_invoices';
         const APPROVED_SUBSCRIPTION_ACCOUNTS_KEY = 'montage_approved_subscribers';
         const PENDING_SUBSCRIPTION_REQUESTS_KEY = 'montage_subscription_requests';
-        const TECHNICIANS_KEY = 'montage_technicians';
-
-        let techniciansCollection = [];
-
-        const defaultTechnicians = [
-            { id: "tech-01", name: "Mark Santos", bay: "Bay A", shift: "08:00 AM - 05:00 PM", is_available: true },
-            { id: "tech-02", name: "John Doe", bay: "Bay B", shift: "10:00 AM - 07:00 PM", is_available: true },
-            { id: "tech-03", name: "Michael Chang", bay: "Bay A", shift: "08:00 AM - 05:00 PM", is_available: false }, // On leave
-            { id: "tech-04", name: "Rene Garcia", bay: "Bay B", shift: "01:00 PM - 10:00 PM", is_available: true }
-        ];
 
         const defaultAppointments = [
-            { id: "MTG-849201", type: "pending", service: "Complete Interior Detailing", date: "2026-07-06", time: "09:00 AM", client: "Alicia Kate Bactasa", staff: "Unassigned", userType: "subscriber" },
-            { id: "MTG-102554", type: "pending", service: "Standard Car Wash", date: "2026-07-06", time: "11:00 AM", client: "Roberto Gomez", staff: "Mark Santos", userType: "regular" },
-            { id: "MTG-736215", type: "completed", service: "Premium Car Wash", date: "2026-06-18", time: "09:00 AM", client: "VIP Member", staff: "John Doe", userType: "subscriber" },
-            { id: "MTG-412985", type: "completed", service: "Standard Car Wash", date: "2026-05-12", time: "02:00 PM", client: "VIP Member", staff: "Mark Santos", userType: "subscriber" },
-            { id: "MTG-903821", type: "cancelled", service: "Deluxe Car Wash", date: "2026-06-25", time: "03:00 PM", client: "Kyle Kenner", staff: "Cancelled", userType: "regular" }
+            { id: "MTG-849201", type: "pending", service: "Complete Interior Detailing", date: "2026-07-06", time: "09:00 AM", client: "Alicia Kate Bactasa", userType: "subscriber" },
+            { id: "MTG-102554", type: "pending", service: "Standard Car Wash", date: "2026-07-06", time: "11:00 AM", client: "Roberto Gomez", userType: "regular" },
+            { id: "MTG-736215", type: "completed", service: "Premium Car Wash", date: "2026-06-18", time: "09:00 AM", client: "VIP Member", userType: "subscriber" },
+            { id: "MTG-412985", type: "completed", service: "Standard Car Wash", date: "2026-05-12", time: "02:00 PM", client: "VIP Member", userType: "subscriber" },
+            { id: "MTG-903821", type: "cancelled", service: "Deluxe Car Wash", date: "2026-06-25", time: "03:00 PM", client: "Kyle Kenner", userType: "regular" }
         ];
 
         const defaultInvoices = [
@@ -46,9 +36,9 @@ const defaultServices = [
         ];
 
         const defaultSubscribers = [
-            { id: "sub-1", name: "Alicia Kate Bactasa", email: "alicia@gmail.com", password: "password123", next_billing_date: "2026-07-06", status: "Verified" },
-            { id: "sub-2", name: "Jun Culanag", email: "jun@gmail.com", password: "password123", next_billing_date: "2026-07-03", status: "Rejected / Overdue" },
-            { id: "sub-3", name: "Chris Evans", email: "chris@gmail.com", password: "password123", next_billing_date: "2026-07-15", status: "Verified" }
+            { id: "sub-1", name: "Alicia Kate Bactasa", email: "alicia@gmail.com", password: "password123", next_billing_date: "2026-07-06", status: "Verified", proof_image: "https://images.unsplash.com/photo-1554415707-6e8cfc93fe23?auto=format&fit=crop&q=80&w=400" },
+            { id: "sub-2", name: "Jun Culanag", email: "jun@gmail.com", password: "password123", next_billing_date: "2026-07-01", status: "Verified", proof_image: "https://images.unsplash.com/photo-1554415707-6e8cfc93fe23?auto=format&fit=crop&q=80&w=400" },
+            { id: "sub-3", name: "Chris Evans", email: "chris@gmail.com", password: "password123", next_billing_date: "2026-07-15", status: "Verified", proof_image: "https://images.unsplash.com/photo-1554415707-6e8cfc93fe23?auto=format&fit=crop&q=80&w=400" }
         ];
 
         let appointmentsRegistry = [];
@@ -115,26 +105,6 @@ const defaultServices = [
             localStorage.setItem(APPROVED_SUBSCRIPTION_ACCOUNTS_KEY, JSON.stringify(subscriberAccounts));
         }
 
-        function loadTechnicians() {
-            try {
-                let data = localStorage.getItem(TECHNICIANS_KEY);
-                if (!data) {
-                    techniciansCollection = defaultTechnicians;
-                    localStorage.setItem(TECHNICIANS_KEY, JSON.stringify(techniciansCollection));
-                } else {
-                    techniciansCollection = JSON.parse(data);
-                }
-            } catch (e) {
-                console.error("Error parsing technicians:", e);
-                techniciansCollection = defaultTechnicians;
-                localStorage.setItem(TECHNICIANS_KEY, JSON.stringify(techniciansCollection));
-            }
-        }
-
-        function saveTechnicians() {
-            localStorage.setItem(TECHNICIANS_KEY, JSON.stringify(techniciansCollection));
-        }
-
         let activeUserTypeFilter = "all";
 
         function switchBookingUserFilter(filterId) {
@@ -156,13 +126,23 @@ const defaultServices = [
 
 
           /* ===================== ADMIN ACTIVE STATE =====================
-              Feature: Tracks the currently selected booking slide, invoice sub-tab, and active ticket target.
+              Feature: Tracks the currently selected booking slide, payment category filter, and active ticket target.
               Purpose: Keeps the UI selection state synchronized with the admin actions being performed.
           */
         let activeBookingSlide = "pending";
-        let activeSelectedTicketId = null;
         let activeLedgerSlide = "pending-workspace";
-        let activeInvoiceSubTab = "regular";
+        let activePaymentFilter = "regular";
+
+        function matchesPaymentFilter(inv) {
+            if (activePaymentFilter === 'regular') {
+                return inv.type === 'regular';
+            } else if (activePaymentFilter === 'membership') {
+                return inv.type === 'subscriber' && inv.total === 1500;
+            } else if (activePaymentFilter === 'subscriber-free') {
+                return inv.type === 'subscriber' && inv.total === 0;
+            }
+            return false;
+        }
 
           /* ===================== ADMIN BOOT / INITIAL RENDER =====================
               Feature: Authentication gate plus initial render calls for every admin module.
@@ -177,11 +157,9 @@ const defaultServices = [
             loadSubscribers();
             loadAppointments();
             loadInvoices();
-            loadTechnicians();
             initializeServiceCatalogData();
             executeAutomatedComplianceAuditLoop();
             renderBookingSlideData();
-            renderStaffAssignmentGrid();
             renderInvoicePendingTable();
             renderArchiveLedgerTable();
             renderAdminServices();
@@ -209,10 +187,6 @@ const defaultServices = [
                 loadInvoices();
                 renderInvoicePendingTable();
                 renderArchiveLedgerTable();
-            }
-            if (event.key === TECHNICIANS_KEY) {
-                loadTechnicians();
-                renderStaffAssignmentGrid();
             }
             if (event.key === 'montage_feedbacks') {
                 renderFeedbacks();
@@ -285,6 +259,7 @@ const defaultServices = [
                 password: req.password,
                 next_billing_date: nextBillingDate,
                 status: "Verified",
+                proof_image: req.proof_image || "https://images.unsplash.com/photo-1554415707-6e8cfc93fe23?auto=format&fit=crop&q=80&w=400",
                 created_at: req.created_at || new Date().toISOString()
             };
 
@@ -329,7 +304,7 @@ const defaultServices = [
               Purpose: Keeps the admin workspace focused on one module at a time.
           */
         function switchTab(tabId) {
-            ['assignment', 'ledgers', 'services', 'monitoring', 'feedbacks'].forEach(tab => {
+            ['bookings', 'ledgers', 'services', 'monitoring', 'feedbacks'].forEach(tab => {
                 const viewSection = document.getElementById(`tab-${tab}`);
                 const navBtn = document.getElementById(`btn-${tab}`);
                 if(viewSection) viewSection.classList.add('hidden');
@@ -343,9 +318,9 @@ const defaultServices = [
             document.getElementById(modalId).classList.toggle('hidden');
         }
 
-          /* ===================== MODULE 1: TRIPLE-SLIDE APPOINTMENTS & STAFF =====================
-              Feature: Pending, completed, and cancelled booking views plus technician assignment controls.
-              Purpose: Manages staff allocation for active appointments and archives past job statuses.
+          /* ===================== MODULE 1: TRIPLE-SLIDE APPOINTMENTS =====================
+              Feature: Pending, completed, and cancelled booking views.
+              Purpose: Manages operational state and archives past job statuses.
           */
         function switchBookingSlide(slideId) {
             activeBookingSlide = slideId;
@@ -378,19 +353,16 @@ const defaultServices = [
                 return;
             }
 
-            filtered.forEach(app => {
-                const isSelected = app.id === activeSelectedTicketId && activeBookingSlide === 'pending';
-                const cardBorderClass = isSelected ? 'border-black bg-neutral-50 shadow-sm' : 'border-neutral-200 bg-white hover:border-neutral-400';
-                const isPendingState = app.staff === 'Unassigned';
-                const staffBadgeStyle = isPendingState ? 'bg-neutral-100 text-neutral-800' : 'bg-neutral-900 text-white';
+            const showActions = activeBookingSlide === 'pending';
 
+            filtered.forEach(app => {
                 const isSubscriber = app.userType === 'subscriber';
                 const typeBadge = isSubscriber 
                     ? `<span class="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 inline-flex items-center gap-0.5">★ VIP Member</span>`
                     : `<span class="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-600 border border-neutral-200 inline-flex items-center">Regular Client</span>`;
 
                 container.innerHTML += `
-                    <div onclick="selectTicket('${app.id}')" class="p-6 border-2 ${cardBorderClass} rounded-[1.5rem] flex justify-between items-center group transition-all ${activeBookingSlide === 'pending' ? 'cursor-pointer' : ''}">
+                    <div class="p-6 border-2 border-neutral-200 bg-white hover:border-neutral-400 rounded-[1.5rem] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-all">
                         <div>
                             <div class="flex items-center gap-2">
                                 <span class="text-[10px] font-mono font-bold bg-neutral-100 px-2 py-1 rounded tracking-wide text-neutral-600">ID: ${app.id}</span>
@@ -400,79 +372,32 @@ const defaultServices = [
                             <p class="text-xs text-neutral-500 mt-1">Date: ${app.date} | Time: ${app.time}</p>
                             <p class="text-xs text-neutral-400 font-medium mt-0.5">Customer: ${app.client}</p>
                         </div>
-                        <div class="text-right">
-                            <span class="text-[10px] font-bold tracking-wider uppercase ${staffBadgeStyle} px-3 py-1.5 rounded-full block text-center">${app.staff}</span>
+                        ${showActions ? `
+                        <div class="flex items-center gap-2 self-end sm:self-auto">
+                            <button onclick="updateBookingStatus('${app.id}', 'completed')" class="bg-black text-white border border-black px-4 py-2 rounded-full text-[10px] font-bold tracking-wider uppercase hover:bg-neutral-800 transition-all focus:outline-none">Complete</button>
+                            <button onclick="updateBookingStatus('${app.id}', 'cancelled')" class="bg-white border border-neutral-200 text-red-600 px-4 py-2 rounded-full text-[10px] font-bold tracking-wider uppercase hover:bg-red-50 hover:border-red-200 transition-all focus:outline-none">Cancel</button>
                         </div>
+                        ` : ''}
                     </div>
                 `;
             });
         }
 
-        function renderStaffAssignmentGrid() {
-            const wrapper = document.getElementById('staff-assignment-grid-wrapper');
-            if(!wrapper) return;
-            wrapper.innerHTML = '';
-
-            const validActiveCrew = techniciansCollection.filter(tech => tech.is_available === true);
-
-            if(validActiveCrew.length === 0) {
-                wrapper.innerHTML = `<p class="text-xs text-red-500 font-bold bg-red-50 p-4 border border-red-100 rounded-xl">No staff are marked available today.</p>`;
+        function updateBookingStatus(bookingId, newStatus) {
+            if (!confirm(`Are you sure you want to mark booking ${bookingId} as ${newStatus}?`)) {
                 return;
             }
 
-            validActiveCrew.forEach(tech => {
-                wrapper.innerHTML += `
-                    <div class="p-4 border border-neutral-200 rounded-[1.5rem] flex justify-between items-center bg-white shadow-sm hover:border-neutral-300 transition-all">
-                        <div>
-                            <p class="font-bold text-sm text-black">${tech.name}</p>
-                            <p class="text-[11px] text-neutral-500 font-medium mt-0.5">Bay: ${tech.bay} | Shift: ${tech.shift}</p>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <button onclick="assignStaff('${tech.name}')" class="bg-black text-white border border-black px-4 py-2 rounded-full text-[10px] font-bold tracking-wider uppercase hover:bg-neutral-800 transition-all focus:outline-none">Assign</button>
-                            <button onclick="deleteStaff('${tech.id}')" class="bg-white border border-neutral-200 text-red-600 px-3.5 py-2 rounded-full text-[10px] font-bold uppercase tracking-wider hover:bg-red-50 hover:border-red-200 transition-all focus:outline-none" title="Remove Technician">✕</button>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        function deleteStaff(techId) {
-            loadTechnicians();
-            const tech = techniciansCollection.find(t => t.id === techId);
-            if (!tech) return;
-
-            if (confirm(`Are you sure you want to remove technician ${tech.name} from the bay roster?`)) {
-                techniciansCollection = techniciansCollection.filter(t => t.id !== techId);
-                saveTechnicians();
-                alert(`Technician has been removed.`);
-                renderStaffAssignmentGrid();
-            }
-        }
-        window.deleteStaff = deleteStaff;
-
-        function selectTicket(ticketId) {
-            if(activeBookingSlide !== 'pending') return;
-            activeSelectedTicketId = ticketId;
-            const targetApp = appointmentsRegistry.find(a => a.id === ticketId);
-            document.getElementById('active-selection-label').innerText = `Target Allocation: ${ticketId} (${targetApp.service})`;
-            renderBookingSlideData();
-        }
-
-        function assignStaff(staffName) {
-            if (!activeSelectedTicketId) {
-                alert('Please select an unassigned booking card first.');
-                return;
-            }
-            let match = appointmentsRegistry.find(a => a.id === activeSelectedTicketId);
-            if(match) {
-                match.staff = staffName;
+            loadAppointments();
+            let booking = appointmentsRegistry.find(app => app.id === bookingId);
+            if (booking) {
+                booking.type = newStatus;
                 saveAppointments();
+                alert(`Booking ${bookingId} status has been updated to ${newStatus}.`);
+                renderBookingSlideData();
             }
-            alert(`${staffName} has been assigned to booking ${activeSelectedTicketId}`);
-            activeSelectedTicketId = null;
-            document.getElementById('active-selection-label').innerText = "None Selected — Click an unassigned booking card";
-            renderBookingSlideData();
         }
+        window.updateBookingStatus = updateBookingStatus;
 
           /* ===================== MODULE 2: DOUBLE-PANEL INVOICE LEDGER HUB =====================
               Feature: Pending invoice review workspace and paid archive ledger with sorting.
@@ -494,23 +419,39 @@ const defaultServices = [
             const tbody = table.querySelector('tbody');
             if(!tbody) return;
 
-            thead.innerHTML = `
-                <tr class="border-b border-neutral-200 bg-neutral-50 font-bold text-neutral-400 uppercase tracking-wider text-[11px]">
-                    <th class="p-5">Payment ID</th>
-                    <th class="p-5">Customer</th>
-                    <th class="p-5">Billing Type / Service</th>
-                    <th class="p-5">Supposed Billing Date</th>
-                    <th class="p-5">Amount</th>
-                    <th class="p-5 text-center">Proof Image</th>
-                    <th class="p-5 text-right">Actions</th>
-                </tr>
-            `;
+            const isRegular = activePaymentFilter === 'regular';
+
+            if (isRegular) {
+                thead.innerHTML = `
+                    <tr class="border-b border-neutral-200 bg-neutral-50 font-bold text-neutral-400 uppercase tracking-wider text-[11px]">
+                        <th class="p-5">Payment ID</th>
+                        <th class="p-5">Customer</th>
+                        <th class="p-5">Service</th>
+                        <th class="p-5">Amount</th>
+                        <th class="p-5 text-center">Proof Image</th>
+                        <th class="p-5 text-right">Actions</th>
+                    </tr>
+                `;
+            } else {
+                thead.innerHTML = `
+                    <tr class="border-b border-neutral-200 bg-neutral-50 font-bold text-neutral-400 uppercase tracking-wider text-[11px]">
+                        <th class="p-5">Payment ID</th>
+                        <th class="p-5">Customer</th>
+                        <th class="p-5">Billing Type / Service</th>
+                        <th class="p-5">Supposed Billing Date</th>
+                        <th class="p-5">Amount</th>
+                        <th class="p-5 text-center">Proof Image</th>
+                        <th class="p-5 text-right">Actions</th>
+                    </tr>
+                `;
+            }
 
             tbody.innerHTML = '';
-            const filteredInvoices = invoicesCollection.filter(inv => inv.status === 'pending');
+            const filteredInvoices = invoicesCollection.filter(inv => inv.status === 'pending' && matchesPaymentFilter(inv));
 
             if(filteredInvoices.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-neutral-400 font-medium font-mono">No payment proofs waiting for review.</td></tr>`;
+                const colSpan = isRegular ? 6 : 7;
+                tbody.innerHTML = `<tr><td colspan="${colSpan}" class="p-8 text-center text-neutral-400 font-medium font-mono">No payment proofs waiting for review.</td></tr>`;
                 return;
             }
 
@@ -521,48 +462,71 @@ const defaultServices = [
                     billingDate = subAcc ? subAcc.next_billing_date : 'N/A';
                 }
 
-                tbody.innerHTML += `
-                    <tr class="hover:bg-neutral-50/60 transition-colors">
-                        <td class="p-5 font-bold font-mono text-black">${inv.id}</td>
-                        <td class="p-5 text-black font-semibold">${inv.client}</td>
-                        <td class="p-5">
-                            <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase ${inv.type === 'subscriber' ? 'bg-amber-50 text-amber-800 border border-amber-100' : 'bg-neutral-100 text-neutral-700'}">${inv.service}</span>
-                        </td>
-                        <td class="p-5 font-mono text-neutral-500 font-bold">${billingDate}</td>
-                        <td class="p-5 font-bold text-neutral-900">₱${(inv.total || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
-                        <td class="p-5 text-center">
-                            ${inv.img ? `
-                            <div onclick="launchProofLightbox('${inv.img}')" class="w-12 h-16 bg-neutral-100 border border-neutral-200 rounded-lg overflow-hidden mx-auto cursor-pointer group hover:border-black transition-all relative">
-                                <img src="${inv.img}" alt="Proof" class="w-full h-full object-cover">
-                                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-[8px] font-bold text-white uppercase tracking-wider">View</div>
-                            </div>` : `<span class="text-neutral-400 text-[10px]">No Proof Uploaded</span>`}
-                        </td>
-                        <td class="p-5 text-right space-x-2">
-                            <button onclick="evaluateRemittanceRoute('${inv.id}', 'Paid')" class="bg-black text-white px-3 py-1.5 rounded-full text-[10px] font-bold tracking-wider uppercase hover:bg-neutral-800 transition-all">Approve</button>
-                            <button onclick="evaluateRemittanceRoute('${inv.id}', 'Rejected')" class="bg-white border border-neutral-200 hover:border-red-200 hover:bg-red-50 text-red-600 px-3 py-1.5 rounded-full text-[10px] font-bold tracking-wider uppercase transition-all">Reject</button>
-                        </td>
-                    </tr>
-                `;
+                if (isRegular) {
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-neutral-50/60 transition-colors">
+                            <td class="p-5 font-bold font-mono text-black">${inv.id}</td>
+                            <td class="p-5 text-black font-semibold">${inv.client}</td>
+                            <td class="p-5">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-neutral-100 text-neutral-700">${inv.service}</span>
+                            </td>
+                            <td class="p-5 font-bold text-neutral-900">₱${(inv.total || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                            <td class="p-5 text-center">
+                                ${inv.img ? `
+                                <div onclick="launchProofLightbox('${inv.img}')" class="w-12 h-16 bg-neutral-100 border border-neutral-200 rounded-lg overflow-hidden mx-auto cursor-pointer group hover:border-black transition-all relative">
+                                    <img src="${inv.img}" alt="Proof" class="w-full h-full object-cover">
+                                    <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-[8px] font-bold text-white uppercase tracking-wider">View</div>
+                                </div>` : `<span class="text-neutral-400 text-[10px]">No Proof Uploaded</span>`}
+                            </td>
+                            <td class="p-5 text-right space-x-2">
+                                <button onclick="evaluateRemittanceRoute('${inv.id}', 'Paid')" class="bg-black text-white px-3 py-1.5 rounded-full text-[10px] font-bold tracking-wider uppercase hover:bg-neutral-800 transition-all">Approve</button>
+                                <button onclick="evaluateRemittanceRoute('${inv.id}', 'Rejected')" class="bg-white border border-neutral-200 hover:border-red-200 hover:bg-red-50 text-red-600 px-3 py-1.5 rounded-full text-[10px] font-bold tracking-wider uppercase transition-all">Reject</button>
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-neutral-50/60 transition-colors">
+                            <td class="p-5 font-bold font-mono text-black">${inv.id}</td>
+                            <td class="p-5 text-black font-semibold">${inv.client}</td>
+                            <td class="p-5">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-amber-50 text-amber-800 border border-amber-100">${inv.service}</span>
+                            </td>
+                            <td class="p-5 font-mono text-neutral-500 font-bold">${billingDate}</td>
+                            <td class="p-5 font-bold text-neutral-900">₱${(inv.total || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                            <td class="p-5 text-center">
+                                ${inv.img ? `
+                                <div onclick="launchProofLightbox('${inv.img}')" class="w-12 h-16 bg-neutral-100 border border-neutral-200 rounded-lg overflow-hidden mx-auto cursor-pointer group hover:border-black transition-all relative">
+                                    <img src="${inv.img}" alt="Proof" class="w-full h-full object-cover">
+                                    <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-[8px] font-bold text-white uppercase tracking-wider">View</div>
+                                </div>` : `<span class="text-neutral-400 text-[10px]">No Proof Uploaded</span>`}
+                            </td>
+                            <td class="p-5 text-right space-x-2">
+                                <button onclick="evaluateRemittanceRoute('${inv.id}', 'Paid')" class="bg-black text-white px-3 py-1.5 rounded-full text-[10px] font-bold tracking-wider uppercase hover:bg-neutral-800 transition-all">Approve</button>
+                                <button onclick="evaluateRemittanceRoute('${inv.id}', 'Rejected')" class="bg-white border border-neutral-200 hover:border-red-200 hover:bg-red-50 text-red-600 px-3 py-1.5 rounded-full text-[10px] font-bold tracking-wider uppercase transition-all">Reject</button>
+                            </td>
+                        </tr>
+                    `;
+                }
             });
         }
 
-        let activeArchiveSubTab = 'regular';
-
-        function switchArchiveSubTab(subTabId) {
-            activeArchiveSubTab = subTabId;
-            ['regular', 'subscriber'].forEach(t => {
-                const btn = document.getElementById(`archiveSubTabBtn-${t}`);
+        function switchPaymentFilter(filterId) {
+            activePaymentFilter = filterId;
+            ['regular', 'membership', 'subscriber-free'].forEach(f => {
+                const btn = document.getElementById(`paymentFilterBtn-${f}`);
                 if (btn) {
-                    if (t === subTabId) {
+                    if (f === filterId) {
                         btn.className = "px-4 py-1.5 rounded-full bg-white text-black shadow-sm transition-all focus:outline-none";
                     } else {
                         btn.className = "px-4 py-1.5 rounded-full text-neutral-500 hover:text-black transition-all focus:outline-none";
                     }
                 }
             });
+            renderInvoicePendingTable();
             renderArchiveLedgerTable();
         }
-        window.switchArchiveSubTab = switchArchiveSubTab;
+        window.switchPaymentFilter = switchPaymentFilter;
 
         function renderArchiveLedgerTable() {
             const table = document.getElementById('invoiceArchiveTableBody').closest('table');
@@ -572,20 +536,10 @@ const defaultServices = [
             const tbody = table.querySelector('tbody');
             if(!tbody) return;
 
-            // Render Header dynamically based on sub-tab
-            if (activeArchiveSubTab === 'subscriber') {
-                thead.innerHTML = `
-                    <tr class="border-b border-neutral-200 bg-neutral-50 font-bold text-neutral-400 uppercase tracking-wider text-[11px]">
-                        <th class="p-5">Payment ID</th>
-                        <th class="p-5">Customer</th>
-                        <th class="p-5">Billing Type</th>
-                        <th class="p-5">Supposed Billing Date</th>
-                        <th class="p-5">Amount</th>
-                        <th class="p-5">Date</th>
-                        <th class="p-5 text-right">Status</th>
-                    </tr>
-                `;
-            } else {
+            const isRegular = activePaymentFilter === 'regular';
+
+            // Render Header dynamically based on category
+            if (isRegular) {
                 thead.innerHTML = `
                     <tr class="border-b border-neutral-200 bg-neutral-50 font-bold text-neutral-400 uppercase tracking-wider text-[11px]">
                         <th class="p-5">Payment ID</th>
@@ -596,15 +550,27 @@ const defaultServices = [
                         <th class="p-5 text-right">Status</th>
                     </tr>
                 `;
+            } else {
+                thead.innerHTML = `
+                    <tr class="border-b border-neutral-200 bg-neutral-50 font-bold text-neutral-400 uppercase tracking-wider text-[11px]">
+                        <th class="p-5">Payment ID</th>
+                        <th class="p-5">Customer</th>
+                        <th class="p-5">Billing Type / Service</th>
+                        <th class="p-5">Supposed Billing Date</th>
+                        <th class="p-5">Amount</th>
+                        <th class="p-5">Date</th>
+                        <th class="p-5 text-right">Status</th>
+                    </tr>
+                `;
             }
 
             tbody.innerHTML = '';
             const sortVal = document.getElementById('archiveSortDropdown').value;
 
-            // Filter for Approved (Paid) or Rejected invoices of the active sub-tab type
+            // Filter for Approved (Paid) or Rejected invoices of the active category
             let processedRecords = invoicesCollection.filter(inv => 
                 (inv.status === 'Paid' || inv.status === 'Rejected') && 
-                inv.type === activeArchiveSubTab
+                matchesPaymentFilter(inv)
             );
 
             // Handle Interactive Sorting Filter Rules Inline
@@ -614,7 +580,7 @@ const defaultServices = [
             if (sortVal === 'value-asc') processedRecords.sort((a, b) => a.total - b.total);
 
             if (processedRecords.length === 0) {
-                const colSpan = activeArchiveSubTab === 'subscriber' ? 7 : 6;
+                const colSpan = isRegular ? 6 : 7;
                 tbody.innerHTML = `<tr><td colspan="${colSpan}" class="p-8 text-center text-neutral-400 font-medium font-mono">No historical records found.</td></tr>`;
                 return;
             }
@@ -625,7 +591,18 @@ const defaultServices = [
                     ? `<span class="px-2.5 py-1 text-[9px] uppercase tracking-wider font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">Approved</span>`
                     : `<span class="px-2.5 py-1 text-[9px] uppercase tracking-wider font-bold rounded-full bg-red-50 text-red-600 border border-red-100">Rejected</span>`;
 
-                if (activeArchiveSubTab === 'subscriber') {
+                if (isRegular) {
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-neutral-50/60 transition-colors">
+                            <td class="p-5 font-bold font-mono text-neutral-400">${inv.id}</td>
+                            <td class="p-5 text-black font-semibold">${inv.client}</td>
+                            <td class="p-5">${inv.service}</td>
+                            <td class="p-5 font-bold text-neutral-900">₱${inv.total.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                            <td class="p-5 text-neutral-500">${inv.date}</td>
+                            <td class="p-5 text-right">${statusBadge}</td>
+                        </tr>
+                    `;
+                } else {
                     const subAcc = subscriberAccounts.find(s => s.name.trim().toLowerCase() === inv.client.trim().toLowerCase());
                     const billingDate = subAcc ? subAcc.next_billing_date : 'N/A';
 
@@ -635,17 +612,6 @@ const defaultServices = [
                             <td class="p-5 text-black font-semibold">${inv.client}</td>
                             <td class="p-5">${inv.service}</td>
                             <td class="p-5 font-mono text-neutral-500 font-bold">${billingDate}</td>
-                            <td class="p-5 font-bold text-neutral-900">₱${inv.total.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
-                            <td class="p-5 text-neutral-500">${inv.date}</td>
-                            <td class="p-5 text-right">${statusBadge}</td>
-                        </tr>
-                    `;
-                } else {
-                    tbody.innerHTML += `
-                        <tr class="hover:bg-neutral-50/60 transition-colors">
-                            <td class="p-5 font-bold font-mono text-neutral-400">${inv.id}</td>
-                            <td class="p-5 text-black font-semibold">${inv.client}</td>
-                            <td class="p-5">${inv.service}</td>
                             <td class="p-5 font-bold text-neutral-900">₱${inv.total.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
                             <td class="p-5 text-neutral-500">${inv.date}</td>
                             <td class="p-5 text-right">${statusBadge}</td>
@@ -675,6 +641,9 @@ const defaultServices = [
                         const today = new Date();
                         const nextBillingDate = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
                         account.next_billing_date = nextBillingDate;
+                        if (match.img) {
+                            account.proof_image = match.img;
+                        }
                         saveSubscribers();
                     }
                 }
@@ -877,26 +846,34 @@ const defaultServices = [
             subscriberAccounts.forEach(account => {
                 const billingDeadlineDate = new Date(account.next_billing_date);
                 let graceThresholdDeadline = new Date(billingDeadlineDate);
-                graceThresholdDeadline.setDate(graceThresholdDeadline.getDate() + 1);
+                graceThresholdDeadline.setDate(graceThresholdDeadline.getDate() + 3); // 3 days grace!
 
                 const failsComplianceWindow = CONTEMPORARY_SYSTEM_DATE > graceThresholdDeadline;
-                const isUnverifiedState = account.status === "Rejected / Overdue";
+                const isOverdue = account.status === "Overdue" || (account.status === "Verified" && failsComplianceWindow);
 
-                if (failsComplianceWindow && isUnverifiedState) {
+                if (isOverdue) {
                     forcedDowngradeCounter++;
                 }
             });
 
             let accountsToRender = subscriberAccounts;
             if (activeComplianceFilter === 'verified') {
-                accountsToRender = subscriberAccounts.filter(acc => acc.status === 'Verified');
+                accountsToRender = subscriberAccounts.filter(acc => {
+                    const billingDeadlineDate = new Date(acc.next_billing_date);
+                    let graceThresholdDeadline = new Date(billingDeadlineDate);
+                    graceThresholdDeadline.setDate(graceThresholdDeadline.getDate() + 3);
+                    const failsCompliance = CONTEMPORARY_SYSTEM_DATE > graceThresholdDeadline;
+                    const isOverdue = acc.status === "Overdue" || (acc.status === "Verified" && failsCompliance);
+                    const isInactive = acc.status === "Inactive" || acc.status === "Rejected / Overdue";
+                    return acc.status === 'Verified' && !isOverdue && !isInactive;
+                });
             } else if (activeComplianceFilter === 'overdue') {
                 accountsToRender = subscriberAccounts.filter(acc => {
                     const billingDeadlineDate = new Date(acc.next_billing_date);
                     let graceThresholdDeadline = new Date(billingDeadlineDate);
-                    graceThresholdDeadline.setDate(graceThresholdDeadline.getDate() + 1);
+                    graceThresholdDeadline.setDate(graceThresholdDeadline.getDate() + 3);
                     const failsCompliance = CONTEMPORARY_SYSTEM_DATE > graceThresholdDeadline;
-                    return acc.status === "Rejected / Overdue" || failsCompliance;
+                    return acc.status === "Overdue" || (acc.status === "Verified" && failsCompliance);
                 });
             }
 
@@ -909,39 +886,48 @@ const defaultServices = [
             accountsToRender.forEach(account => {
                 const billingDeadlineDate = new Date(account.next_billing_date);
                 let graceThresholdDeadline = new Date(billingDeadlineDate);
-                graceThresholdDeadline.setDate(graceThresholdDeadline.getDate() + 1);
+                graceThresholdDeadline.setDate(graceThresholdDeadline.getDate() + 3);
 
                 const failsComplianceWindow = CONTEMPORARY_SYSTEM_DATE > graceThresholdDeadline;
+                const isOverdue = account.status === "Overdue" || (account.status === "Verified" && failsComplianceWindow);
                 
-                let systemActionLabel = '';
-                let statusBadgeStyle = '';
-
-                if (failsComplianceWindow && account.status === "Rejected / Overdue") {
-                    systemActionLabel = "Needs Review";
-                    statusBadgeStyle = "bg-red-50 text-red-700 border border-red-100 font-extrabold";
+                let displayStatus = account.status;
+                if (account.status === "Verified" && failsComplianceWindow) {
+                    displayStatus = "Overdue";
                 } else if (account.status === "Rejected / Overdue") {
-                    systemActionLabel = "Overdue";
-                    statusBadgeStyle = "bg-red-50 text-red-600 border border-red-100 font-bold";
-                } else {
-                    systemActionLabel = "Paid";
-                    statusBadgeStyle = "bg-emerald-50 text-emerald-700 border border-emerald-100 font-bold";
+                    displayStatus = "Inactive";
                 }
 
-                const showDowngradeBtn = account.status === 'Verified';
+                let statusBadgeStyle = '';
+                if (displayStatus === 'Verified') {
+                    statusBadgeStyle = 'bg-emerald-50 text-emerald-700 border border-emerald-100 font-bold';
+                } else if (displayStatus === 'Overdue') {
+                    statusBadgeStyle = 'bg-red-50 text-red-700 border border-red-100 font-extrabold';
+                } else {
+                    // Inactive
+                    statusBadgeStyle = 'bg-neutral-100 text-neutral-800 border border-neutral-200 font-bold';
+                }
+
+                const canDowngrade = displayStatus === 'Overdue';
+                const proofImgUrl = account.proof_image || "https://images.unsplash.com/photo-1554415707-6e8cfc93fe23?auto=format&fit=crop&q=80&w=400";
 
                 complianceTable.innerHTML += `
                     <tr class="hover:bg-neutral-50/60 transition-colors">
                         <td class="p-5 font-bold text-neutral-900">${account.name}</td>
-                        <td class="p-5 font-mono text-neutral-500">${account.next_billing_date}</td>
-                        <td class="p-5 font-mono text-neutral-400">${graceThresholdDeadline.toISOString().split('T')[0]}</td>
-                        <td class="p-5">
-                            <span class="px-2.5 py-1 text-[10px] uppercase font-bold tracking-wider rounded-full ${account.status === 'Verified' ? 'bg-neutral-100 text-neutral-800' : 'bg-amber-50 text-amber-800 border border-amber-100'}">${account.status}</span>
+                        <td class="p-5 text-center">
+                            <div onclick="launchProofLightbox('${proofImgUrl}')" class="w-12 h-16 bg-neutral-100 border border-neutral-200 rounded-lg overflow-hidden mx-auto cursor-pointer group hover:border-black transition-all relative">
+                                <img src="${proofImgUrl}" alt="Proof" class="w-full h-full object-cover">
+                                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-[8px] font-bold text-white uppercase tracking-wider">View</div>
+                            </div>
                         </td>
-                        <td class="p-5 text-right flex items-center justify-end gap-2.5">
-                            <span class="px-3 py-1.5 text-[9px] uppercase tracking-widest rounded-full ${statusBadgeStyle} inline-block">${systemActionLabel}</span>
-                            ${showDowngradeBtn ? `
-                            <button onclick="downgradeSubscriber('${account.id}')" class="bg-white border border-neutral-200 text-red-600 px-3 py-1.5 rounded-full text-[10px] font-bold tracking-wider uppercase hover:bg-red-50 hover:border-red-200 transition-all focus:outline-none">Downgrade</button>
-                            ` : ''}
+                        <td class="p-5 font-mono text-neutral-500">${account.next_billing_date}</td>
+                        <td class="p-5">
+                            <span class="px-2.5 py-1 text-[10px] uppercase font-bold tracking-wider rounded-full ${statusBadgeStyle}">${displayStatus}</span>
+                        </td>
+                        <td class="p-5 text-right">
+                            ${canDowngrade ? `
+                            <button onclick="downgradeSubscriber('${account.id}')" class="bg-black text-white px-3 py-1.5 rounded-full text-[10px] font-bold tracking-wider uppercase hover:bg-neutral-800 transition-all focus:outline-none">Downgrade to Inactive</button>
+                            ` : `<span class="text-neutral-400 text-[10px] font-semibold">—</span>`}
                         </td>
                     </tr>
                 `;
@@ -958,9 +944,9 @@ const defaultServices = [
             loadSubscribers();
             let account = subscriberAccounts.find(s => s.id === subscriberId);
             if (account) {
-                account.status = "Rejected / Overdue"; // Immediately changes dashboard access to Inactive Member
+                account.status = "Inactive"; // Immediately changes dashboard access to Inactive Member
                 saveSubscribers();
-                alert(`Subscriber ${account.name} has been manually downgraded.`);
+                alert(`Subscriber ${account.name} has been manually downgraded to Inactive.`);
                 executeAutomatedComplianceAuditLoop();
             }
         }
@@ -1030,38 +1016,6 @@ const defaultServices = [
 
         window.renderFeedbacks = renderFeedbacks;
 
-        function handleNewStaffSubmission(event) {
-            event.preventDefault();
-            const name = document.getElementById('staffNameInput').value.trim();
-            const bay = document.getElementById('staffBayInput').value;
-            const shift = document.getElementById('staffShiftInput').value;
-
-            if (!name) {
-                alert('Please enter a valid technician name.');
-                return;
-            }
-
-            loadTechnicians();
-            const newId = `tech-${Math.floor(10 + Math.random() * 90)}`;
-            const newTech = {
-                id: newId,
-                name: name,
-                bay: bay,
-                shift: shift,
-                is_available: true
-            };
-
-            techniciansCollection.push(newTech);
-            saveTechnicians();
-
-            alert(`Technician ${name} has been successfully registered!`);
-            
-            document.getElementById('addStaffForm').reset();
-            toggleModal('addStaffModal');
-
-            renderStaffAssignmentGrid();
-        }
-        window.handleNewStaffSubmission = handleNewStaffSubmission;
         window.switchTab = switchTab;
         window.switchBookingSlide = switchBookingSlide;
         window.switchLedgerSlide = switchLedgerSlide;

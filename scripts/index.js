@@ -223,7 +223,6 @@
                 date: selectedDate,
                 time: activeTimeState,
                 client: clientName,
-                staff: 'Unassigned',
                 userType: 'regular'
             };
             appointments.unshift(newBooking);
