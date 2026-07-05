@@ -21,6 +21,10 @@
 </head>
 <body class="bg-light text-dark font-sans antialiased selection:bg-dark selection:text-light">
 
+        <!-- ===================== LANDING PAGE HEADER =====================
+            Feature: Sticky top navigation with login and booking call-to-action buttons.
+            Purpose: Gives visitors immediate access to core entry points on the landing page.
+        -->
     <header class="sticky top-0 z-40 bg-light/90 backdrop-blur-md border-b border-neutral-200/60">
         <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
             <a href="#" class="text-lg font-bold tracking-tight uppercase">Montage Auto Studio</a>
@@ -36,6 +40,10 @@
         </div>
     </header>
 
+        <!-- ===================== HERO / INTRO SECTION =====================
+            Feature: Full-screen brand intro, operating hours, and primary booking button.
+            Purpose: Establishes the studio's premium positioning and routes users into scheduling.
+        -->
     <section class="relative min-h-[calc(100vh-5rem)] flex items-center justify-center bg-dark text-light overflow-hidden">
         <div class="absolute inset-0 bg-neutral-900 bg-cover bg-center mix-blend-overlay opacity-30" style="background-image: url('https://images.unsplash.com/photo-1607860108855-64acf2078ed9?auto=format&fit=crop&q=80&w=1200');"></div>
         <div class="relative max-w-4xl mx-auto px-6 text-center z-10 py-12">
@@ -52,6 +60,10 @@
         </div>
     </section>
 
+        <!-- ===================== ABOUT / FACILITY SECTION =====================
+            Feature: Facility description, service capacity facts, and supporting imagery.
+            Purpose: Explains the studio layout and why online booking improves throughput.
+        -->
     <section id="about" class="py-24 border-b border-neutral-200/60 bg-white">
         <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div class="aspect-[4/3] bg-neutral-100 bg-cover bg-center border border-neutral-200/60 rounded-3xl overflow-hidden shadow-inner" style="background-image: url('https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?auto=format&fit=crop&q=80&w=800');"></div>
@@ -73,18 +85,26 @@
         </div>
     </section>
 
+        <!-- ===================== SERVICES / CATALOG SECTION =====================
+            Feature: Service catalog cards loaded dynamically into the public menu grid.
+            Purpose: Shows available treatment tiers before the visitor starts booking.
+        -->
     <section id="menu" class="py-24 border-b border-neutral-200/60">
-    <div class="max-w-7xl mx-auto px-6">
-        <div class="text-center max-w-2xl mx-auto mb-16">
-            <span class="text-xs font-bold tracking-widest uppercase text-neutral-400 block mb-2">Service Selection</span>
-            <h2 class="text-3xl font-black tracking-tight uppercase">Select Treatment Tier</h2>
-        </div>
-        
-        <div id="index-services-container" class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center max-w-2xl mx-auto mb-16">
+                <span class="text-xs font-bold tracking-widest uppercase text-neutral-400 block mb-2">Service Selection</span>
+                <h2 class="text-3xl font-black tracking-tight uppercase">Select Treatment Tier</h2>
             </div>
-    </div>
-</section>
 
+            <div id="index-services-container" class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            </div>
+        </div>
+    </section>
+
+        <!-- ===================== SUBSCRIPTION / VIP SECTION =====================
+            Feature: VIP membership pricing, benefits list, and subscribe CTA.
+            Purpose: Promotes the recurring plan and explains what the plan includes.
+        -->
     <section id="subscription" class="py-24 bg-dark text-light border-t border-b border-neutral-800">
         <div class="max-w-4xl mx-auto px-6">
             <div class="border border-neutral-800 p-8 sm:p-12 bg-neutral-950 rounded-[2rem] relative overflow-hidden shadow-2xl">
@@ -104,6 +124,10 @@
         </div>
     </section>
 
+        <!-- ===================== BOOKING WIZARD / SCHEDULING SECTION =====================
+            Feature: Service selection, date/time scheduling, customer details, and payment proof upload.
+            Purpose: Collects all inputs needed to create a verified appointment request.
+        -->
     <section id="booking-wizard" class="py-24 bg-neutral-50/50 border-b border-neutral-200/60">
         <div class="max-w-7xl mx-auto px-6">
             <div class="max-w-2xl mx-auto text-center mb-16">
@@ -116,7 +140,7 @@
                         <div class="border-l-2 border-dark pl-4 py-1.5 text-xs text-neutral-500 font-medium">
                             Real-time constraint tracking configured. Weekend capacity boundaries enforce automatic interval locking rules.
                         </div>
-                        
+
                         <div class="relative z-30">
                             <label class="block text-xs font-bold uppercase tracking-wider text-neutral-400 mb-2">1. Choose Intended Service Treatment</label>
                             <button type="button" onclick="toggleCustomDropdown('serviceDropdownMenu')" class="w-full bg-white border border-neutral-200 p-3.5 rounded-full text-xs font-semibold text-left flex justify-between items-center focus:outline-none focus:border-dark transition-all px-5">
@@ -125,46 +149,7 @@
                             </button>
                             <div id="serviceDropdownMenu" class="absolute left-0 right-0 mt-2 bg-white border border-neutral-200 rounded-[2rem] shadow-xl overflow-hidden hidden max-h-[280px] overflow-y-auto">
                                 <div class="bg-neutral-50/60 px-5 py-2.5 border-b border-neutral-100 text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Basic Car Care</div>
-                                <div class="divide-y divide-neutral-100">
-                                    <button type="button" onclick="selectCustomItem('Standard Car Wash', 250, '45 Mins', 'Standard Car Wash — ₱250')" class="w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors flex justify-between items-center">
-                                        <span>Standard Car Wash</span><span class="text-neutral-400 font-bold">₱250</span>
-                                    </button>
-                                    <button type="button" onclick="selectCustomItem('Deluxe Car Wash', 400, '1 Hour', 'Deluxe Car Wash — ₱400')" class="w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors flex justify-between items-center">
-                                        <span>Deluxe Car Wash</span><span class="text-neutral-400 font-bold">₱400</span>
-                                    </button>
-                                    <button type="button" onclick="selectCustomItem('Premium Car Wash', 600, '1.5 Hours', 'Premium Car Wash — ₱600')" class="w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors flex justify-between items-center">
-                                        <span>Premium Car Wash</span><span class="text-neutral-400 font-bold">₱600</span>
-                                    </button>
-                                    <button type="button" onclick="selectCustomItem('Light Claying Service', 500, '1 Hour', 'Light Claying Service — ₱500')" class="w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors flex justify-between items-center">
-                                        <span>Light Claying Service</span><span class="text-neutral-400 font-bold">₱500</span>
-                                    </button>
-                                    <button type="button" onclick="selectCustomItem('Heavy Claying Service', 900, '2 Hours', 'Heavy Claying Service — ₱900')" class="w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors flex justify-between items-center">
-                                        <span>Heavy Claying Service</span><span class="text-neutral-400 font-bold">₱900</span>
-                                    </button>
-                                    <button type="button" onclick="selectCustomItem('Under Chassis Wash', 300, '30 Mins', 'Under Chassis Wash — ₱300')" class="w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors flex justify-between items-center">
-                                        <span>Under Chassis Wash</span><span class="text-neutral-400 font-bold">₱300</span>
-                                    </button>
-                                </div>
-                                <div class="bg-neutral-50/60 px-5 py-2.5 border-y border-neutral-100 text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Interior Detailing</div>
-                                <div class="divide-y divide-neutral-100">
-                                    <button type="button" onclick="selectCustomItem('Complete Interior Detailing', 2500, '3 Hours', 'Complete Interior Detailing — ₱2,500')" class="w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors flex justify-between items-center">
-                                        <span>Complete Interior Detailing</span><span class="text-neutral-400 font-bold">₱2,500</span>
-                                    </button>
-                                    <button type="button" onclick="selectCustomItem('Interior Detailing (w/o stripping)', 1800, '2 Hours', 'Interior Detailing (w/o stripping) — ₱1,800')" class="w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors flex justify-between items-center">
-                                        <span>Interior Detailing (w/o stripping)</span><span class="text-neutral-400 font-bold">₱1,800</span>
-                                    </button>
-                                </div>
-                                <div class="bg-neutral-50/60 px-5 py-2.5 border-y border-neutral-100 text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Exterior Detailing & Protection</div>
-                                <div class="divide-y divide-neutral-100">
-                                    <button type="button" onclick="selectCustomItem('Full Exterior Detailing', 4000, '4 Hours', 'Full Exterior Detailing — ₱4,000')" class="w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors flex justify-between items-center">
-                                        <span>Full Exterior Detailing</span><span class="text-neutral-400 font-bold">₱4,000</span>
-                                    </button>
-                                    <button type="button" onclick="selectCustomItem('Paint Correction', 3500, '3.5 Hours', 'Paint Correction — ₱3,500')" class="w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors flex justify-between items-center">
-                                        <span>Paint Correction</span><span class="text-neutral-400 font-bold">₱3,500</span>
-                                    </button>
-                                    <button type="button" onclick="selectCustomItem('Body Glass Coating', 12000, '8 Hours', 'Body Glass Coating — ₱12,000')" class="w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors flex justify-between items-center">
-                                        <span>Body Glass Coating</span><span class="text-neutral-400 font-bold">₱12,000</span>
-                                    </button>
+                                <div id="dropdown-services-wrapper" class="divide-y divide-neutral-100">
                                 </div>
                             </div>
                         </div>
@@ -175,7 +160,7 @@
                                 <div>
                                     <input type="date" id="bookingDate" required class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-semibold focus:outline-none focus:border-dark focus:bg-white transition-all px-4" onchange="handleDateChange()">
                                 </div>
-                                
+
                                 <div class="relative z-20">
                                     <div class="relative w-full text-left group">
                                         <button type="button" onclick="toggleCustomDropdown('timeDropdownMenu')" class="w-full flex items-center justify-between bg-white text-dark border border-neutral-200 p-4 rounded-full text-xs font-bold uppercase tracking-wider focus:outline-none focus:border-dark transition-all duration-200 shadow-sm hover:border-neutral-400">
@@ -183,14 +168,14 @@
                                             <span class="text-neutral-400 text-[10px] ml-2 group-hover:text-dark transition-colors">▼</span>
                                         </button>
                                         <div id="timeDropdownMenu" class="absolute left-0 right-0 mt-2 bg-white border border-neutral-200 rounded-[2rem] shadow-xl overflow-hidden hidden z-50 divide-y divide-neutral-100">
-                                            <button type="button" onclick="selectCustomTime('09:00 AM', '09:00 AM - 10:00 AM')" class="w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors uppercase tracking-wider">09:00 AM - 10:00 AM</button>
-                                            <button type="button" onclick="selectCustomTime('10:00 AM', '10:00 AM - 11:00 AM')" class="w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors uppercase tracking-wider">10:00 AM - 11:00 AM</button>
-                                            <button type="button" onclick="selectCustomTime('11:00 AM', '11:00 AM - 12:00 PM')" class="w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors uppercase tracking-wider">11:00 AM - 12:00 PM</button>
-                                            <button type="button" onclick="selectCustomTime('02:00 PM', '02:00 PM - 03:00 PM')" class="w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors uppercase tracking-wider">02:00 PM - 03:00 PM</button>
-                                            <button type="button" onclick="selectCustomTime('03:00 PM', '03:00 PM - 04:00 PM')" class="w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors uppercase tracking-wider">03:00 PM - 04:00 PM</button>
+                                            <button type="button" data-time="09:00 AM" onclick="selectCustomTime('09:00 AM', '09:00 AM - 10:00 AM')" class="w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors uppercase tracking-wider">09:00 AM - 10:00 AM</button>
+                                            <button type="button" data-time="10:00 AM" onclick="selectCustomTime('10:00 AM', '10:00 AM - 11:00 AM')" class="w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors uppercase tracking-wider">10:00 AM - 11:00 AM</button>
+                                            <button type="button" data-time="11:00 AM" onclick="selectCustomTime('11:00 AM', '11:00 AM - 12:00 PM')" class="w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors uppercase tracking-wider">11:00 AM - 12:00 PM</button>
+                                            <button type="button" data-time="02:00 PM" onclick="selectCustomTime('02:00 PM', '02:00 PM - 03:00 PM')" class="w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors uppercase tracking-wider">02:00 PM - 03:00 PM</button>
+                                            <button type="button" data-time="03:00 PM" onclick="selectCustomTime('03:00 PM', '03:00 PM - 04:00 PM')" class="w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors uppercase tracking-wider">03:00 PM - 04:00 PM</button>
                                         </div>
                                     </div>
-                                    <p id="capacityWarning" class="text-[10px] text-red-500 font-semibold mt-1.5 ml-3 hidden">Saturday capacity thresholds bound to 16 items maximum.</p>
+                                    <p id="capacityWarning" class="text-[10px] text-red-500 font-semibold mt-1.5 ml-3 hidden"></p>
                                 </div>
                             </div>
                         </div>
@@ -203,25 +188,24 @@
                                     <input type="tel" id="custPhone" placeholder="Mobile Phone (Required)" required class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-medium focus:outline-none focus:border-dark focus:bg-white transition-all px-5">
                                     <p id="phoneError" class="text-[10px] text-red-500 font-semibold mt-1.5 ml-3 hidden">Identity contact digits required.</p>
                                 </div>
-                                <div>
-                                    
-                                </div>
                             </div>
-                            
-                            <div class="relative z-10">
-                                <button type="button" onclick="toggleCustomDropdown('paymentDropdownMenu')" class="w-full bg-white border border-neutral-200 p-4 rounded-full text-xs font-bold uppercase tracking-wider text-left flex justify-between items-center focus:outline-none focus:border-dark transition-all px-5 shadow-sm hover:border-neutral-400">
-                                    <span id="customPaymentDisplay">E-Wallet</span>
-                                    <span class="text-neutral-400 text-[10px]">▼</span>
-                                </button>
-                                <div id="paymentDropdownMenu" class="absolute left-0 right-0 mt-2 bg-white border border-neutral-200 rounded-[2rem] shadow-xl overflow-hidden hidden z-50 divide-y divide-neutral-100">
-                                    <button type="button" onclick="selectCustomPayment('E-Wallet (GCash / Maya)')" class="w-full text-left px-6 py-4 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors uppercase tracking-wider">
-                                        E-Wallet (GCash / Maya)
-                                    </button>
-                                    <button type="button" onclick="selectCustomPayment('Credit/Debit Card')" class="w-full text-left px-6 py-4 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors uppercase tracking-wider">
-                                        Credit/Debit Card
-                                    </button>
+
+                            <div id="payment-section" class="pt-4">
+                                <div class="bg-neutral-900 text-light p-6 rounded-[2rem] border border-neutral-800 shadow-xl space-y-4">
+                                    <div class="flex justify-between items-center pb-2 border-b border-neutral-800">
+                                        <span class="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Official GCash Channel</span>
+                                        <span class="text-[10px] bg-blue-600 text-white font-bold px-2 py-0.5 rounded">Instant Verification</span>
+                                    </div>
+                                    <div class="text-xs space-y-1">
+                                        <div class="flex justify-between"><span class="text-neutral-400">Receiving Name:</span><span class="font-bold text-white">Montage Auto Studio</span></div>
+                                        <div class="flex justify-between"><span class="text-neutral-400">Mobile Number:</span><span class="font-bold text-white font-mono">0917-XXX-XXXX</span></div>
+                                    </div>
+                                    <div class="pt-2">
+                                        <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-2">Upload Proof of Payment / Transaction Screenshot</label>
+                                        <input type="file" id="paymentProof" accept="image/*" required class="w-full bg-neutral-800 border border-neutral-700 p-3 rounded-xl text-xs text-neutral-300 focus:outline-none focus:border-neutral-500 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:uppercase file:bg-light file:text-dark hover:file:bg-neutral-200 cursor-pointer">
+                                    </div>
                                 </div>
-                                <input type="hidden" id="paymentMethod" name="paymentMethod" value="E-Wallet (GCash/Maya)">
+                                <input type="hidden" id="paymentMethod" name="paymentMethod" value="GCash Mobile Wallet">
                             </div>
                         </div>
                     </div>
@@ -244,7 +228,7 @@
                                 </div>
                                 <div class="flex justify-between items-center">
                                     <span class="text-neutral-500 font-medium">Expected Frame:</span>
-                                    <span id="summaryDuration" class="font-bold text-dark">45 Mins</span>
+                                    <span id="summaryDuration" class="font-bold text-dark">30 Mins</span>
                                 </div>
                                 <div class="border-t border-dashed border-neutral-300 my-4 pt-4 flex justify-between items-center text-sm font-bold">
                                     <span class="text-neutral-800">Total Invoiced:</span>
@@ -263,6 +247,10 @@
         </div>
     </section>
 
+        <!-- ===================== FOOTER / SITE DETAILS =====================
+            Feature: Quick links, operating hours, and studio location details.
+            Purpose: Provides supporting business information at the bottom of the page.
+        -->
     <footer class="bg-dark text-light pt-16 pb-8 border-t border-neutral-900">
         <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-12 text-xs font-normal mb-12">
             <div>
@@ -290,6 +278,10 @@
         </div>
     </footer>
 
+        <!-- ===================== AUTH MODALS =====================
+            Feature: Login, registration, and subscription payment modals.
+            Purpose: Handles account access and subscription onboarding without leaving the page.
+        -->
     <div id="loginModal" class="fixed inset-0 z-50 flex items-center justify-center bg-dark/60 backdrop-blur-sm hidden">
         <div class="bg-white p-8 w-full max-w-sm relative rounded-[2rem] shadow-2xl mx-4">
             <button onclick="toggleModal('loginModal')" type="button" class="absolute top-5 right-5 text-neutral-400 hover:text-dark text-xs font-bold">✕</button>
@@ -340,8 +332,6 @@
                 <div class="relative">
                     <select required class="w-full appearance-none bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-semibold focus:outline-none focus:border-dark pr-10">
                         <option value="E-Wallet">E-Wallet (GCash / Maya)</option>
-                        <option value="Credit/Debit Card">Credit/Debit Card</option>
-                        <option value="Online Banking">Online Banking</option>
                     </select>
                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-neutral-500">▼</div>
                 </div>
@@ -350,13 +340,39 @@
         </div>
     </div>
 
+    <!-- ===================== LANDING PAGE LOGIC / DATA & MODULES =====================
+         Feature: Scheduling rules, login routing, subscription onboarding, and catalog rendering.
+         Purpose: Controls the public booking flow, validation, and service data display.
+    -->
     <script>
-        // Global data layer constraints
-        let activeServiceState = "Standard Car Wash";
-        let activeServicePrice = 250;
-        let activeServiceDuration = "45 Mins";
+        /* ===================== LANDING PAGE CONFIG / STATE =====================
+           Feature: Global booking capacity ceiling and base UI configuration values.
+           Purpose: Defines the constraints used across the public scheduling experience.
+        */
+        const GLOBAL_BAY_CAPACITY_CEILING = 2; // Maximum overlapping cars permitted per slot configuration
+
+        // Master Catalog Collection Schema map matching specifications exactly
+        let masterCatalogServices = [];
+
+        let activeServiceState = "";
+        let activeServicePrice = 0;
+        let activeServiceDuration = "";
         let activeTimeState = "";
 
+          /* ===================== LANDING PAGE TIMELINE STATE =====================
+              Feature: Persisted occupancy registry for dates and time slots.
+              Purpose: Tracks how many bookings already exist for each appointment window.
+          */
+        // Stores data structural schema layout format: { "YYYY-MM-DD": { "09:00 AM": bookingCount } }
+        let currentTimelineLoadRegistry = JSON.parse(localStorage.getItem('montage_timeline_registry')) || {
+            "2026-07-06": { "09:00 AM": 2, "10:00 AM": 1 },
+            "2026-07-11": { "09:00 AM": 2, "10:00 AM": 2 }
+        };
+
+          /* ===================== LANDING PAGE MODAL / DROPDOWN HELPERS =====================
+              Feature: Shared helpers for modals, dropdown menus, and selection UI states.
+              Purpose: Keeps interactive controls consistent across the landing page components.
+          */
         function toggleModal(modalId) {
             document.getElementById(modalId).classList.toggle('hidden');
         }
@@ -369,32 +385,33 @@
         function toggleCustomDropdown(menuId) {
             const dropmenus = ['serviceDropdownMenu', 'timeDropdownMenu', 'paymentDropdownMenu'];
             dropmenus.forEach(id => {
-                if (id !== menuId) document.getElementById(id).classList.add('hidden');
+                const element = document.getElementById(id);
+                if (element && id !== menuId) element.classList.add('hidden');
             });
-            document.getElementById(menuId).classList.toggle('hidden');
+            const targetedMenu = document.getElementById(menuId);
+            if(targetedMenu) targetedMenu.classList.toggle('hidden');
         }
 
         function selectCustomItem(value, price, duration, label) {
             activeServiceState = value;
             activeServicePrice = price;
             activeServiceDuration = duration;
-            
+
             document.getElementById('customServiceDisplay').innerText = label;
             document.getElementById('serviceDropdownMenu').classList.add('hidden');
+            evaluateTimelineValidationGuards();
             updateSummary();
         }
 
         function selectCustomTime(value, label) {
+            const dateInput = document.getElementById('bookingDate').value;
+            if (isTimeSlotTimelineExceeded(dateInput, value, activeServiceDuration)) {
+                return; // Guard layout verification intercept
+            }
             activeTimeState = value;
             document.getElementById('customTimeDisplay').innerText = label;
             document.getElementById('timeDropdownMenu').classList.add('hidden');
             updateSummary();
-        }
-
-        function selectCustomPayment(value) {
-            document.getElementById('customPaymentDisplay').innerText = value;
-            document.getElementById('paymentMethod').value = value;
-            document.getElementById('paymentDropdownMenu').classList.add('hidden');
         }
 
         function selectServiceDirectly(serviceName, price, duration, label) {
@@ -402,70 +419,145 @@
             activeServicePrice = price;
             activeServiceDuration = duration;
             document.getElementById('customServiceDisplay').innerText = label;
-            
+
             window.location.href = '#booking-wizard';
+            evaluateTimelineValidationGuards();
             updateSummary();
         }
 
         function handleDateChange() {
-            const dateInput = document.getElementById('bookingDate').value;
+            evaluateTimelineValidationGuards();
+            updateSummary();
+        }
+
+          /* ===================== LANDING PAGE TIMELINE VALIDATION =====================
+              Feature: Slot locking, day-of-week checks, and capacity warnings for bookings.
+              Purpose: Prevents users from choosing time windows that exceed studio availability.
+          */
+        function evaluateTimelineValidationGuards() {
+            const selectedDate = document.getElementById('bookingDate').value;
+            const timeButtons = document.querySelectorAll('#timeDropdownMenu button');
             const warningElement = document.getElementById('capacityWarning');
-            if (dateInput && new Date(dateInput).getUTCDay() === 6) {
+            let structuralLockoutTriggered = false;
+
+            timeButtons.forEach(button => {
+                const hourSlot = button.getAttribute('data-time');
+
+                if (selectedDate && activeServiceDuration) {
+                    const isLocked = isTimeSlotTimelineExceeded(selectedDate, hourSlot, activeServiceDuration);
+                    if (isLocked) {
+                        button.className = "w-full text-left px-6 py-3.5 text-xs font-semibold bg-neutral-100 text-neutral-400 line-through cursor-not-allowed uppercase tracking-wider";
+                        button.setAttribute('disabled', 'true');
+                        if (activeTimeState === hourSlot) {
+                            activeTimeState = "";
+                            document.getElementById('customTimeDisplay').innerText = "Time Slot...";
+                        }
+                        structuralLockoutTriggered = true;
+                    } else {
+                        button.className = "w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors uppercase tracking-wider";
+                        button.removeAttribute('disabled');
+                    }
+                } else {
+                    button.className = "w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors uppercase tracking-wider";
+                    button.removeAttribute('disabled');
+                }
+            });
+
+            if (structuralLockoutTriggered) {
+                warningElement.innerText = "Selected time interval spans cross-slots exceeding our global bay capacity.";
+                warningElement.classList.remove('hidden');
+            } else if (selectedDate && new Date(selectedDate).getUTCDay() === 6) {
+                warningElement.innerText = "Saturday studio operational processing rules apply (16 cars maximum limit).";
                 warningElement.classList.remove('hidden');
             } else {
                 warningElement.classList.add('hidden');
             }
-            updateSummary();
+        }
+
+        function isTimeSlotTimelineExceeded(date, targetHour, durationString) {
+            if (!date) return false;
+
+            // Map index timeline structures
+            const structuralSlots = ["09:00 AM", "10:00 AM", "11:00 AM", "02:00 PM", "03:00 PM"];
+            const indexPointer = structuralSlots.indexOf(targetHour);
+            if (indexPointer === -1) return false;
+
+            // Determine explicit hour spanning blocks based on parsed string limits
+            let operationalSpanningBlocks = 1;
+            if (durationString.includes("Hour") || durationString.includes("1 Hour")) operationalSpanningBlocks = 1;
+            if (durationString.includes("1.5 Hours") || durationString.includes("2 Hours")) operationalSpanningBlocks = 2;
+            if (durationString.includes("3 Hours")) operationalSpanningBlocks = 3;
+            if (durationString.includes("4 Hours")) operationalSpanningBlocks = 4;
+
+            const targetDateRegistry = currentTimelineLoadRegistry[date] || {};
+
+            for (let i = 0; i < operationalSpanningBlocks; i++) {
+                const evaluateIndex = indexPointer + i;
+                if (evaluateIndex >= structuralSlots.length) {
+                    return true; // Overlap flags locked if it runs past operating limits
+                }
+                const currentSlotKey = structuralSlots[evaluateIndex];
+                const activeOccupancyLoad = targetDateRegistry[currentSlotKey] || 0;
+
+                if (activeOccupancyLoad >= GLOBAL_BAY_CAPACITY_CEILING) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         function updateSummary() {
-            document.getElementById('summaryService').innerText = activeServiceState;
+            document.getElementById('summaryService').innerText = activeServiceState || 'None Selected';
             document.getElementById('summaryDate').innerText = document.getElementById('bookingDate').value || '—';
             document.getElementById('summaryTime').innerText = activeTimeState || '—';
-            document.getElementById('summaryDuration').innerText = activeServiceDuration;
+            document.getElementById('summaryDuration').innerText = activeServiceDuration || '—';
             document.getElementById('summaryTotal').innerText = '₱' + parseFloat(activeServicePrice).toLocaleString('en-US', { minimumFractionDigits: 2 });
         }
 
         function handleFormSubmission(event) {
             event.preventDefault();
-            alert(`Printing Invoice.... \n\nReference ID Token: MTG-${Math.floor(100000 + Math.random() * 900000)}`);
+
+            const selectedDate = document.getElementById('bookingDate').value;
+            if (!activeTimeState) {
+                alert('Please provide a valid open scheduling time slot window.');
+                return;
+            }
+
+            // Persistence tracking update configuration block
+            if (!currentTimelineLoadRegistry[selectedDate]) {
+                currentTimelineLoadRegistry[selectedDate] = {};
+            }
+            currentTimelineLoadRegistry[selectedDate][activeTimeState] = (currentTimelineLoadRegistry[selectedDate][activeTimeState] || 0) + 1;
+            localStorage.setItem('montage_timeline_registry', JSON.stringify(currentTimelineLoadRegistry));
+
+            alert(`Printing Invoice.... \n\nReference ID Token: MTG-${Math.floor(100000 + Math.random() * 900000)}\n\nGCash Payment Proof recorded for studio audit review.`);
             document.getElementById('wizardForm').reset();
+
             activeTimeState = "";
-            document.getElementById('customTimeDisplay').innerText = "Select Time Slot...";
+            document.getElementById('customTimeDisplay').innerText = "Time Slot...";
+            evaluateTimelineValidationGuards();
             updateSummary();
         }
 
         function simulateLoginRedirect(event) {
-    event.preventDefault();
-    
-    // Captures the form element dynamically 
-    const form = event.target.closest('form') || document.querySelector('#loginModal form');
-    
-    const emailInput = document.getElementById('loginEmail').value;
-    
-    // Fallback password reader: checks id="loginPassword", then name="password", then type="password"
-    const passwordField = document.getElementById('loginPassword') || 
-                          (form ? form.querySelector('input[type="password"]') : null);
-    
-    const passwordInput = passwordField ? passwordField.value : '';
-    
-    // 1. ADMINISTRATIVE GATEKEEPER BYPASS
-    if (emailInput === 'admin@gmail.com' && passwordInput === 'montage2026') {
-        localStorage.setItem('isAdminAuthenticated', 'true');
-        window.location.href = 'admin.html';
-        return; 
-    }
-    
-    // 2. STANDARD CUSTOMER / SUBSCRIBER SESSION LOGIC
-    toggleModal('loginModal');
-    
-    // Safeguard if a non-email string or plain username is used
-    const fallbackName = emailInput.includes('@') ? emailInput.split('@')[0].toUpperCase() : emailInput.toUpperCase();
-    
-    localStorage.setItem('subscriber_session_active', 'true');
-    localStorage.setItem('subscriber_name', fallbackName);
-    window.location.href = 'dashboard.html';
-}
+            event.preventDefault();
+            const form = event.target.closest('form') || document.querySelector('#loginModal form');
+            const emailInput = document.getElementById('loginEmail').value;
+            const passwordField = document.getElementById('loginPassword') || (form ? form.querySelector('input[type="password"]') : null);
+            const passwordInput = passwordField ? passwordField.value : '';
+
+            if (emailInput === 'admin@gmail.com' && passwordInput === 'montage2026') {
+                localStorage.setItem('isAdminAuthenticated', 'true');
+                window.location.href = 'admin.html';
+                return;
+            }
+
+            toggleModal('loginModal');
+            const fallbackName = emailInput.includes('@') ? emailInput.split('@')[0].toUpperCase() : emailInput.toUpperCase();
+            localStorage.setItem('subscriber_session_active', 'true');
+            localStorage.setItem('subscriber_name', fallbackName);
+            window.location.href = 'dashboard.html';
+        }
 
         function handleRegistrationStep(event) {
             event.preventDefault();
@@ -476,16 +568,15 @@
         function handleFinalizeSubPaymentRoute(event) {
             event.preventDefault();
             toggleModal('subPaymentModal');
-            
+
             const registeredName = document.getElementById('subRegName').value || 'VIP Client';
             localStorage.setItem('subscriber_session_active', 'true');
             localStorage.setItem('subscriber_name', registeredName);
-            
+
             alert('Membership Activated Successfully!');
             window.location.href = 'dashboard.html';
         }
 
-        // Close dropdown layers if clicking blank wrapper nodes outside components
         window.addEventListener('click', function(e) {
             if (!e.target.closest('#serviceDropdownMenu') && !e.target.closest('#timeDropdownMenu') && !e.target.closest('#paymentDropdownMenu')) {
                 const menus = document.querySelectorAll('[id$="DropdownMenu"]');
@@ -497,66 +588,105 @@
             }
         });
 
-        window.onload = function() {
-            updateSummary();
-        };
-
-        function renderLivePublicServices() {
-            // Seed defaults matching your exact provided content if admin hasn't configured localStorage yet
-            const defaultServices = [
-                { id: "srv-wash", name: "Standard Wash", price: 250, duration: "45m", desc: "An essential exterior foam cleaning treatment utilizing scratch-free microfiber wash mitts and deep wheel cleaning.", isPremium: false },
-                { id: "srv-detail", name: "Interior Detailing", price: 2500, duration: "3h", desc: "Full cabin deep cleaning, sterilization, leather restoration, fabric stain extraction, and anti-bac odor elimination treatments.", isPremium: false },
-                { id: "srv-showroom", name: "Showroom Tier", price: 18500, duration: "12h", desc: "Our ultimate preservation suite incorporating full body glass coating protection layers, professional rustproofing, and premium window tint applications.", isPremium: true }
-            ];
-            
-            const services = JSON.parse(localStorage.getItem('montage_services')) || defaultServices;
-            const container = document.getElementById('index-services-container');
-            if (!container) return;
-            
-            container.innerHTML = '';
-            
-            services.forEach((service, index) => {
-                // If price is 15,000+ or marked premium, auto-style with your black luxury card variant aesthetic
-                const isPremiumTier = service.price >= 15000 || service.isPremium;
-                
-                let cardHTML = '';
-                
-                if (isPremiumTier) {
-                    cardHTML = `
-                        <div class="border border-dark bg-dark text-light p-8 rounded-3xl flex flex-col justify-between hover:bg-black transition-all hover:shadow-xl">
-                            <div>
-                                <div class="flex justify-between items-start mb-4">
-                                    <h3 class="text-lg font-bold uppercase tracking-tight">${service.name}</h3>
-                                    <span class="text-sm font-bold text-neutral-200">₱${Number(service.price).toLocaleString()}</span>
-                                </div>
-                                <div class="text-[11px] font-semibold tracking-wider text-neutral-500 uppercase mb-4 bg-neutral-800 px-2.5 py-1 rounded-full inline-block">Duration: ${service.duration}</div>
-                                <p class="text-neutral-400 text-xs font-light leading-relaxed mb-6">${service.desc}</p>
-                            </div>
-                            <button type="button" onclick="selectServiceDirectly('${service.name}', ${service.price}, '${service.duration}', '${service.name} — ₱${Number(service.price).toLocaleString()}')" class="w-full text-center text-xs font-bold tracking-widest uppercase bg-light text-dark py-3.5 rounded-full hover:bg-neutral-200 transition-all block shadow-sm">Select Service</button>
-                        </div>
-                    `;
-                } else {
-                    cardHTML = `
-                        <div class="border border-neutral-200/80 bg-white p-8 rounded-3xl flex flex-col justify-between hover:border-dark transition-all hover:shadow-lg ${index === 1 ? 'relative ring-1 ring-neutral-100' : ''}">
-                            <div>
-                                <div class="flex justify-between items-start mb-4">
-                                    <h3 class="text-lg font-bold uppercase tracking-tight">${service.name}</h3>
-                                    <span class="text-sm font-bold text-neutral-800">₱${Number(service.price).toLocaleString()}</span>
-                                </div>
-                                <div class="text-[11px] font-semibold tracking-wider text-neutral-400 uppercase mb-4 bg-neutral-50 px-2.5 py-1 rounded-full inline-block">Duration: ${service.duration}</div>
-                                <p class="text-neutral-500 text-xs font-normal leading-relaxed mb-6">${service.desc}</p>
-                            </div>
-                            <button type="button" onclick="selectServiceDirectly('${service.name}', ${service.price}, '${service.duration}', '${service.name} — ₱${Number(service.price).toLocaleString()}')" class="w-full text-center text-xs font-bold tracking-widest uppercase border border-dark py-3.5 rounded-full hover:bg-dark hover:text-light transition-all block">Select Service</button>
-                        </div>
-                    `;
-                }
-                
-                container.innerHTML += cardHTML;
-            });
+          /* ===================== LANDING PAGE CATALOG FETCH / RENDER =====================
+              Feature: Backend catalog loading with local fallback rendering for cards and dropdown options.
+              Purpose: Shows available services and pricing even when remote data is unavailable.
+          */
+        function fetchAndRenderCatalogServices() {
+            fetch('get_services.php')
+                .then(response => {
+                    if (!response.ok) throw new Error('Network resource data schema array parsing error.');
+                    return response.json();
+                })
+                .then(data => {
+                    if (Array.isArray(data) && data.length > 0) {
+                        masterCatalogServices = data;
+                    } else {
+                        throw new Error('Fallback target trigger needed');
+                    }
+                    renderDOMCatalogs();
+                })
+                .catch(err => {
+                    // Standardized Master Catalog Data Schema Fallback Allocation
+                    masterCatalogServices = [
+                        { name: "Standard Car Wash", price: 250, duration: "30 Mins", desc: "An essential exterior foam cleaning treatment utilizing scratch-free microfiber wash mitts and deep wheel cleaning." },
+                        { name: "Deluxe Car Wash", price: 400, duration: "45 Mins", desc: "Full cabin deep cleaning, sterilization, leather restoration, fabric stain extraction, and anti-bac odor elimination treatments." },
+                        { name: "Premium Car Wash", price: 600, duration: "1 Hour", desc: "Our ultimate preservation suite incorporating full body glass coating protection layers, premium window treatments, and high-gloss wax." },
+                        { name: "Under Chassis Wash", price: 350, duration: "30 Mins", desc: "High-pressure multi-directional undercarriage flush targeting mud, corrosive elements, salt buildup, and road grime." }
+                    ];
+                    renderDOMCatalogs();
+                });
         }
 
-        // Attach event listener execution
-        window.addEventListener('DOMContentLoaded', renderLivePublicServices);
+        function renderDOMCatalogs() {
+            const menuCardsContainer = document.getElementById('index-services-container');
+            const wizardDropdownWrapper = document.getElementById('dropdown-services-wrapper');
+
+            if (menuCardsContainer) menuCardsContainer.innerHTML = '';
+            if (wizardDropdownWrapper) wizardDropdownWrapper.innerHTML = '';
+
+            masterCatalogServices.forEach((service, index) => {
+                // Render Menu Cards
+                if (menuCardsContainer) {
+                    const isPremiumVariant = service.price >= 600;
+                    let cardHTML = '';
+
+                    if (isPremiumVariant) {
+                        cardHTML = `
+                            <div class="border border-dark bg-dark text-light p-8 rounded-3xl flex flex-col justify-between hover:bg-black transition-all hover:shadow-xl">
+                                <div>
+                                    <div class="flex justify-between items-start mb-4">
+                                        <h3 class="text-lg font-bold uppercase tracking-tight">${service.name}</h3>
+                                        <span class="text-sm font-bold text-neutral-200">₱${service.price}</span>
+                                    </div>
+                                    <div class="text-[11px] font-semibold tracking-wider text-neutral-500 uppercase mb-4 bg-neutral-800 px-2.5 py-1 rounded-full inline-block">Duration: ${service.duration}</div>
+                                    <p class="text-neutral-400 text-xs font-light leading-relaxed mb-6">${service.desc}</p>
+                                </div>
+                                <button type="button" onclick="selectServiceDirectly('${service.name}', ${service.price}, '${service.duration}', '${service.name} — ₱${service.price}')" class="w-full text-center text-xs font-bold tracking-widest uppercase bg-light text-dark py-3.5 rounded-full hover:bg-neutral-200 transition-all block shadow-sm">Select Service</button>
+                            </div>
+                        `;
+                    } else {
+                        cardHTML = `
+                            <div class="border border-neutral-200/80 bg-white p-8 rounded-3xl flex flex-col justify-between hover:border-dark transition-all hover:shadow-lg">
+                                <div>
+                                    <div class="flex justify-between items-start mb-4">
+                                        <h3 class="text-lg font-bold uppercase tracking-tight">${service.name}</h3>
+                                        <span class="text-sm font-bold text-neutral-800">₱${service.price}</span>
+                                    </div>
+                                    <div class="text-[11px] font-semibold tracking-wider text-neutral-400 uppercase mb-4 bg-neutral-50 px-2.5 py-1 rounded-full inline-block">Duration: ${service.duration}</div>
+                                    <p class="text-neutral-500 text-xs font-normal leading-relaxed mb-6">${service.desc}</p>
+                                </div>
+                                <button type="button" onclick="selectServiceDirectly('${service.name}', ${service.price}, '${service.duration}', '${service.name} — ₱${service.price}')" class="w-full text-center text-xs font-bold tracking-widest uppercase border border-dark py-3.5 rounded-full hover:bg-dark hover:text-light transition-all block">Select Service</button>
+                            </div>
+                        `;
+                    }
+                    menuCardsContainer.innerHTML += cardHTML;
+                }
+
+                // Render Dynamic Dropdown items inside Wizard Component
+                if (wizardDropdownWrapper) {
+                    const optionButtonHTML = `
+                        <button type="button" onclick="selectCustomItem('${service.name}', ${service.price}, '${service.duration}', '${service.name} — ₱${service.price}')" class="w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors flex justify-between items-center">
+                            <span>${service.name}</span><span class="text-neutral-400 font-bold">₱${service.price}</span>
+                        </button>
+                    `;
+                    wizardDropdownWrapper.innerHTML += optionButtonHTML;
+                }
+            });
+
+            // Auto-initialize standard default configuration indices cleanly
+            if (masterCatalogServices.length > 0) {
+                activeServiceState = masterCatalogServices[0].name;
+                activeServicePrice = masterCatalogServices[0].price;
+                activeServiceDuration = masterCatalogServices[0].duration;
+                document.getElementById('customServiceDisplay').innerText = `${activeServiceState} — ₱${activeServicePrice}`;
+                updateSummary();
+            }
+        }
+
+        window.onload = function() {
+            fetchAndRenderCatalogServices();
+        };
     </script>
 </body>
 </html>

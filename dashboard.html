@@ -21,15 +21,19 @@
 </head>
 <body class="bg-neutral-50 text-dark font-sans antialiased text-base">
 
+        <!-- ===================== DASHBOARD SHELL / NAVIGATION =====================
+            Feature: Member sidebar navigation with account, booking, and subscription routes.
+            Purpose: Provides fast movement between the customer-facing workspace sections.
+        -->
     <div class="min-h-screen flex flex-col md:flex-row">
-        
+
         <aside class="w-full md:w-72 bg-dark text-light flex flex-col justify-between p-8 border-r border-neutral-800">
             <div class="space-y-10">
                 <div class="pb-6 border-b border-neutral-800">
                     <div class="text-lg font-bold uppercase tracking-wider text-white">Montage Studio</div>
                     <div class="text-xs text-neutral-400 tracking-widest uppercase font-mono mt-1.5">Member Hub</div>
                 </div>
-                
+
                 <nav class="space-y-4 text-sm font-semibold uppercase tracking-wider text-neutral-400">
                     <button onclick="switchView('overview')" id="nav-overview" class="w-full flex items-center space-x-3 bg-neutral-900 text-white p-4 rounded-full transition-all text-left font-bold">
                         <span></span> <span>My Account</span>
@@ -42,7 +46,7 @@
                     </button>
                 </nav>
             </div>
-            
+
             <div class="pt-6 border-t border-neutral-800">
                 <button onclick="terminateSessionLogout()" class="w-full text-center text-sm font-bold bg-neutral-900 hover:bg-red-950 hover:text-red-200 border border-neutral-800 text-neutral-400 py-4 rounded-full tracking-widest uppercase transition-all">
                     Logout
@@ -50,8 +54,12 @@
             </div>
         </aside>
 
+           <!-- ===================== DASHBOARD WORKSPACE / MEMBER VIEWS =====================
+               Feature: Overview, booking, and subscription panels shown inside the main content area.
+               Purpose: Keeps the member experience organized into clear self-service sections.
+           -->
         <main class="flex-1 p-8 md:p-12 space-y-12 overflow-y-auto max-h-screen">
-            
+
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-neutral-200">
                 <div>
                     <h2 class="text-3xl font-black uppercase tracking-tight text-dark">Member Workspace</h2>
@@ -109,7 +117,7 @@
                     <div class="border-b border-neutral-200 pb-3">
                         <h3 class="text-lg font-bold uppercase tracking-wider text-neutral-400">Your Subscription Menu Guide</h3>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div id="dashboard-static-guides" class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="bg-white border border-neutral-200 p-6 rounded-2xl shadow-sm">
                             <h4 class="text-base font-bold text-dark uppercase mb-1">Standard Car Wash</h4>
                             <p class="text-sm text-neutral-500 font-light leading-relaxed">Essential exterior high-lubricity foam rinse, microfiber wheel cluster scrubbing, and absolute paint safety mapping.</p>
@@ -123,8 +131,8 @@
                             <p class="text-sm text-neutral-500 font-light leading-relaxed">Thorough detailing pre-wash cycle including absolute wheel barrel decon clay treatments and complete cabin vacuum configurations.</p>
                         </div>
                         <div class="bg-white border border-neutral-200 p-6 rounded-2xl shadow-sm">
-                            <h4 class="text-base font-bold text-dark uppercase mb-1">Complete Interior Detailing</h4>
-                            <p class="text-sm text-neutral-500 font-light leading-relaxed">Meticulous non-stripping surface decontamination, upholstery steam sterilization, leather deep-feeding conditioning, and anti-bacterial fog extraction rules.</p>
+                            <h4 class="text-base font-bold text-dark uppercase mb-1">Under Chassis Wash</h4>
+                            <p class="text-sm text-neutral-500 font-light leading-relaxed">High-pressure multi-directional undercarriage flush targeting mud, corrosive elements, salt buildup, and road grime.</p>
                         </div>
                     </div>
                 </div>
@@ -138,39 +146,18 @@
 
                 <form id="dashWizardForm" onsubmit="handleDashboardFormSubmission(event)">
                     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                        
+
                         <div class="lg:col-span-7 space-y-8 bg-white border border-neutral-200 p-8 rounded-[2rem] shadow-sm">
-                            
+
                             <div class="relative z-30">
                                 <label class="block text-xs font-bold uppercase tracking-wider text-neutral-400 mb-3">1. Select Intended Service Treatment</label>
                                 <button type="button" onclick="toggleDashboardDropdown('dashServiceDropdownMenu')" class="w-full bg-white border border-neutral-200 p-4 rounded-full text-sm font-semibold text-left flex justify-between items-center focus:outline-none focus:border-dark transition-all px-6 shadow-sm hover:border-neutral-400">
-                                    <span id="customDashServiceDisplay">Standard Car Wash — Covered by Subscription</span>
+                                    <span id="customDashServiceDisplay">Loading Master Catalog...</span>
                                     <span class="text-neutral-500 text-[10px]">▼</span>
                                 </button>
                                 <div id="dashServiceDropdownMenu" class="absolute left-0 right-0 mt-2 bg-white border border-neutral-200 rounded-[2rem] shadow-xl overflow-hidden hidden z-50 max-h-[280px] overflow-y-auto">
-                                    <div class="bg-neutral-50/60 px-5 py-2.5 border-b border-neutral-100 text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Basic Car Care (Subscribers: Fully Covered)</div>
-                                    <div class="divide-y divide-neutral-100">
-                                        <button type="button" onclick="selectDashboardServiceItem('Standard Car Wash', '45 Mins', 'Standard Car Wash — Covered by Subscription')" class="w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors flex justify-between items-center">
-                                            <span>Standard Car Wash</span><span class="text-emerald-600 font-bold text-[11px] uppercase tracking-wider">VIP Covered</span>
-                                        </button>
-                                        <button type="button" onclick="selectDashboardServiceItem('Deluxe Car Wash', '1 Hour', 'Deluxe Car Wash — Covered by Subscription')" class="w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors flex justify-between items-center">
-                                            <span>Deluxe Car Wash</span><span class="text-emerald-600 font-bold text-[11px] uppercase tracking-wider">VIP Covered</span>
-                                        </button>
-                                        <button type="button" onclick="selectDashboardServiceItem('Premium Car Wash', '1.5 Hours', 'Premium Car Wash — Covered by Subscription')" class="w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors flex justify-between items-center">
-                                            <span>Premium Car Wash</span><span class="text-emerald-600 font-bold text-[11px] uppercase tracking-wider">VIP Covered</span>
-                                        </button>
-                                        <button type="button" onclick="selectDashboardServiceItem('Light Claying Service', '1 Hour', 'Light Claying Service — Covered by Subscription')" class="w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors flex justify-between items-center">
-                                            <span>Light Claying Service</span><span class="text-emerald-600 font-bold text-[11px] uppercase tracking-wider">VIP Covered</span>
-                                        </button>
-                                    </div>
-                                    <div class="bg-neutral-50/60 px-5 py-2.5 border-y border-neutral-100 text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Advanced Detailing & Protection (Subscribers: Fully Covered)</div>
-                                    <div class="divide-y divide-neutral-100">
-                                        <button type="button" onclick="selectDashboardServiceItem('Complete Interior Detailing', '3 Hours', 'Complete Interior Detailing — Covered by Subscription')" class="w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors flex justify-between items-center">
-                                            <span>Complete Interior Detailing</span><span class="text-emerald-600 font-bold text-[11px] uppercase tracking-wider">VIP Covered</span>
-                                        </button>
-                                        <button type="button" onclick="selectDashboardServiceItem('Paint Correction Process', '3.5 Hours', 'Paint Correction Process — Covered by Subscription')" class="w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors flex justify-between items-center">
-                                            <span>Paint Correction Process</span><span class="text-emerald-600 font-bold text-[11px] uppercase tracking-wider">VIP Covered</span>
-                                        </button>
+                                    <div id="dropdown-services-category-title" class="bg-neutral-50/60 px-5 py-2.5 border-b border-neutral-100 text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Available Detailing Tiers</div>
+                                    <div id="dash-dropdown-services-wrapper" class="divide-y divide-neutral-100">
                                     </div>
                                 </div>
                             </div>
@@ -205,7 +192,7 @@
                                 <div class="flex justify-between text-sm font-medium"><span>Target Date:</span><span id="summaryDate" class="font-bold text-dark">—</span></div>
                                 <div class="flex justify-between text-sm font-medium"><span>Reserved Slot:</span><span id="summaryTime" class="font-bold text-dark">—</span></div>
                                 <div class="flex justify-between text-sm font-medium"><span>Estimated Process:</span><span id="summaryDuration" class="font-bold text-dark">—</span></div>
-                                
+
                                 <div class="border-t border-dashed border-neutral-300 pt-4 flex justify-between items-center text-sm font-bold text-emerald-700 bg-emerald-50/50 p-3 rounded-xl border border-emerald-100">
                                     <span>Payment Verification:</span>
                                     <span id="paymentStatusSummary" class="uppercase font-extrabold tracking-wider text-xs">✓ Covered (VIP Plan)</span>
@@ -231,7 +218,7 @@
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div class="lg:col-span-2 bg-white border border-neutral-200 p-8 rounded-[2rem] shadow-sm space-y-6">
                         <h4 class="text-xs uppercase tracking-wider text-neutral-400 font-bold border-b border-neutral-100 pb-3">User & Plan Registry</h4>
-                        
+
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm">
                             <div>
                                 <span class="text-xs text-neutral-400 font-medium uppercase tracking-wider block">Account Holder</span>
@@ -251,27 +238,34 @@
                             </div>
                         </div>
 
-                        <div class="border-t border-neutral-100 pt-6 grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm">
+                        <div class="border-t border-neutral-100 pt-6 grid grid-cols-1 sm:grid-cols-3 gap-6 text-sm">
                             <div>
                                 <span class="text-xs text-neutral-400 font-medium uppercase tracking-wider block">Last Billing Log Date</span>
                                 <span class="font-bold text-dark text-base">June 15, 2026</span>
                             </div>
                             <div>
-                                <span class="text-xs text-neutral-400 font-medium uppercase tracking-wider block">Next Scheduled Invoicing</span>
-                                <span id="subParamNextBilling" class="font-bold text-dark text-base">July 15, 2026</span>
+                                <span class="text-xs text-neutral-400 font-medium uppercase tracking-wider block">Next Billing Date</span>
+                                <span id="subParamNextBilling" class="font-bold text-emerald-700 text-base">July 15, 2026</span>
+                            </div>
+                            <div>
+                                <span class="text-xs text-neutral-400 font-medium uppercase tracking-wider block">Account Classification</span>
+                                <span id="subParamType" class="font-bold text-dark text-base">Subscriber</span>
                             </div>
                         </div>
                     </div>
 
                     <div class="bg-white border border-neutral-200 p-8 rounded-[2rem] shadow-sm flex flex-col justify-between space-y-8">
                         <div class="space-y-4">
-                            <h4 class="text-xs uppercase tracking-wider text-neutral-400 font-bold border-b border-neutral-100 pb-3">Ledger</h4>
+                            <h4 class="text-xs uppercase tracking-wider text-neutral-400 font-bold border-b border-neutral-100 pb-3">Ledger Hub</h4>
                             <div class="text-sm font-medium text-neutral-500 leading-relaxed">
-                                Access your compiled monthly recurring statement histories or drop plan configurations safely.
+                                Access your compiled monthly recurring statement histories, manage active billing cycles, or request custom plan adjustments.
                             </div>
                         </div>
 
                         <div class="space-y-3">
+                            <button onclick="toggleModal('renewalHubModal')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold tracking-widest uppercase py-4 rounded-full transition-all text-center shadow-sm">
+                                Submit Plan Renewal Proof
+                            </button>
                             <button onclick="alert('Under construction!')" class="w-full bg-neutral-50 hover:bg-neutral-100 text-dark border border-neutral-200 text-xs font-bold tracking-widest uppercase py-4 rounded-full transition-all text-center">
                                 View Monthly Invoice
                             </button>
@@ -286,6 +280,48 @@
         </main>
     </div>
 
+        <!-- ===================== DASHBOARD MODALS / MEMBER ACTIONS =====================
+            Feature: Renewal upload, reschedule flow, and subscription cancellation dialogs.
+            Purpose: Collects confirmation steps without leaving the dashboard page.
+        -->
+    <div id="renewalHubModal" class="fixed inset-0 z-50 flex items-center justify-center bg-dark/60 backdrop-blur-sm hidden">
+        <div class="bg-white border border-neutral-200 p-8 w-full max-w-md relative rounded-[2rem] shadow-2xl mx-4">
+            <button onclick="toggleModal('renewalHubModal')" class="absolute top-5 right-5 text-neutral-400 hover:text-dark text-xs font-bold">✕</button>
+            <div class="mb-6">
+                <h3 class="text-xl font-bold uppercase tracking-tight text-dark">Membership Fee Check-In</h3>
+                <p class="text-xs text-neutral-400 font-medium mt-1">Submit your monthly renewal payment to extend access rules.</p>
+            </div>
+
+            <form onsubmit="handleRenewalSubmission(event)" class="space-y-5">
+                <div class="bg-neutral-900 text-light p-5 rounded-2xl border border-neutral-800 space-y-3 shadow-inner">
+                    <div class="flex justify-between items-center pb-2 border-b border-neutral-800">
+                        <span class="text-[10px] font-bold uppercase tracking-widest text-neutral-400">GCash Remittance Parameters</span>
+                        <span class="text-[10px] bg-emerald-600 text-white font-extrabold px-2 py-0.5 rounded">Corporate Registry</span>
+                    </div>
+                    <div class="text-xs space-y-1.5">
+                        <div class="flex justify-between"><span class="text-neutral-400">Receiving Name:</span><span class="font-bold text-white">Montage Auto Studio Inc.</span></div>
+                        <div class="flex justify-between"><span class="text-neutral-400">Corporate Mobile Number:</span><span class="font-bold text-white font-mono">0917-888-MONTAG</span></div>
+                        <div class="flex justify-between border-t border-neutral-800 pt-1.5 font-bold text-sm">
+                            <span class="text-neutral-300">Renewal Fee Due:</span>
+                            <span class="text-emerald-400">₱1,500.00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-neutral-400">Upload Renewal Proof of Payment</label>
+                    <input type="file" id="renewalProofFile" accept="image/*" required class="w-full bg-neutral-50 border border-neutral-200 p-3 rounded-xl text-xs text-dark focus:outline-none focus:border-dark file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:uppercase file:bg-dark file:text-light hover:file:bg-neutral-800 cursor-pointer">
+                </div>
+
+                <div class="pt-2">
+                    <button type="submit" class="w-full bg-dark text-light text-xs font-bold tracking-widest uppercase py-4 rounded-full border border-dark hover:bg-neutral-800 transition-all shadow-sm">
+                        Submit Verification Screenshot
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div id="rescheduleModal" class="fixed inset-0 z-50 flex items-center justify-center bg-dark/60 backdrop-blur-sm hidden">
         <div class="bg-white border border-neutral-200 p-8 w-full max-w-md relative rounded-[2rem] shadow-2xl mx-4">
             <button onclick="toggleModal('rescheduleModal')" class="absolute top-5 right-5 text-neutral-400 hover:text-dark text-xs font-bold">✕</button>
@@ -293,7 +329,7 @@
                 <h3 class="text-xl font-bold uppercase tracking-tight text-dark">Reschedule Session</h3>
                 <p class="text-xs text-neutral-400 font-medium mt-1">Appointment ID: <span id="rescheduleTargetId" class="font-bold font-mono text-dark"></span></p>
             </div>
-            
+
             <form onsubmit="processRescheduleValidation(event)" class="space-y-4">
                 <div>
                     <label class="block text-xs font-bold uppercase tracking-wider text-neutral-400 mb-2">Select Alternative Date</label>
@@ -317,7 +353,7 @@
                     </div>
                     <p id="reschCapacityWarning" class="text-[11px] text-red-500 font-semibold mt-2 ml-4 hidden">Saturday constraints limit twin-bay capacity allocation thresholds.</p>
                 </div>
-                
+
                 <div class="pt-2">
                     <button type="submit" class="w-full bg-dark text-light text-xs font-bold tracking-widest uppercase py-4 rounded-full border border-dark hover:bg-neutral-800 transition-all shadow-sm">
                         Verify Slot & Save Modifications
@@ -352,12 +388,19 @@
         </div>
     </div>
 
+    <!-- ===================== DASHBOARD LOGIC / DATA & MODULES =====================
+         Feature: Appointment arrays, member profile state, catalog sync, and modal workflows.
+         Purpose: Drives the interactive behavior of the member dashboard and its booking tools.
+    -->
     <script>
-        // Relational transaction array sets
+        /* ===================== DASHBOARD DATA / STATE =====================
+           Feature: Active appointments, past history, and counters for completed sessions.
+           Purpose: Supplies the dashboard with the member's booking records and summary metrics.
+        */
         let currentAppointments = [
             { id: "MTG-847291", service: "Standard Car Wash", date: "2026-07-14", time: "10:00 AM - 11:00 AM" }
         ];
-        
+
         let historyAppointments = [
             { id: "MTG-736215", service: "Premium Car Wash", date: "2026-06-18", time: "09:00 AM - 10:30 AM" },
             { id: "MTG-412985", service: "Standard Car Wash", date: "2026-05-12", time: "02:00 PM - 02:45 PM" }
@@ -367,17 +410,40 @@
         let selectedRescheduleId = null;
         let activeSubTabState = "active";
 
-        let activeDashServiceState = "Standard Car Wash";
-        let activeDashServiceDuration = "45 Mins";
+          /* ===================== DASHBOARD SYNC STATE =====================
+              Feature: Remote or fallback service catalog payload used by booking dropdowns and cards.
+              Purpose: Keeps the booking interface synced with service names, prices, and durations.
+          */
+        let masterCatalogPayload = [];
+        let activeDashServiceState = "";
+        let activeDashServiceDuration = "";
         let activeDashTimeState = "";
 
+          /* ===================== DASHBOARD PROFILE STATE =====================
+              Feature: Current member identity, account class, and next billing date display values.
+              Purpose: Personalizes the dashboard and controls subscriber-specific booking behavior.
+          */
+        let userProfileSession = {
+            name: "VIP Member",
+            customer_type: "Subscriber",
+            next_billing_date: "July 15, 2026"
+        };
+
+          /* ===================== DASHBOARD MODAL UTILITIES =====================
+              Feature: Generic modal toggle helper used by renewal, reschedule, and cancellation overlays.
+              Purpose: Reuses one visibility helper for all popup flows on the page.
+          */
         function toggleModal(modalId) {
             document.getElementById(modalId).classList.toggle('hidden');
         }
 
+          /* ===================== DASHBOARD APPOINTMENT MODULE =====================
+              Feature: Active/history session tabs, row rendering, rescheduling, and appointment removal.
+              Purpose: Lets members inspect current reservations and manage existing bookings.
+          */
         function switchAppointmentTab(tabId) {
             activeSubTabState = tabId;
-            
+
             const activeBtn = document.getElementById('tabBtn-active');
             const historyBtn = document.getElementById('tabBtn-history');
             const actionsHeader = document.getElementById('actionsTableHeader');
@@ -398,8 +464,9 @@
         function renderAppointmentsTable() {
             const tbody = document.getElementById('appointmentsTableBody');
             const counter = document.getElementById('appointmentCounter');
+            if(!tbody) return;
             tbody.innerHTML = '';
-            
+
             if (activeSubTabState === 'active') {
                 counter.innerText = `${currentAppointments.length} Session${currentAppointments.length !== 1 ? 's' : ''}`;
                 if (currentAppointments.length === 0) {
@@ -415,7 +482,7 @@
                             <td class="p-5 text-neutral-600 text-base">${app.time}</td>
                             <td class="p-5">
                                 <span class="inline-flex items-center text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-100">
-                                    Pending 
+                                    Pending
                                 </span>
                             </td>
                             <td class="p-5 text-right space-x-2">
@@ -450,6 +517,10 @@
             document.getElementById('subParamCount').innerText = `${baseCompletedAppointmentsCount + currentAppointments.length} Appointments Done`;
         }
 
+          /* ===================== DASHBOARD DROPDOWNS / SUMMARY =====================
+              Feature: Service and time dropdowns, date validation, and summary field updates.
+              Purpose: Keeps the booking wizard selections and preview panel synchronized.
+          */
         function toggleDashboardDropdown(menuId) {
             const listMenus = ['dashServiceDropdownMenu', 'dashTimeDropdownMenu', 'reschTimeDropdownMenu'];
             listMenus.forEach(id => {
@@ -497,27 +568,22 @@
             event.preventDefault();
             const targetDate = document.getElementById('reschDate').value;
             const targetTime = document.getElementById('reschTime').value;
-            
+
             if (!targetTime) {
                 alert("Please select an alternative hourly window from the dropdown checklist matrix.");
                 return;
             }
-            
+
             const dateObj = new Date(targetDate);
             if (dateObj.getUTCDay() === 0) {
                 alert("Scheduling Constraint Violation: Montage Auto Studio operates strictly Mon-Sat. Sunday slots remain permanently unavailable.");
                 return;
             }
 
-            if (targetDate === "2026-08-01" && targetTime.startsWith("10:00 AM")) {
-                alert("Rejection Logged: Target frame has reached absolute capacity bounds across twin bays. Please assign an alternate hour matrix.");
-                return;
-            }
-
             let match = currentAppointments.find(app => app.id === selectedRescheduleId);
             if (match) {
                 match.date = targetDate;
-                match.time = targetTime.includes('-') ? targetTime : `${targetTime} - ${parseInt(targetTime)+1}:00 PM`;
+                match.time = targetTime.includes('-') ? targetTime : `${targetTime} - ${targetTime.startsWith('09') ? '10:00 AM' : targetTime.startsWith('10') ? '11:00 AM' : targetTime.startsWith('11') ? '12:00 PM' : '03:00 PM'}`;
             }
 
             alert(`Validation Complete: Slot available. Appointment ID ${selectedRescheduleId} modified successfully.`);
@@ -528,7 +594,7 @@
         function switchView(viewId) {
             const views = ['view-overview', 'view-booking', 'view-subscription'];
             const navs = ['nav-overview', 'nav-booking', 'nav-subscription'];
-            
+
             views.forEach(v => document.getElementById(v).classList.add('hidden'));
             navs.forEach(n => document.getElementById(n).className = "w-full flex items-center space-x-3 hover:bg-neutral-900 hover:text-white p-4 rounded-full transition-all text-left text-neutral-400");
 
@@ -541,7 +607,7 @@
         function handleDateChange(warningElementId) {
             const dateInput = event.target.value;
             const warningElement = document.getElementById(warningElementId);
-            if (dateInput && new Date(dateInput).getUTCDay() === 6) { 
+            if (dateInput && new Date(dateInput).getUTCDay() === 6) {
                 warningElement.classList.remove('hidden');
             } else {
                 warningElement.classList.add('hidden');
@@ -561,32 +627,45 @@
         function handleDashboardFormSubmission(event) {
             event.preventDefault();
             const dateVal = document.getElementById('bookingDate').value;
-            
+
             if (!activeDashTimeState) {
                 alert("Please select a target booking window before confirmation step routing.");
                 return;
             }
-            
+
             const referenceId = "MTG-" + Math.floor(100000 + Math.random() * 900000);
-            
+
             currentAppointments.push({
                 id: referenceId,
                 service: activeDashServiceState,
                 date: dateVal,
                 time: `${activeDashTimeState} - ${activeDashTimeState.startsWith('09') ? '10:00 AM' : activeDashTimeState.startsWith('10') ? '11:00 AM' : activeDashTimeState.startsWith('11') ? '12:00 PM' : '03:00 PM'}`
             });
-            
+
             alert(`Reservation Authorized!\n\nBooking ID: ${referenceId}`);
             document.getElementById('dashWizardForm').reset();
-            
-            activeDashServiceState = "Standard Car Wash";
-            activeDashServiceDuration = "45 Mins";
+
+            if(masterCatalogPayload.length > 0) {
+                activeDashServiceState = masterCatalogPayload[0].name;
+                activeDashServiceDuration = masterCatalogPayload[0].duration;
+                const priceLabel = userProfileSession.customer_type === 'Subscriber' ? 'Covered by Subscription' : `₱${masterCatalogPayload[0].price}`;
+                document.getElementById('customDashServiceDisplay').innerText = `${activeDashServiceState} — ${priceLabel}`;
+            }
+
             activeDashTimeState = "";
-            document.getElementById('customDashServiceDisplay').innerText = "Standard Car Wash — Covered by Subscription";
             document.getElementById('customDashTimeDisplay').innerText = "Select Target Window...";
-            
+
             renderAppointmentsTable();
             switchView('overview');
+        }
+
+        function handleRenewalSubmission(event) {
+            event.preventDefault();
+            const fileCtrl = document.getElementById('renewalProofFile');
+            if(fileCtrl && fileCtrl.files.length > 0) {
+                alert("Renewal Verification Success!\n\nOur bookkeeping ledger team is audit-tracking your uploaded screenshot transaction. Your current expiration matrix has been extended safely.");
+                toggleModal('renewalHubModal');
+            }
         }
 
         function deleteAppointment(appId) {
@@ -596,46 +675,111 @@
             }
         }
 
-        /* PRODUCTION SOFT-DOWNGRADE IMPLEMENTATION VECTOR */
         function executeSoftSubscriptionDowngrade() {
             toggleModal('cancelConfirmModal');
-            
-            // Execute non-destructive state changes within user workspace fields
+
             const statusTag = document.getElementById('accountStatusTag');
             const toggleBtn = document.getElementById('cancelPlanToggleBtn');
             const tierDisplay = document.getElementById('currentTierDisplay');
             const paymentSummary = document.getElementById('paymentStatusSummary');
-            
+
+            userProfileSession.customer_type = 'Regular';
+            document.getElementById('subParamType').innerText = 'Regular';
+
             if (statusTag) {
                 statusTag.className = "text-xs bg-amber-50 text-amber-700 font-bold px-4 py-2 rounded-full border border-amber-200 flex items-center gap-1.5 self-start sm:self-center";
                 statusTag.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500 inline-block"></span>INACTIVE`;
             }
-            
+
             if (tierDisplay) {
-                tierDisplay.innerHTML = `Unlimited VIP Wash Club <span class="text-xs font-bold tracking-widest text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200 ml-2 uppercase">Pending Expiry</span>`;
+                tierDisplay.innerHTML = `Standard Individual Pricing <span class="text-xs font-bold tracking-widest text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200 ml-2 uppercase">Subscription Cancelled</span>`;
             }
-            
+
             if (paymentSummary) {
-                paymentSummary.innerHTML = `✓ Covered (Cycle Expiry Active)`;
+                paymentSummary.className = "border-t border-dashed border-neutral-300 pt-4 flex justify-between items-center text-sm font-bold text-dark bg-neutral-100 p-3 rounded-xl border border-neutral-200";
+                paymentSummary.innerHTML = `Requires Walk-in Settlement`;
             }
-            
+
             if (toggleBtn) {
                 toggleBtn.innerText = "Reactivate Subscription Plan";
                 toggleBtn.className = "w-full bg-dark text-light text-xs font-bold tracking-widest uppercase py-4 rounded-full transition-all text-center hover:bg-neutral-800 shadow-sm";
-                // Swap handler dynamically to allow reactive reversals safely
-                toggleBtn.onclick = function() {
-                    location.reload(); 
-                };
+                toggleBtn.onclick = function() { location.reload(); };
             }
-            
-            alert("State Machine Updated: VIP status logged to 'Cancellation Pending'. Relational accounting tables preserved successfully.");
-            switchView('overview');
+
+            // Sync booking layout parameters back to standard currency rules instantly
+            fetchAndSyncDashboardDropdown();
+            alert("State Machine Updated: VIP privileges terminated. Booking prices restored to standard retail metrics.");
         }
 
-        function terminateSessionLogout() { 
+        function terminateSessionLogout() {
             localStorage.removeItem('subscriber_session_active');
             localStorage.removeItem('subscriber_name');
-            window.location.href = 'index.html'; 
+            window.location.href = 'index.html';
+        }
+
+          /* ===================== DASHBOARD CATALOG FETCH / RENDER =====================
+              Feature: Loads the service catalog from the backend and falls back to local defaults if needed.
+              Purpose: Populates the booking menu cards and dropdown items with live service data.
+          */
+        function fetchAndSyncDashboardDropdown() {
+            fetch('get_services.php')
+                .then(response => {
+                    if(!response.ok) throw new Error('Data Schema validation failed.');
+                    return response.json();
+                })
+                .then(data => {
+                    if (Array.isArray(data) && data.length > 0) masterCatalogPayload = data;
+                    else throw new Error('Use dynamic fallbacks');
+                    renderSynchronizedComponents();
+                })
+                .catch(err => {
+                    // Standardized Master Catalog Data Schema Fallback Allocation
+                    masterCatalogPayload = [
+                        { name: "Standard Car Wash", price: 250, duration: "30 Mins" },
+                        { name: "Deluxe Car Wash", price: 400, duration: "45 Mins" },
+                        { name: "Premium Car Wash", price: 600, duration: "1 Hour" },
+                        { name: "Under Chassis Wash", price: 350, duration: "30 Mins" }
+                    ];
+                    renderSynchronizedComponents();
+                });
+        }
+
+        function renderSynchronizedComponents() {
+            const dropdownWrapper = document.getElementById('dash-dropdown-services-wrapper');
+            const categoryHeader = document.getElementById('dropdown-services-category-title');
+            if(!dropdownWrapper) return;
+
+            dropdownWrapper.innerHTML = '';
+
+            const isSubscribedProfile = (userProfileSession.customer_type === 'Subscriber');
+
+            if(categoryHeader) {
+                categoryHeader.innerText = isSubscribedProfile ?
+                    "Basic Car Care (Subscribers: Fully Covered)" : "Available Treatment Pricing Suite";
+            }
+
+            masterCatalogPayload.forEach(service => {
+                // Client-side subscriber mutation conversion check
+                const displayPriceTag = isSubscribedProfile ? "₱0 (Included in Plan)" : `₱${service.price}`;
+                const badgeStyleClass = isSubscribedProfile ? "text-emerald-600 bg-emerald-50 border border-emerald-100" : "text-neutral-500 bg-neutral-50";
+
+                const optionBtnHTML = `
+                    <button type="button" onclick="selectDashboardServiceItem('${service.name}', '${service.duration}', '${service.name} — ${displayPriceTag}')" class="w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors flex justify-between items-center">
+                        <span>${service.name}</span>
+                        <span class="font-bold text-[10px] uppercase tracking-wider px-2 py-0.5 rounded ${badgeStyleClass}">${displayPriceTag}</span>
+                    </button>
+                `;
+                dropdownWrapper.innerHTML += optionBtnHTML;
+            });
+
+            // Re-bind defaults
+            if (masterCatalogPayload.length > 0) {
+                activeDashServiceState = masterCatalogPayload[0].name;
+                activeDashServiceDuration = masterCatalogPayload[0].duration;
+                const startingPriceText = isSubscribedProfile ? "Covered by Subscription" : `₱${masterCatalogPayload[0].price}`;
+                document.getElementById('customDashServiceDisplay').innerText = `${activeDashServiceState} — ${startingPriceText}`;
+                updateSummary();
+            }
         }
 
         window.addEventListener('click', function(e) {
@@ -655,10 +799,16 @@
                 window.location.href = 'index.html';
                 return;
             }
+
             const activeProfileName = localStorage.getItem('subscriber_name') || 'VIP Member';
+            userProfileSession.name = activeProfileName;
+
             document.getElementById('dashWelcomeName').innerText = activeProfileName;
             document.getElementById('subParamName').innerText = activeProfileName;
+            document.getElementById('subParamNextBilling').innerText = userProfileSession.next_billing_date;
+
             renderAppointmentsTable();
+            fetchAndSyncDashboardDropdown();
         };
     </script>
 </body>
