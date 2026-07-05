@@ -1,0 +1,403 @@
+// ===============================================
+//             index.html script
+// ===============================================
+
+ /* ===================== LANDING PAGE CONFIG / STATE =====================
+           Feature: Global booking capacity ceiling and base UI configuration values.
+           Purpose: Defines the constraints used across the public scheduling experience.
+        */
+        const GLOBAL_BAY_CAPACITY_CEILING = 2; // Maximum overlapping cars permitted per slot configuration
+        const PENDING_SUBSCRIPTION_REQUESTS_KEY = 'montage_subscription_requests';
+        const APPROVED_SUBSCRIPTION_ACCOUNTS_KEY = 'montage_approved_subscribers';
+
+        // Master Catalog Collection Schema map matching specifications exactly
+        let masterCatalogServices = [];
+
+        let activeServiceState = "";
+        let activeServicePrice = 0;
+        let activeServiceDuration = "";
+        let activeTimeState = "";
+
+          /* ===================== LANDING PAGE TIMELINE STATE =====================
+              Feature: Persisted occupancy registry for dates and time slots.
+              Purpose: Tracks how many bookings already exist for each appointment window.
+          */
+        // Stores data structural schema layout format: { "YYYY-MM-DD": { "09:00 AM": bookingCount } }
+        let currentTimelineLoadRegistry = JSON.parse(localStorage.getItem('montage_timeline_registry')) || {
+            "2026-07-06": { "09:00 AM": 2, "10:00 AM": 1 },
+            "2026-07-11": { "09:00 AM": 2, "10:00 AM": 2 }
+        };
+
+          /* ===================== LANDING PAGE MODAL / DROPDOWN HELPERS =====================
+              Feature: Shared helpers for modals, dropdown menus, and selection UI states.
+              Purpose: Keeps interactive controls consistent across the landing page components.
+          */
+        function toggleModal(modalId) {
+            document.getElementById(modalId).classList.toggle('hidden');
+        }
+
+        function navigateToSubscription() {
+            toggleModal('loginModal');
+            window.location.href = '#subscription';
+        }
+
+        function toggleCustomDropdown(menuId) {
+            const dropmenus = ['serviceDropdownMenu', 'timeDropdownMenu', 'paymentDropdownMenu'];
+            dropmenus.forEach(id => {
+                const element = document.getElementById(id);
+                if (element && id !== menuId) element.classList.add('hidden');
+            });
+            const targetedMenu = document.getElementById(menuId);
+            if(targetedMenu) targetedMenu.classList.toggle('hidden');
+        }
+
+        function selectCustomItem(value, price, duration, label) {
+            activeServiceState = value;
+            activeServicePrice = price;
+            activeServiceDuration = duration;
+
+            document.getElementById('customServiceDisplay').innerText = label;
+            document.getElementById('serviceDropdownMenu').classList.add('hidden');
+            evaluateTimelineValidationGuards();
+            updateSummary();
+        }
+
+        function selectCustomTime(value, label) {
+            const dateInput = document.getElementById('bookingDate').value;
+            if (isTimeSlotTimelineExceeded(dateInput, value, activeServiceDuration)) {
+                return; // Guard layout verification intercept
+            }
+            activeTimeState = value;
+            document.getElementById('customTimeDisplay').innerText = label;
+            document.getElementById('timeDropdownMenu').classList.add('hidden');
+            updateSummary();
+        }
+
+        function selectServiceDirectly(serviceName, price, duration, label) {
+            activeServiceState = serviceName;
+            activeServicePrice = price;
+            activeServiceDuration = duration;
+            document.getElementById('customServiceDisplay').innerText = label;
+
+            window.location.href = '#booking-wizard';
+            evaluateTimelineValidationGuards();
+            updateSummary();
+        }
+
+        function handleDateChange() {
+            evaluateTimelineValidationGuards();
+            updateSummary();
+        }
+
+          /* ===================== LANDING PAGE TIMELINE VALIDATION =====================
+              Feature: Slot locking, day-of-week checks, and capacity warnings for bookings.
+              Purpose: Prevents users from choosing time windows that exceed studio availability.
+          */
+        function evaluateTimelineValidationGuards() {
+            const selectedDate = document.getElementById('bookingDate').value;
+            const timeButtons = document.querySelectorAll('#timeDropdownMenu button');
+            const warningElement = document.getElementById('capacityWarning');
+            let structuralLockoutTriggered = false;
+
+            timeButtons.forEach(button => {
+                const hourSlot = button.getAttribute('data-time');
+
+                if (selectedDate && activeServiceDuration) {
+                    const isLocked = isTimeSlotTimelineExceeded(selectedDate, hourSlot, activeServiceDuration);
+                    if (isLocked) {
+                        button.className = "w-full text-left px-6 py-3.5 text-xs font-semibold bg-neutral-100 text-neutral-400 line-through cursor-not-allowed uppercase tracking-wider";
+                        button.setAttribute('disabled', 'true');
+                        if (activeTimeState === hourSlot) {
+                            activeTimeState = "";
+                            document.getElementById('customTimeDisplay').innerText = "Time Slot...";
+                        }
+                        structuralLockoutTriggered = true;
+                    } else {
+                        button.className = "w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors uppercase tracking-wider";
+                        button.removeAttribute('disabled');
+                    }
+                } else {
+                    button.className = "w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors uppercase tracking-wider";
+                    button.removeAttribute('disabled');
+                }
+            });
+
+            if (structuralLockoutTriggered) {
+                warningElement.innerText = "Selected time interval spans cross-slots exceeding our global bay capacity.";
+                warningElement.classList.remove('hidden');
+            } else if (selectedDate && new Date(selectedDate).getUTCDay() === 6) {
+                warningElement.innerText = "Saturday bookings are limited to 16 cars.";
+                warningElement.classList.remove('hidden');
+            } else {
+                warningElement.classList.add('hidden');
+            }
+        }
+
+        function isTimeSlotTimelineExceeded(date, targetHour, durationString) {
+            if (!date) return false;
+
+            // Map index timeline structures
+            const structuralSlots = ["09:00 AM", "10:00 AM", "11:00 AM", "02:00 PM", "03:00 PM"];
+            const indexPointer = structuralSlots.indexOf(targetHour);
+            if (indexPointer === -1) return false;
+
+            // Determine explicit hour spanning blocks based on parsed string limits
+            let operationalSpanningBlocks = 1;
+            if (durationString.includes("Hour") || durationString.includes("1 Hour")) operationalSpanningBlocks = 1;
+            if (durationString.includes("1.5 Hours") || durationString.includes("2 Hours")) operationalSpanningBlocks = 2;
+            if (durationString.includes("3 Hours")) operationalSpanningBlocks = 3;
+            if (durationString.includes("4 Hours")) operationalSpanningBlocks = 4;
+
+            const targetDateRegistry = currentTimelineLoadRegistry[date] || {};
+
+            for (let i = 0; i < operationalSpanningBlocks; i++) {
+                const evaluateIndex = indexPointer + i;
+                if (evaluateIndex >= structuralSlots.length) {
+                    return true; // Overlap flags locked if it runs past operating limits
+                }
+                const currentSlotKey = structuralSlots[evaluateIndex];
+                const activeOccupancyLoad = targetDateRegistry[currentSlotKey] || 0;
+
+                if (activeOccupancyLoad >= GLOBAL_BAY_CAPACITY_CEILING) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function updateSummary() {
+            document.getElementById('summaryService').innerText = activeServiceState || 'None Selected';
+            document.getElementById('summaryDate').innerText = document.getElementById('bookingDate').value || '—';
+            document.getElementById('summaryTime').innerText = activeTimeState || '—';
+            document.getElementById('summaryDuration').innerText = activeServiceDuration || '—';
+            document.getElementById('summaryTotal').innerText = '₱' + parseFloat(activeServicePrice).toLocaleString('en-US', { minimumFractionDigits: 2 });
+        }
+
+        function handleFormSubmission(event) {
+            event.preventDefault();
+
+            const selectedDate = document.getElementById('bookingDate').value;
+            if (!activeTimeState) {
+                alert('Please provide a valid open scheduling time slot window.');
+                return;
+            }
+
+            // Persistence tracking update configuration block
+            if (!currentTimelineLoadRegistry[selectedDate]) {
+                currentTimelineLoadRegistry[selectedDate] = {};
+            }
+            currentTimelineLoadRegistry[selectedDate][activeTimeState] = (currentTimelineLoadRegistry[selectedDate][activeTimeState] || 0) + 1;
+            localStorage.setItem('montage_timeline_registry', JSON.stringify(currentTimelineLoadRegistry));
+
+            alert(`Booking submitted.\n\nReference ID: MTG-${Math.floor(100000 + Math.random() * 900000)}\n\nPayment proof recorded.`);
+            document.getElementById('wizardForm').reset();
+
+            activeTimeState = "";
+            document.getElementById('customTimeDisplay').innerText = "Time Slot...";
+            evaluateTimelineValidationGuards();
+            updateSummary();
+        }
+
+        function simulateLoginRedirect(event) {
+            event.preventDefault();
+            const form = event.target.closest('form') || document.querySelector('#loginModal form');
+            const emailInput = document.getElementById('loginEmail').value;
+            const passwordField = document.getElementById('loginPassword') || (form ? form.querySelector('input[type="password"]') : null);
+            const passwordInput = passwordField ? passwordField.value : '';
+
+            if (emailInput === 'admin@gmail.com' && passwordInput === 'montage2026') {
+                localStorage.setItem('isAdminAuthenticated', 'true');
+                window.location.href = 'admin.html';
+                return;
+            }
+
+            toggleModal('loginModal');
+            const approvedAccounts = JSON.parse(localStorage.getItem(APPROVED_SUBSCRIPTION_ACCOUNTS_KEY) || '[]');
+            const approvedAccount = approvedAccounts.find(account => account.email && account.email.toLowerCase() === emailInput.toLowerCase());
+
+            if (!approvedAccount) {
+                const pendingRequests = JSON.parse(localStorage.getItem(PENDING_SUBSCRIPTION_REQUESTS_KEY) || '[]');
+                const pendingRequest = pendingRequests.find(account => account.email && account.email.toLowerCase() === emailInput.toLowerCase());
+                if (pendingRequest) {
+                    alert('Your subscription is still waiting for admin approval.');
+                    return;
+                }
+
+                alert('No approved subscription was found for that email yet. Please finish subscription approval first.');
+                return;
+            }
+
+            if (approvedAccount.password && approvedAccount.password !== passwordInput) {
+                alert('The password does not match the approved account.');
+                return;
+            }
+
+            localStorage.setItem('subscriber_session_active', 'true');
+            localStorage.setItem('subscriber_name', approvedAccount.name || approvedAccount.email.split('@')[0].toUpperCase());
+            localStorage.setItem('subscriber_email', approvedAccount.email);
+            window.location.href = 'dashboard.html';
+        }
+
+        function handleRegistrationStep(event) {
+            event.preventDefault();
+            toggleModal('availSubModal');
+            toggleModal('subPaymentModal');
+        }
+
+        async function handleFinalizeSubPaymentRoute(event) {
+            event.preventDefault();
+            const paymentProofInput = document.getElementById('subscriptionPaymentProof');
+            const paymentProofFile = paymentProofInput ? paymentProofInput.files[0] : null;
+
+            if (!paymentProofFile) {
+                alert('Please upload your GCash proof of payment.');
+                return;
+            }
+
+            const readFileAsDataUrl = file => new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+
+            const proofDataUrl = await readFileAsDataUrl(paymentProofFile);
+            const pendingRequests = JSON.parse(localStorage.getItem(PENDING_SUBSCRIPTION_REQUESTS_KEY) || '[]');
+            const pendingRequest = {
+                id: `SUB-${Math.floor(100000 + Math.random() * 900000)}`,
+                name: document.getElementById('subRegName').value.trim(),
+                email: document.getElementById('subRegEmail').value.trim().toLowerCase(),
+                password: document.getElementById('subRegPassword').value,
+                payment_method: 'GCash',
+                proof_image: proofDataUrl,
+                proof_name: paymentProofFile.name,
+                status: 'Pending admin approval',
+                created_at: new Date().toISOString()
+            };
+
+            pendingRequests.unshift(pendingRequest);
+            localStorage.setItem(PENDING_SUBSCRIPTION_REQUESTS_KEY, JSON.stringify(pendingRequests));
+
+            toggleModal('subPaymentModal');
+            toggleModal('subPendingModal');
+            document.getElementById('subPaymentModal').querySelector('form').reset();
+            document.getElementById('availSubModal').querySelector('form').reset();
+        }
+
+        window.addEventListener('click', function(e) {
+            if (!e.target.closest('#serviceDropdownMenu') && !e.target.closest('#timeDropdownMenu') && !e.target.closest('#paymentDropdownMenu')) {
+                const menus = document.querySelectorAll('[id$="DropdownMenu"]');
+                menus.forEach(menu => {
+                    if (menu.previousElementSibling && !menu.previousElementSibling.contains(e.target)) {
+                        menu.classList.add('hidden');
+                    }
+                });
+            }
+        });
+
+        window.addEventListener('storage', function(event) {
+            if (event.key === PENDING_SUBSCRIPTION_REQUESTS_KEY || event.key === APPROVED_SUBSCRIPTION_ACCOUNTS_KEY) {
+                // No live UI on this page needs rerendering, but the listener keeps the flow consistent across tabs.
+            }
+        });
+
+          /* ===================== LANDING PAGE CATALOG FETCH / RENDER =====================
+              Feature: Backend catalog loading with local fallback rendering for cards and dropdown options.
+              Purpose: Shows available services and pricing even when remote data is unavailable.
+          */
+        function fetchAndRenderCatalogServices() {
+            fetch('get_services.php')
+                .then(response => {
+                    if (!response.ok) throw new Error('Network resource data schema array parsing error.');
+                    return response.json();
+                })
+                .then(data => {
+                    if (Array.isArray(data) && data.length > 0) {
+                        masterCatalogServices = data;
+                    } else {
+                        throw new Error('Fallback target trigger needed');
+                    }
+                    renderDOMCatalogs();
+                })
+                .catch(err => {
+                    // Standardized Master Catalog Data Schema Fallback Allocation
+                    masterCatalogServices = [
+                        { name: "Standard Car Wash", price: 250, duration: "30 Mins", desc: "An essential exterior foam cleaning treatment utilizing scratch-free microfiber wash mitts and deep wheel cleaning." },
+                        { name: "Deluxe Car Wash", price: 400, duration: "45 Mins", desc: "Full cabin deep cleaning, sterilization, leather restoration, fabric stain extraction, and anti-bac odor elimination treatments." },
+                        { name: "Premium Car Wash", price: 600, duration: "1 Hour", desc: "Our ultimate preservation suite incorporating full body glass coating protection layers, premium window treatments, and high-gloss wax." },
+                        { name: "Under Chassis Wash", price: 350, duration: "30 Mins", desc: "High-pressure multi-directional undercarriage flush targeting mud, corrosive elements, salt buildup, and road grime." }
+                    ];
+                    renderDOMCatalogs();
+                });
+        }
+
+        function renderDOMCatalogs() {
+            const menuCardsContainer = document.getElementById('index-services-container');
+            const wizardDropdownWrapper = document.getElementById('dropdown-services-wrapper');
+
+            if (menuCardsContainer) menuCardsContainer.innerHTML = '';
+            if (wizardDropdownWrapper) wizardDropdownWrapper.innerHTML = '';
+
+            masterCatalogServices.forEach((service, index) => {
+                // Render Menu Cards
+                if (menuCardsContainer) {
+                    const isPremiumVariant = service.price >= 600;
+                    let cardHTML = '';
+
+                    if (isPremiumVariant) {
+                        cardHTML = `
+                            <div class="border border-dark bg-dark text-light p-8 rounded-3xl flex flex-col justify-between hover:bg-black transition-all hover:shadow-xl">
+                                <div>
+                                    <div class="flex justify-between items-start mb-4">
+                                        <h3 class="text-lg font-bold uppercase tracking-tight">${service.name}</h3>
+                                        <span class="text-sm font-bold text-neutral-200">₱${service.price}</span>
+                                    </div>
+                                    <div class="text-[11px] font-semibold tracking-wider text-neutral-500 uppercase mb-4 bg-neutral-800 px-2.5 py-1 rounded-full inline-block">Duration: ${service.duration}</div>
+                                    <p class="text-neutral-400 text-xs font-light leading-relaxed mb-6">${service.desc}</p>
+                                </div>
+                                <button type="button" onclick="selectServiceDirectly('${service.name}', ${service.price}, '${service.duration}', '${service.name} — ₱${service.price}')" class="w-full text-center text-xs font-bold tracking-widest uppercase bg-light text-dark py-3.5 rounded-full hover:bg-neutral-200 transition-all block shadow-sm">Select Service</button>
+                            </div>
+                        `;
+                    } else {
+                        cardHTML = `
+                            <div class="border border-neutral-200/80 bg-white p-8 rounded-3xl flex flex-col justify-between hover:border-dark transition-all hover:shadow-lg">
+                                <div>
+                                    <div class="flex justify-between items-start mb-4">
+                                        <h3 class="text-lg font-bold uppercase tracking-tight">${service.name}</h3>
+                                        <span class="text-sm font-bold text-neutral-800">₱${service.price}</span>
+                                    </div>
+                                    <div class="text-[11px] font-semibold tracking-wider text-neutral-400 uppercase mb-4 bg-neutral-50 px-2.5 py-1 rounded-full inline-block">Duration: ${service.duration}</div>
+                                    <p class="text-neutral-500 text-xs font-normal leading-relaxed mb-6">${service.desc}</p>
+                                </div>
+                                <button type="button" onclick="selectServiceDirectly('${service.name}', ${service.price}, '${service.duration}', '${service.name} — ₱${service.price}')" class="w-full text-center text-xs font-bold tracking-widest uppercase border border-dark py-3.5 rounded-full hover:bg-dark hover:text-light transition-all block">Select Service</button>
+                            </div>
+                        `;
+                    }
+                    menuCardsContainer.innerHTML += cardHTML;
+                }
+
+                // Render Dynamic Dropdown items inside Wizard Component
+                if (wizardDropdownWrapper) {
+                    const optionButtonHTML = `
+                        <button type="button" onclick="selectCustomItem('${service.name}', ${service.price}, '${service.duration}', '${service.name} — ₱${service.price}')" class="w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors flex justify-between items-center">
+                            <span>${service.name}</span><span class="text-neutral-400 font-bold">₱${service.price}</span>
+                        </button>
+                    `;
+                    wizardDropdownWrapper.innerHTML += optionButtonHTML;
+                }
+            });
+
+            // Auto-initialize standard default configuration indices cleanly
+            if (masterCatalogServices.length > 0) {
+                activeServiceState = masterCatalogServices[0].name;
+                activeServicePrice = masterCatalogServices[0].price;
+                activeServiceDuration = masterCatalogServices[0].duration;
+                document.getElementById('customServiceDisplay').innerText = `${activeServiceState} — ₱${activeServicePrice}`;
+                updateSummary();
+            }
+        }
+
+        window.onload = function() {
+            fetchAndRenderCatalogServices();
+        };
+
