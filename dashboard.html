@@ -113,29 +113,6 @@
                     </div>
                 </div>
 
-                <div class="space-y-6">
-                    <div class="border-b border-neutral-200 pb-3">
-                        <h3 class="text-lg font-bold uppercase tracking-wider text-neutral-400">Your Subscription Menu Guide</h3>
-                    </div>
-                    <div id="dashboard-static-guides" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="bg-white border border-neutral-200 p-6 rounded-2xl shadow-sm">
-                            <h4 class="text-base font-bold text-dark uppercase mb-1">Standard Car Wash</h4>
-                            <p class="text-sm text-neutral-500 font-light leading-relaxed">Essential exterior high-lubricity foam rinse, microfiber wheel cluster scrubbing, and absolute paint safety mapping.</p>
-                        </div>
-                        <div class="bg-white border border-neutral-200 p-6 rounded-2xl shadow-sm">
-                            <h4 class="text-base font-bold text-dark uppercase mb-1">Deluxe Car Wash</h4>
-                            <p class="text-sm text-neutral-500 font-light leading-relaxed">Upgraded application sequence adding specialized spray gloss sealants and lower-chassis salt clearance variables.</p>
-                        </div>
-                        <div class="bg-white border border-neutral-200 p-6 rounded-2xl shadow-sm">
-                            <h4 class="text-base font-bold text-dark uppercase mb-1">Premium Car Wash</h4>
-                            <p class="text-sm text-neutral-500 font-light leading-relaxed">Thorough detailing pre-wash cycle including absolute wheel barrel decon clay treatments and complete cabin vacuum configurations.</p>
-                        </div>
-                        <div class="bg-white border border-neutral-200 p-6 rounded-2xl shadow-sm">
-                            <h4 class="text-base font-bold text-dark uppercase mb-1">Under Chassis Wash</h4>
-                            <p class="text-sm text-neutral-500 font-light leading-relaxed">High-pressure multi-directional undercarriage flush targeting mud, corrosive elements, salt buildup, and road grime.</p>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             <div id="view-booking" class="hidden">
@@ -150,13 +127,13 @@
                         <div class="lg:col-span-7 space-y-8 bg-white border border-neutral-200 p-8 rounded-[2rem] shadow-sm">
 
                             <div class="relative z-30">
-                                <label class="block text-xs font-bold uppercase tracking-wider text-neutral-400 mb-3">1. Select Intended Service Treatment</label>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-neutral-400 mb-3">1. Choose a service</label>
                                 <button type="button" onclick="toggleDashboardDropdown('dashServiceDropdownMenu')" class="w-full bg-white border border-neutral-200 p-4 rounded-full text-sm font-semibold text-left flex justify-between items-center focus:outline-none focus:border-dark transition-all px-6 shadow-sm hover:border-neutral-400">
-                                    <span id="customDashServiceDisplay">Loading Master Catalog...</span>
+                                    <span id="customDashServiceDisplay">Loading services...</span>
                                     <span class="text-neutral-500 text-[10px]">▼</span>
                                 </button>
                                 <div id="dashServiceDropdownMenu" class="absolute left-0 right-0 mt-2 bg-white border border-neutral-200 rounded-[2rem] shadow-xl overflow-hidden hidden z-50 max-h-[280px] overflow-y-auto">
-                                    <div id="dropdown-services-category-title" class="bg-neutral-50/60 px-5 py-2.5 border-b border-neutral-100 text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Available Detailing Tiers</div>
+                                    <div id="dropdown-services-category-title" class="bg-neutral-50/60 px-5 py-2.5 border-b border-neutral-100 text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Basic Car Care</div>
                                     <div id="dash-dropdown-services-wrapper" class="divide-y divide-neutral-100">
                                     </div>
                                 </div>
@@ -170,7 +147,7 @@
                                     </div>
                                     <div class="relative z-20">
                                         <button type="button" onclick="toggleDashboardDropdown('dashTimeDropdownMenu')" class="w-full bg-white border border-neutral-200 p-4 rounded-full text-sm font-semibold text-left flex justify-between items-center focus:outline-none focus:border-dark transition-all px-6 shadow-sm hover:border-neutral-400">
-                                            <span id="customDashTimeDisplay">Select Target Window...</span>
+                                            <span id="customDashTimeDisplay">Choose a time...</span>
                                             <span class="text-neutral-400 text-[10px]">▼</span>
                                         </button>
                                         <div id="dashTimeDropdownMenu" class="absolute left-0 right-0 mt-2 bg-white border border-neutral-200 rounded-[2rem] shadow-xl overflow-hidden hidden z-50 divide-y divide-neutral-100">
@@ -181,21 +158,21 @@
                                         </div>
                                     </div>
                                 </div>
-                                <p id="capacityWarning" class="text-xs text-red-500 font-semibold mt-3 ml-4 hidden">Saturday studio capacity thresholds capped at 16 vehicles maximum.</p>
+                                <p id="capacityWarning" class="text-xs text-red-500 font-semibold mt-3 ml-4 hidden">Saturday bookings are limited to 16 cars.</p>
                             </div>
                         </div>
 
                         <div class="lg:col-span-5 space-y-6">
                             <div class="bg-white border border-neutral-200 p-6 sm:p-8 rounded-[2rem] shadow-sm space-y-4">
-                                <div class="text-xs uppercase tracking-wider text-neutral-400 font-bold border-b border-neutral-200 pb-3 mb-2">Session Authorization</div>
-                                <div class="flex justify-between text-sm font-medium"><span>Selected Service:</span><span id="summaryService" class="font-bold text-dark">—</span></div>
-                                <div class="flex justify-between text-sm font-medium"><span>Target Date:</span><span id="summaryDate" class="font-bold text-dark">—</span></div>
-                                <div class="flex justify-between text-sm font-medium"><span>Reserved Slot:</span><span id="summaryTime" class="font-bold text-dark">—</span></div>
-                                <div class="flex justify-between text-sm font-medium"><span>Estimated Process:</span><span id="summaryDuration" class="font-bold text-dark">—</span></div>
+                                <div class="text-xs uppercase tracking-wider text-neutral-400 font-bold border-b border-neutral-200 pb-3 mb-2">Booking Summary</div>
+                                <div class="flex justify-between text-sm font-medium"><span>Service:</span><span id="summaryService" class="font-bold text-dark">—</span></div>
+                                <div class="flex justify-between text-sm font-medium"><span>Date:</span><span id="summaryDate" class="font-bold text-dark">—</span></div>
+                                <div class="flex justify-between text-sm font-medium"><span>Time:</span><span id="summaryTime" class="font-bold text-dark">—</span></div>
+                                <div class="flex justify-between text-sm font-medium"><span>Duration:</span><span id="summaryDuration" class="font-bold text-dark">—</span></div>
 
                                 <div class="border-t border-dashed border-neutral-300 pt-4 flex justify-between items-center text-sm font-bold text-emerald-700 bg-emerald-50/50 p-3 rounded-xl border border-emerald-100">
-                                    <span>Payment Verification:</span>
-                                    <span id="paymentStatusSummary" class="uppercase font-extrabold tracking-wider text-xs">✓ Covered (VIP Plan)</span>
+                                    <span>Payment:</span>
+                                    <span id="paymentStatusSummary" class="uppercase font-extrabold tracking-wider text-xs">Included in plan</span>
                                 </div>
 
                                 <div class="pt-2">
@@ -212,12 +189,12 @@
            <div id="view-subscription" class="hidden space-y-8">
                 <div class="mb-4">
                     <h3 class="text-3xl font-black uppercase tracking-tight text-dark">Subscription Management </h3>
-                    <p class="text-base text-neutral-400 font-medium mt-1">Review ledger data logs and account status rules.</p>
+                    <p class="text-base text-neutral-400 font-medium mt-1">Check payment history and account status.</p>
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div class="lg:col-span-2 bg-white border border-neutral-200 p-8 rounded-[2rem] shadow-sm space-y-6">
-                        <h4 class="text-xs uppercase tracking-wider text-neutral-400 font-bold border-b border-neutral-100 pb-3">User & Plan Registry</h4>
+                        <h4 class="text-xs uppercase tracking-wider text-neutral-400 font-bold border-b border-neutral-100 pb-3">Member & Plan</h4>
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm">
                             <div>
@@ -229,7 +206,7 @@
                                 <span class="font-bold text-dark text-base">January 15, 2026</span>
                             </div>
                             <div>
-                                <span class="text-xs text-neutral-400 font-medium uppercase tracking-wider block">Last Serviced Appointment</span>
+                                <span class="text-xs text-neutral-400 font-medium uppercase tracking-wider block">Last Visit</span>
                                 <span class="font-bold text-dark text-base">June 18, 2026</span>
                             </div>
                             <div>
@@ -256,7 +233,7 @@
 
                     <div class="bg-white border border-neutral-200 p-8 rounded-[2rem] shadow-sm flex flex-col justify-between space-y-8">
                         <div class="space-y-4">
-                            <h4 class="text-xs uppercase tracking-wider text-neutral-400 font-bold border-b border-neutral-100 pb-3">Ledger Hub</h4>
+                            <h4 class="text-xs uppercase tracking-wider text-neutral-400 font-bold border-b border-neutral-100 pb-3">Payments</h4>
                             <div class="text-sm font-medium text-neutral-500 leading-relaxed">
                                 Access your compiled monthly recurring statement histories, manage active billing cycles, or request custom plan adjustments.
                             </div>
@@ -264,7 +241,7 @@
 
                         <div class="space-y-3">
                             <button onclick="toggleModal('renewalHubModal')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold tracking-widest uppercase py-4 rounded-full transition-all text-center shadow-sm">
-                                Submit Plan Renewal Proof
+                                Upload Payment Proof
                             </button>
                             <button onclick="alert('Under construction!')" class="w-full bg-neutral-50 hover:bg-neutral-100 text-dark border border-neutral-200 text-xs font-bold tracking-widest uppercase py-4 rounded-full transition-all text-center">
                                 View Monthly Invoice
@@ -295,8 +272,7 @@
             <form onsubmit="handleRenewalSubmission(event)" class="space-y-5">
                 <div class="bg-neutral-900 text-light p-5 rounded-2xl border border-neutral-800 space-y-3 shadow-inner">
                     <div class="flex justify-between items-center pb-2 border-b border-neutral-800">
-                        <span class="text-[10px] font-bold uppercase tracking-widest text-neutral-400">GCash Remittance Parameters</span>
-                        <span class="text-[10px] bg-emerald-600 text-white font-extrabold px-2 py-0.5 rounded">Corporate Registry</span>
+                        <span class="text-[10px] font-bold uppercase tracking-widest text-neutral-400">GCash</span>
                     </div>
                     <div class="text-xs space-y-1.5">
                         <div class="flex justify-between"><span class="text-neutral-400">Receiving Name:</span><span class="font-bold text-white">Montage Auto Studio Inc.</span></div>
@@ -309,7 +285,7 @@
                 </div>
 
                 <div class="space-y-2">
-                    <label class="block text-xs font-bold uppercase tracking-wider text-neutral-400">Upload Renewal Proof of Payment</label>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-neutral-400">Upload payment proof</label>
                     <input type="file" id="renewalProofFile" accept="image/*" required class="w-full bg-neutral-50 border border-neutral-200 p-3 rounded-xl text-xs text-dark focus:outline-none focus:border-dark file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:uppercase file:bg-dark file:text-light hover:file:bg-neutral-800 cursor-pointer">
                 </div>
 
@@ -326,20 +302,20 @@
         <div class="bg-white border border-neutral-200 p-8 w-full max-w-md relative rounded-[2rem] shadow-2xl mx-4">
             <button onclick="toggleModal('rescheduleModal')" class="absolute top-5 right-5 text-neutral-400 hover:text-dark text-xs font-bold">✕</button>
             <div class="mb-6">
-                <h3 class="text-xl font-bold uppercase tracking-tight text-dark">Reschedule Session</h3>
-                <p class="text-xs text-neutral-400 font-medium mt-1">Appointment ID: <span id="rescheduleTargetId" class="font-bold font-mono text-dark"></span></p>
+                <h3 class="text-xl font-bold uppercase tracking-tight text-dark">Reschedule Booking</h3>
+                <p class="text-xs text-neutral-400 font-medium mt-1">Booking ID: <span id="rescheduleTargetId" class="font-bold font-mono text-dark"></span></p>
             </div>
 
             <form onsubmit="processRescheduleValidation(event)" class="space-y-4">
                 <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-neutral-400 mb-2">Select Alternative Date</label>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-neutral-400 mb-2">Choose a new date</label>
                     <input type="date" id="reschDate" required class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-sm font-semibold focus:outline-none focus:border-dark transition-all px-5" onchange="handleDateChange('reschCapacityWarning')">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-neutral-400 mb-2">Select Alternative Time</label>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-neutral-400 mb-2">Choose a new time</label>
                     <div class="relative z-50">
                         <button type="button" onclick="toggleDashboardDropdown('reschTimeDropdownMenu')" class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-sm font-semibold text-left flex justify-between items-center focus:outline-none focus:border-dark transition-all px-5 shadow-sm hover:border-neutral-400">
-                            <span id="customReschTimeDisplay">Select Time...</span>
+                            <span id="customReschTimeDisplay">Choose a time...</span>
                             <span class="text-neutral-500 text-[10px]">▼</span>
                         </button>
                         <div id="reschTimeDropdownMenu" class="absolute left-0 right-0 mt-2 bg-white border border-neutral-200 rounded-[2rem] shadow-xl overflow-hidden hidden divide-y divide-neutral-100">
@@ -351,7 +327,7 @@
                         </div>
                         <input type="hidden" id="reschTime" required>
                     </div>
-                    <p id="reschCapacityWarning" class="text-[11px] text-red-500 font-semibold mt-2 ml-4 hidden">Saturday constraints limit twin-bay capacity allocation thresholds.</p>
+                    <p id="reschCapacityWarning" class="text-[11px] text-red-500 font-semibold mt-2 ml-4 hidden">Saturday bookings are limited to 16 cars.</p>
                 </div>
 
                 <div class="pt-2">
@@ -570,7 +546,7 @@
             const targetTime = document.getElementById('reschTime').value;
 
             if (!targetTime) {
-                alert("Please select an alternative hourly window from the dropdown checklist matrix.");
+                alert("Please select another time slot from the list.");
                 return;
             }
 
@@ -629,7 +605,7 @@
             const dateVal = document.getElementById('bookingDate').value;
 
             if (!activeDashTimeState) {
-                alert("Please select a target booking window before confirmation step routing.");
+                alert("Please select a booking time before confirming.");
                 return;
             }
 
@@ -663,7 +639,7 @@
             event.preventDefault();
             const fileCtrl = document.getElementById('renewalProofFile');
             if(fileCtrl && fileCtrl.files.length > 0) {
-                alert("Renewal Verification Success!\n\nOur bookkeeping ledger team is audit-tracking your uploaded screenshot transaction. Your current expiration matrix has been extended safely.");
+                alert("Renewal proof submitted. Your plan has been extended.");
                 toggleModal('renewalHubModal');
             }
         }
@@ -745,8 +721,10 @@
         }
 
         function renderSynchronizedComponents() {
+            const menuCardsContainer = document.getElementById('dashboard-services-container');
             const dropdownWrapper = document.getElementById('dash-dropdown-services-wrapper');
             const categoryHeader = document.getElementById('dropdown-services-category-title');
+            if (menuCardsContainer) menuCardsContainer.innerHTML = '';
             if(!dropdownWrapper) return;
 
             dropdownWrapper.innerHTML = '';
@@ -755,10 +733,47 @@
 
             if(categoryHeader) {
                 categoryHeader.innerText = isSubscribedProfile ?
-                    "Basic Car Care (Subscribers: Fully Covered)" : "Available Treatment Pricing Suite";
+                    "Basic Car Care (Subscribers: Fully Covered)" : "Basic Car Care";
             }
 
             masterCatalogPayload.forEach(service => {
+                if (menuCardsContainer) {
+                    const isPremiumVariant = service.price >= 600;
+                    let cardHTML = '';
+
+                    if (isPremiumVariant) {
+                        cardHTML = `
+                            <div class="border border-dark bg-dark text-light p-8 rounded-3xl flex flex-col justify-between hover:bg-black transition-all hover:shadow-xl">
+                                <div>
+                                    <div class="flex justify-between items-start mb-4">
+                                        <h3 class="text-lg font-bold uppercase tracking-tight">${service.name}</h3>
+                                        <span class="text-sm font-bold text-neutral-200">₱${service.price}</span>
+                                    </div>
+                                    <div class="text-[11px] font-semibold tracking-wider text-neutral-500 uppercase mb-4 bg-neutral-800 px-2.5 py-1 rounded-full inline-block">Duration: ${service.duration}</div>
+                                    <p class="text-neutral-400 text-xs font-light leading-relaxed mb-6">${service.desc}</p>
+                                </div>
+                                <button type="button" onclick="selectDashboardServiceItem('${service.name}', '${service.duration}', '${service.name} — ₱${service.price}')" class="w-full text-center text-xs font-bold tracking-widest uppercase bg-light text-dark py-3.5 rounded-full hover:bg-neutral-200 transition-all block shadow-sm">Select Service</button>
+                            </div>
+                        `;
+                    } else {
+                        cardHTML = `
+                            <div class="border border-neutral-200/80 bg-white p-8 rounded-3xl flex flex-col justify-between hover:border-dark transition-all hover:shadow-lg">
+                                <div>
+                                    <div class="flex justify-between items-start mb-4">
+                                        <h3 class="text-lg font-bold uppercase tracking-tight">${service.name}</h3>
+                                        <span class="text-sm font-bold text-neutral-800">₱${service.price}</span>
+                                    </div>
+                                    <div class="text-[11px] font-semibold tracking-wider text-neutral-400 uppercase mb-4 bg-neutral-50 px-2.5 py-1 rounded-full inline-block">Duration: ${service.duration}</div>
+                                    <p class="text-neutral-500 text-xs font-normal leading-relaxed mb-6">${service.desc}</p>
+                                </div>
+                                <button type="button" onclick="selectDashboardServiceItem('${service.name}', '${service.duration}', '${service.name} — ₱${service.price}')" class="w-full text-center text-xs font-bold tracking-widest uppercase border border-dark py-3.5 rounded-full hover:bg-dark hover:text-light transition-all block">Select Service</button>
+                            </div>
+                        `;
+                    }
+
+                    menuCardsContainer.innerHTML += cardHTML;
+                }
+
                 // Client-side subscriber mutation conversion check
                 const displayPriceTag = isSubscribedProfile ? "₱0 (Included in Plan)" : `₱${service.price}`;
                 const badgeStyleClass = isSubscribedProfile ? "text-emerald-600 bg-emerald-50 border border-emerald-100" : "text-neutral-500 bg-neutral-50";

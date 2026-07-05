@@ -70,7 +70,7 @@
             <div>
                 <span class="text-xs font-bold tracking-widest uppercase text-neutral-400 block mb-2">Our Facility</span>
                 <h2 class="text-3xl font-black tracking-tight uppercase mb-6">Built For Uncompromising Efficiency</h2>
-                <p class="text-neutral-600 font-light text-sm leading-relaxed mb-8">Located in Banilad, Mandaue City, our specialized facility operates a custom twin-bay setup engineered to comfortably service up to 18 vehicles a day on weekdays and 16 on Saturdays. By pre-scheduling your visit online, our crew custom-blends detailing elements and allocates manpower prior to your arrival, ensuring precision treatment without waiting lines.</p>
+                <p class="text-neutral-600 font-light text-sm leading-relaxed mb-8">Located in Banilad, Mandaue City, our studio runs on a two-bay setup that handles up to 18 vehicles on weekdays and 16 on Saturdays. Booking ahead helps our team prepare before you arrive and keeps your visit moving smoothly.</p>
                 <div class="grid grid-cols-2 gap-4 text-center">
                     <div class="border border-neutral-200 p-5 rounded-2xl bg-neutral-50/50">
                         <div class="text-2xl font-bold tracking-tight">2 BAYS</div>
@@ -93,7 +93,7 @@
         <div class="max-w-7xl mx-auto px-6">
             <div class="text-center max-w-2xl mx-auto mb-16">
                 <span class="text-xs font-bold tracking-widest uppercase text-neutral-400 block mb-2">Service Selection</span>
-                <h2 class="text-3xl font-black tracking-tight uppercase">Select Treatment Tier</h2>
+                <h2 class="text-3xl font-black tracking-tight uppercase">Choose a Service</h2>
             </div>
 
             <div id="index-services-container" class="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -112,13 +112,13 @@
                 <div class="relative z-10 max-w-xl">
                     <span class="text-xs font-bold tracking-widest text-neutral-400 block mb-2">★ JOIN THE CLUB: UNLIMITED VIP MEMBERSHIP</span>
                     <h2 class="text-3xl font-black uppercase tracking-tight mb-4">₱1,500 <span class="text-sm font-normal text-neutral-500">/ Month</span></h2>
-                    <p class="text-neutral-400 text-sm font-light mb-8 leading-relaxed">To satisfy consistent upkeep, unlock unlimited cleanings with recurring flat monthly fees.</p>
+                    <p class="text-neutral-400 text-sm font-light mb-8 leading-relaxed">Get unlimited cleanings for a fixed monthly fee.</p>
                     <ul class="space-y-3 text-xs text-neutral-300 font-normal mb-8">
                         <li class="flex items-center">✓ Enjoy unlimited access to our signature Standard Car Wash package all month long</li>
                         <li class="flex items-center">✓ Benefit from an exclusive 15% discount on all advanced specialized detailing services</li>
                         <li class="flex items-center">✓ Lock in priority scheduling privileges during high-demand peak weekend studio hours</li>
                     </ul>
-                    <button onclick="toggleModal('availSubModal')" class="bg-light text-dark font-bold text-xs tracking-widest uppercase px-6 py-3.5 rounded-full hover:bg-neutral-200 transition-all shadow-sm">Avail Subscription Now</button>
+                    <button onclick="toggleModal('availSubModal')" class="bg-light text-dark font-bold text-xs tracking-widest uppercase px-6 py-3.5 rounded-full hover:bg-neutral-200 transition-all shadow-sm">Get Subscription</button>
                 </div>
             </div>
         </div>
@@ -142,7 +142,7 @@
                         </div>
 
                         <div class="relative z-30">
-                            <label class="block text-xs font-bold uppercase tracking-wider text-neutral-400 mb-2">1. Choose Intended Service Treatment</label>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-neutral-400 mb-2">1. Choose a service</label>
                             <button type="button" onclick="toggleCustomDropdown('serviceDropdownMenu')" class="w-full bg-white border border-neutral-200 p-3.5 rounded-full text-xs font-semibold text-left flex justify-between items-center focus:outline-none focus:border-dark transition-all px-5">
                                 <span id="customServiceDisplay">Standard Car Wash — ₱250</span>
                                 <span class="text-neutral-500 text-[10px]">▼</span>
@@ -164,7 +164,7 @@
                                 <div class="relative z-20">
                                     <div class="relative w-full text-left group">
                                         <button type="button" onclick="toggleCustomDropdown('timeDropdownMenu')" class="w-full flex items-center justify-between bg-white text-dark border border-neutral-200 p-4 rounded-full text-xs font-bold uppercase tracking-wider focus:outline-none focus:border-dark transition-all duration-200 shadow-sm hover:border-neutral-400">
-                                            <span id="customTimeDisplay">Time Slot...</span>
+                                            <span id="customTimeDisplay">Choose a time...</span>
                                             <span class="text-neutral-400 text-[10px] ml-2 group-hover:text-dark transition-colors">▼</span>
                                         </button>
                                         <div id="timeDropdownMenu" class="absolute left-0 right-0 mt-2 bg-white border border-neutral-200 rounded-[2rem] shadow-xl overflow-hidden hidden z-50 divide-y divide-neutral-100">
@@ -181,27 +181,27 @@
                         </div>
 
                         <div class="space-y-4 pt-6 border-t border-neutral-100">
-                            <label class="block text-xs font-bold uppercase tracking-wider text-neutral-400">3. Let us know who you are!</label>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-neutral-400">3. Your details</label>
                             <input type="text" id="custName" placeholder="Full Name" required class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-medium focus:outline-none focus:border-dark focus:bg-white transition-all px-5">
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <input type="tel" id="custPhone" placeholder="Mobile Phone (Required)" required class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-medium focus:outline-none focus:border-dark focus:bg-white transition-all px-5">
-                                    <p id="phoneError" class="text-[10px] text-red-500 font-semibold mt-1.5 ml-3 hidden">Identity contact digits required.</p>
+                                    <p id="phoneError" class="text-[10px] text-red-500 font-semibold mt-1.5 ml-3 hidden">Phone number is required.</p>
                                 </div>
                             </div>
 
                             <div id="payment-section" class="pt-4">
                                 <div class="bg-neutral-900 text-light p-6 rounded-[2rem] border border-neutral-800 shadow-xl space-y-4">
                                     <div class="flex justify-between items-center pb-2 border-b border-neutral-800">
-                                        <span class="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Official GCash Channel</span>
-                                        <span class="text-[10px] bg-blue-600 text-white font-bold px-2 py-0.5 rounded">Instant Verification</span>
+                                        <span class="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Payment Details</span>
+    
                                     </div>
                                     <div class="text-xs space-y-1">
-                                        <div class="flex justify-between"><span class="text-neutral-400">Receiving Name:</span><span class="font-bold text-white">Montage Auto Studio</span></div>
-                                        <div class="flex justify-between"><span class="text-neutral-400">Mobile Number:</span><span class="font-bold text-white font-mono">0917-XXX-XXXX</span></div>
+                                        <div class="flex justify-between"><span class="text-neutral-400">Account Name:</span><span class="font-bold text-white">Montage Auto Studio</span></div>
+                                        <div class="flex justify-between"><span class="text-neutral-400">Number:</span><span class="font-bold text-white font-mono">0917-XXX-XXXX</span></div>
                                     </div>
                                     <div class="pt-2">
-                                        <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-2">Upload Proof of Payment / Transaction Screenshot</label>
+                                        <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-2">Upload payment proof</label>
                                         <input type="file" id="paymentProof" accept="image/*" required class="w-full bg-neutral-800 border border-neutral-700 p-3 rounded-xl text-xs text-neutral-300 focus:outline-none focus:border-neutral-500 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:uppercase file:bg-light file:text-dark hover:file:bg-neutral-200 cursor-pointer">
                                     </div>
                                 </div>
@@ -212,22 +212,22 @@
 
                     <div class="lg:col-span-5 bg-neutral-50 p-6 sm:p-8 rounded-2xl border border-neutral-200/60 flex flex-col justify-between">
                         <div>
-                            <div class="text-xs font-bold uppercase tracking-wider text-neutral-400 mb-6 pb-2 border-b border-neutral-200">Session Breakdown</div>
+                            <div class="text-xs font-bold uppercase tracking-wider text-neutral-400 mb-6 pb-2 border-b border-neutral-200">Booking Summary</div>
                             <div class="space-y-4 text-xs">
                                 <div class="flex justify-between items-center">
-                                    <span class="text-neutral-500 font-medium">Selected Tier:</span>
+                                    <span class="text-neutral-500 font-medium">Service:</span>
                                     <span id="summaryService" class="font-bold text-dark">Standard Car Wash</span>
                                 </div>
                                 <div class="flex justify-between items-center">
-                                    <span class="text-neutral-500 font-medium">Date Target:</span>
+                                    <span class="text-neutral-500 font-medium">Date:</span>
                                     <span id="summaryDate" class="font-bold text-dark">—</span>
                                 </div>
                                 <div class="flex justify-between items-center">
-                                    <span class="text-neutral-500 font-medium">Allocated Hour:</span>
+                                    <span class="text-neutral-500 font-medium">Time:</span>
                                     <span id="summaryTime" class="font-bold text-dark">—</span>
                                 </div>
                                 <div class="flex justify-between items-center">
-                                    <span class="text-neutral-500 font-medium">Expected Frame:</span>
+                                    <span class="text-neutral-500 font-medium">Duration:</span>
                                     <span id="summaryDuration" class="font-bold text-dark">30 Mins</span>
                                 </div>
                                 <div class="border-t border-dashed border-neutral-300 my-4 pt-4 flex justify-between items-center text-sm font-bold">
@@ -261,7 +261,7 @@
                 <div class="text-[11px] font-bold tracking-widest uppercase text-neutral-500 mb-4">Quick Links</div>
                 <ul class="space-y-2.5 font-medium text-neutral-400 uppercase tracking-wider text-[11px]">
                     <li><a href="#about" class="hover:text-light transition-colors">Our Workspace</a></li>
-                    <li><a href="#menu" class="hover:text-light transition-colors">Treatment Tiers</a></li>
+                    <li><a href="#menu" class="hover:text-light transition-colors">Services</a></li>
                 </ul>
             </div>
             <div>
@@ -310,9 +310,9 @@
             </div>
             <form onsubmit="handleRegistrationStep(event)" class="space-y-4">
                 <input type="text" id="subRegName" placeholder="Full Name" required class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-medium px-5 focus:outline-none focus:border-dark">
-                <input type="email" placeholder="Primary Email Address" required class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-medium px-5 focus:outline-none focus:border-dark">
-                <input type="password" placeholder="Password" required class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-medium px-5 focus:outline-none focus:border-dark">
-                <button type="submit" class="w-full bg-dark text-light text-xs font-bold tracking-widest uppercase py-3.5 rounded-full shadow-sm">Proceed to Payment Gateway ➔</button>
+                <input type="email" id="subRegEmail" placeholder="Primary Email Address" required class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-medium px-5 focus:outline-none focus:border-dark">
+                <input type="password" id="subRegPassword" placeholder="Password" required class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-medium px-5 focus:outline-none focus:border-dark">
+                <button type="submit" class="w-full bg-dark text-light text-xs font-bold tracking-widest uppercase py-3.5 rounded-full shadow-sm">Continue to GCash Payment ➔</button>
             </form>
         </div>
     </div>
@@ -321,22 +321,35 @@
         <div class="bg-white border border-neutral-200/80 p-8 w-full max-w-sm relative rounded-[2rem] shadow-2xl mx-4">
             <button onclick="toggleModal('subPaymentModal')" type="button" class="absolute top-5 right-5 text-neutral-400 hover:text-dark text-xs font-bold">✕</button>
             <div class="text-center mb-6">
-                <h3 class="text-lg font-bold uppercase tracking-tight">Payment Verification</h3>
-                <p class="text-xs text-neutral-400 font-normal mt-1">Step 2 of 2: Complete authorization</p>
+                <h3 class="text-lg font-bold uppercase tracking-tight">Payment Review</h3>
+                <p class="text-xs text-neutral-400 font-normal mt-1">Step 2 of 2: GCash proof only</p>
             </div>
             <div class="bg-neutral-50 p-4 rounded-xl border border-neutral-200 mb-6 text-xs space-y-2">
-                <div class="flex justify-between font-medium"><span>Plan Allocation:</span><span class="font-bold">Unlimited VIP Club Plan</span></div>
+                <div class="flex justify-between font-medium"><span>Payment Method:</span><span class="font-bold">GCash only</span></div>
+                <div class="flex justify-between font-medium"><span>Plan:</span><span class="font-bold">Unlimited VIP Club Plan</span></div>
                 <div class="border-t border-neutral-200 pt-2 flex justify-between font-bold text-sm"><span>Total Due:</span><span>₱1,500.00</span></div>
             </div>
             <form onsubmit="handleFinalizeSubPaymentRoute(event)" class="space-y-4">
-                <div class="relative">
-                    <select required class="w-full appearance-none bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-semibold focus:outline-none focus:border-dark pr-10">
-                        <option value="E-Wallet">E-Wallet (GCash / Maya)</option>
-                    </select>
-                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-neutral-500">▼</div>
+                <div>
+                    <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-2">Upload GCash proof of payment</label>
+                    <input type="file" id="subscriptionPaymentProof" accept="image/*" required class="w-full bg-neutral-50 border border-neutral-200 p-3 rounded-xl text-xs text-dark focus:outline-none focus:border-dark file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:uppercase file:bg-dark file:text-light hover:file:bg-neutral-800 cursor-pointer">
                 </div>
-                <button type="submit" class="w-full bg-dark text-light text-xs font-bold tracking-widest uppercase py-3.5 rounded-full shadow-sm">Authorize Plan Activation</button>
+                <button type="submit" class="w-full bg-dark text-light text-xs font-bold tracking-widest uppercase py-3.5 rounded-full shadow-sm">Submit Payment</button>
             </form>
+        </div>
+    </div>
+
+    <div id="subPendingModal" class="fixed inset-0 z-50 flex items-center justify-center bg-dark/60 backdrop-blur-sm hidden">
+        <div class="bg-white p-8 w-full max-w-md relative rounded-[2rem] shadow-2xl mx-4 border border-neutral-200">
+            <button onclick="toggleModal('subPendingModal')" type="button" class="absolute top-5 right-5 text-neutral-400 hover:text-dark text-xs font-bold">✕</button>
+            <div class="text-center space-y-4">
+                <div class="mx-auto w-14 h-14 rounded-full bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700 text-xl font-black">!</div>
+                <div>
+                    <h3 class="text-lg font-bold uppercase tracking-tight">Waiting for Review</h3>
+                    <p class="text-xs text-neutral-500 font-normal mt-2 leading-relaxed">Your GCash proof has been sent. Please wait for email verification. The account will be created only after admin approval.</p>
+                </div>
+                <button onclick="toggleModal('subPendingModal')" type="button" class="w-full bg-dark text-light text-xs font-bold tracking-widest uppercase py-3.5 rounded-full shadow-sm">Okay</button>
+            </div>
         </div>
     </div>
 
@@ -350,6 +363,8 @@
            Purpose: Defines the constraints used across the public scheduling experience.
         */
         const GLOBAL_BAY_CAPACITY_CEILING = 2; // Maximum overlapping cars permitted per slot configuration
+        const PENDING_SUBSCRIPTION_REQUESTS_KEY = 'montage_subscription_requests';
+        const APPROVED_SUBSCRIPTION_ACCOUNTS_KEY = 'montage_approved_subscribers';
 
         // Master Catalog Collection Schema map matching specifications exactly
         let masterCatalogServices = [];
@@ -467,7 +482,7 @@
                 warningElement.innerText = "Selected time interval spans cross-slots exceeding our global bay capacity.";
                 warningElement.classList.remove('hidden');
             } else if (selectedDate && new Date(selectedDate).getUTCDay() === 6) {
-                warningElement.innerText = "Saturday studio operational processing rules apply (16 cars maximum limit).";
+                warningElement.innerText = "Saturday bookings are limited to 16 cars.";
                 warningElement.classList.remove('hidden');
             } else {
                 warningElement.classList.add('hidden');
@@ -530,7 +545,7 @@
             currentTimelineLoadRegistry[selectedDate][activeTimeState] = (currentTimelineLoadRegistry[selectedDate][activeTimeState] || 0) + 1;
             localStorage.setItem('montage_timeline_registry', JSON.stringify(currentTimelineLoadRegistry));
 
-            alert(`Printing Invoice.... \n\nReference ID Token: MTG-${Math.floor(100000 + Math.random() * 900000)}\n\nGCash Payment Proof recorded for studio audit review.`);
+            alert(`Booking submitted.\n\nReference ID: MTG-${Math.floor(100000 + Math.random() * 900000)}\n\nPayment proof recorded.`);
             document.getElementById('wizardForm').reset();
 
             activeTimeState = "";
@@ -553,9 +568,29 @@
             }
 
             toggleModal('loginModal');
-            const fallbackName = emailInput.includes('@') ? emailInput.split('@')[0].toUpperCase() : emailInput.toUpperCase();
+            const approvedAccounts = JSON.parse(localStorage.getItem(APPROVED_SUBSCRIPTION_ACCOUNTS_KEY) || '[]');
+            const approvedAccount = approvedAccounts.find(account => account.email && account.email.toLowerCase() === emailInput.toLowerCase());
+
+            if (!approvedAccount) {
+                const pendingRequests = JSON.parse(localStorage.getItem(PENDING_SUBSCRIPTION_REQUESTS_KEY) || '[]');
+                const pendingRequest = pendingRequests.find(account => account.email && account.email.toLowerCase() === emailInput.toLowerCase());
+                if (pendingRequest) {
+                    alert('Your subscription is still waiting for admin approval.');
+                    return;
+                }
+
+                alert('No approved subscription was found for that email yet. Please finish subscription approval first.');
+                return;
+            }
+
+            if (approvedAccount.password && approvedAccount.password !== passwordInput) {
+                alert('The password does not match the approved account.');
+                return;
+            }
+
             localStorage.setItem('subscriber_session_active', 'true');
-            localStorage.setItem('subscriber_name', fallbackName);
+            localStorage.setItem('subscriber_name', approvedAccount.name || approvedAccount.email.split('@')[0].toUpperCase());
+            localStorage.setItem('subscriber_email', approvedAccount.email);
             window.location.href = 'dashboard.html';
         }
 
@@ -565,16 +600,44 @@
             toggleModal('subPaymentModal');
         }
 
-        function handleFinalizeSubPaymentRoute(event) {
+        async function handleFinalizeSubPaymentRoute(event) {
             event.preventDefault();
+            const paymentProofInput = document.getElementById('subscriptionPaymentProof');
+            const paymentProofFile = paymentProofInput ? paymentProofInput.files[0] : null;
+
+            if (!paymentProofFile) {
+                alert('Please upload your GCash proof of payment.');
+                return;
+            }
+
+            const readFileAsDataUrl = file => new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+
+            const proofDataUrl = await readFileAsDataUrl(paymentProofFile);
+            const pendingRequests = JSON.parse(localStorage.getItem(PENDING_SUBSCRIPTION_REQUESTS_KEY) || '[]');
+            const pendingRequest = {
+                id: `SUB-${Math.floor(100000 + Math.random() * 900000)}`,
+                name: document.getElementById('subRegName').value.trim(),
+                email: document.getElementById('subRegEmail').value.trim().toLowerCase(),
+                password: document.getElementById('subRegPassword').value,
+                payment_method: 'GCash',
+                proof_image: proofDataUrl,
+                proof_name: paymentProofFile.name,
+                status: 'Pending admin approval',
+                created_at: new Date().toISOString()
+            };
+
+            pendingRequests.unshift(pendingRequest);
+            localStorage.setItem(PENDING_SUBSCRIPTION_REQUESTS_KEY, JSON.stringify(pendingRequests));
+
             toggleModal('subPaymentModal');
-
-            const registeredName = document.getElementById('subRegName').value || 'VIP Client';
-            localStorage.setItem('subscriber_session_active', 'true');
-            localStorage.setItem('subscriber_name', registeredName);
-
-            alert('Membership Activated Successfully!');
-            window.location.href = 'dashboard.html';
+            toggleModal('subPendingModal');
+            document.getElementById('subPaymentModal').querySelector('form').reset();
+            document.getElementById('availSubModal').querySelector('form').reset();
         }
 
         window.addEventListener('click', function(e) {
@@ -585,6 +648,12 @@
                         menu.classList.add('hidden');
                     }
                 });
+            }
+        });
+
+        window.addEventListener('storage', function(event) {
+            if (event.key === PENDING_SUBSCRIPTION_REQUESTS_KEY || event.key === APPROVED_SUBSCRIPTION_ACCOUNTS_KEY) {
+                // No live UI on this page needs rerendering, but the listener keeps the flow consistent across tabs.
             }
         });
 
