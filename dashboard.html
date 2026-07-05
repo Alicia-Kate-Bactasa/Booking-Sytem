@@ -44,6 +44,9 @@
                     <button onclick="switchView('subscription')" id="nav-subscription" class="w-full flex items-center space-x-3 hover:bg-neutral-900 hover:text-white p-4 rounded-full transition-all text-left text-neutral-400">
                         <span></span> <span>Subscription Status</span>
                     </button>
+                    <button onclick="toggleModal('feedbackModal')" class="w-full flex items-center space-x-3 hover:bg-neutral-900 hover:text-white p-4 rounded-full transition-all text-left text-neutral-400 focus:outline-none">
+                        <span></span> <span>Submit Feedback</span>
+                    </button>
                 </nav>
             </div>
 
@@ -361,6 +364,58 @@
                     </button>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Feedback Modal -->
+    <div id="feedbackModal" class="fixed inset-0 z-50 flex items-center justify-center bg-dark/60 backdrop-blur-sm hidden">
+        <div class="bg-white p-8 w-full max-w-md relative rounded-[2rem] shadow-2xl mx-4 border border-neutral-200">
+            <button onclick="toggleModal('feedbackModal')" type="button" class="absolute top-5 right-5 text-neutral-400 hover:text-dark text-xs font-bold focus:outline-none">✕</button>
+            <div class="text-center mb-6">
+                <h3 class="text-lg font-bold uppercase tracking-tight text-dark">Customer Feedback</h3>
+                <p class="text-xs text-neutral-400 font-normal mt-1 leading-relaxed">We value your opinion. Let us know about your experience.</p>
+            </div>
+            <form id="feedbackForm" onsubmit="submitCustomerFeedback(event)" class="space-y-4">
+                <div>
+                    <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1.5">Your Name</label>
+                    <input type="text" id="feedbackName" required class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-semibold focus:outline-none focus:border-dark px-5">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1.5">Booking ID (Optional)</label>
+                        <input type="text" id="feedbackBookingId" placeholder="MTG-XXXXXX" class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-semibold focus:outline-none focus:border-dark px-5">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1.5">Service</label>
+                        <select id="feedbackService" required class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-semibold focus:outline-none focus:border-dark px-5 cursor-pointer">
+                            <option value="Standard Car Wash">Standard Car Wash</option>
+                            <option value="Deluxe Car Wash">Deluxe Car Wash</option>
+                            <option value="Premium Car Wash">Premium Car Wash</option>
+                            <option value="Under Chassis Wash">Under Chassis Wash</option>
+                            <option value="Complete Interior Detailing">Complete Detailing</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1.5">Rating (1 to 4 Stars)</label>
+                    <div class="flex items-center space-x-3 bg-neutral-50 border border-neutral-200 p-3.5 rounded-full justify-center">
+                        <button type="button" onclick="setFeedbackRating(1)" class="rating-star text-amber-500 text-lg hover:scale-110 transition-transform">★</button>
+                        <button type="button" onclick="setFeedbackRating(2)" class="rating-star text-amber-500 text-lg hover:scale-110 transition-transform">★</button>
+                        <button type="button" onclick="setFeedbackRating(3)" class="rating-star text-amber-500 text-lg hover:scale-110 transition-transform">★</button>
+                        <button type="button" onclick="setFeedbackRating(4)" class="rating-star text-amber-500 text-lg hover:scale-110 transition-transform">★</button>
+                    </div>
+                    <input type="hidden" id="feedbackRating" value="4" required>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1.5">Comments</label>
+                    <textarea id="feedbackComments" required placeholder="Write your review here..." class="w-full bg-neutral-50 border border-neutral-200 p-4 rounded-[1.5rem] text-xs font-medium focus:outline-none focus:border-dark h-24 resize-none"></textarea>
+                </div>
+
+                <button type="submit" class="w-full bg-dark text-light text-xs font-bold tracking-widest uppercase py-3.5 rounded-full border border-dark hover:bg-neutral-800 shadow-sm transition-all focus:outline-none">Submit Feedback</button>
+            </form>
         </div>
     </div>
 

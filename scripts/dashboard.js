@@ -6,18 +6,44 @@
            Feature: Active appointments, past history, and counters for completed sessions.
            Purpose: Supplies the dashboard with the member's booking records and summary metrics.
         */
-        let currentAppointments = [
-            { id: "MTG-847291", service: "Standard Car Wash", date: "2026-07-14", time: "10:00 AM - 11:00 AM" }
-        ];
-
-        let historyAppointments = [
-            { id: "MTG-736215", service: "Premium Car Wash", date: "2026-06-18", time: "09:00 AM - 10:30 AM" },
-            { id: "MTG-412985", service: "Standard Car Wash", date: "2026-05-12", time: "02:00 PM - 02:45 PM" }
-        ];
-
+        let currentAppointments = [];
+        let historyAppointments = [];
         let baseCompletedAppointmentsCount = 14;
         let selectedRescheduleId = null;
         let activeSubTabState = "active";
+
+        function loadSubscriberAppointments(activeProfileName) {
+            let data = localStorage.getItem('montage_appointments');
+            let allAppointments = [];
+            
+            const initialApps = [
+                { id: "MTG-849201", type: "pending", service: "Complete Interior Detailing", date: "2026-07-06", time: "09:00 AM", client: "Alicia Kate Bactasa", staff: "Unassigned", userType: "subscriber" },
+                { id: "MTG-102554", type: "pending", service: "Standard Car Wash", date: "2026-07-06", time: "11:00 AM", client: "Roberto Gomez", staff: "Mark Santos", userType: "regular" },
+                { id: "MTG-736215", type: "completed", service: "Premium Car Wash", date: "2026-06-18", time: "09:00 AM", client: "VIP Member", staff: "John Doe", userType: "subscriber" },
+                { id: "MTG-412985", type: "completed", service: "Standard Car Wash", date: "2026-05-12", time: "02:00 PM", client: "VIP Member", staff: "Mark Santos", userType: "subscriber" },
+                { id: "MTG-903821", type: "cancelled", service: "Deluxe Car Wash", date: "2026-06-25", time: "03:00 PM", client: "Kyle Kenner", staff: "Cancelled", userType: "regular" },
+                { id: "MTG-847291", type: "pending", service: "Standard Car Wash", date: "2026-07-14", time: "10:00 AM - 11:00 AM", client: "Alicia Kate Bactasa", staff: "John Doe", userType: "subscriber" }
+            ];
+
+            if (!data) {
+                localStorage.setItem('montage_appointments', JSON.stringify(initialApps));
+                allAppointments = initialApps;
+            } else {
+                allAppointments = JSON.parse(data);
+            }
+
+            const cleanProfileName = activeProfileName.trim().toLowerCase();
+            const filtered = allAppointments.filter(app => {
+                const client = (app.client || '').trim().toLowerCase();
+                return client === cleanProfileName || 
+                       (cleanProfileName === 'vip member' && client.includes('vip')) ||
+                       cleanProfileName.includes(client) || 
+                       client.includes(cleanProfileName);
+            });
+
+            currentAppointments = filtered.filter(app => app.type === 'pending');
+            historyAppointments = filtered.filter(app => app.type === 'completed' || app.type === 'cancelled');
+        }
 
           /* ===================== DASHBOARD SYNC STATE =====================
               Feature: Remote or fallback service catalog payload used by booking dropdowns and cards.
@@ -60,12 +86,11 @@
             if (tabId === 'active') {
                 activeBtn.className = "text-xs font-bold uppercase tracking-wider px-5 py-2 rounded-full bg-white text-dark shadow-sm transition-all";
                 historyBtn.className = "text-xs font-semibold uppercase tracking-wider px-5 py-2 rounded-full text-neutral-500 hover:text-dark transition-all";
-                if (actionsHeader) actionsHeader.classList.remove('hidden');
             } else {
                 historyBtn.className = "text-xs font-bold uppercase tracking-wider px-5 py-2 rounded-full bg-white text-dark shadow-sm transition-all";
                 activeBtn.className = "text-xs font-semibold uppercase tracking-wider px-5 py-2 rounded-full text-neutral-500 hover:text-dark transition-all";
-                if (actionsHeader) actionsHeader.classList.add('hidden');
             }
+            if (actionsHeader) actionsHeader.classList.remove('hidden'); // Always keep it visible since history has a "Leave Feedback" action
 
             renderAppointmentsTable();
         }
@@ -118,7 +143,9 @@
                                     ✓ Completed
                                 </span>
                             </td>
-                            <td class="p-5 text-right text-neutral-400 italic text-xs font-medium">Archived</td>
+                            <td class="p-5 text-right space-x-2">
+                                <button onclick="openFeedbackForBooking('${app.id}', '${app.service}')" class="bg-neutral-100 border border-neutral-200 px-4 py-2 rounded-full font-bold text-xs hover:bg-dark hover:text-light transition-all">Leave Feedback</button>
+                            </td>
                         </tr>`;
                 });
             }
@@ -189,18 +216,32 @@
                 return;
             }
 
-            let match = currentAppointments.find(app => app.id === selectedRescheduleId);
+            const appointments = JSON.parse(localStorage.getItem('montage_appointments') || '[]');
+            let match = appointments.find(app => app.id === selectedRescheduleId);
             if (match) {
                 match.date = targetDate;
                 match.time = targetTime.includes('-') ? targetTime : `${targetTime} - ${targetTime.startsWith('09') ? '10:00 AM' : targetTime.startsWith('10') ? '11:00 AM' : targetTime.startsWith('11') ? '12:00 PM' : '03:00 PM'}`;
+                localStorage.setItem('montage_appointments', JSON.stringify(appointments));
             }
 
             alert(`Validation Complete: Slot available. Appointment ID ${selectedRescheduleId} modified successfully.`);
             toggleModal('rescheduleModal');
+
+            const activeProfileName = localStorage.getItem('subscriber_name') || 'VIP Member';
+            loadSubscriberAppointments(activeProfileName);
             renderAppointmentsTable();
         }
 
         function switchView(viewId) {
+            if (viewId === 'booking') {
+                const isInactive = userProfileSession.customer_type === 'Inactive Member';
+                if (isInactive) {
+                    alert("Your account is currently inactive due to an overdue subscription. You cannot book covered sessions. You will be redirected to the regular booking page to book at retail rates.");
+                    window.location.href = 'index.html#booking';
+                    return;
+                }
+            }
+
             const views = ['view-overview', 'view-booking', 'view-subscription'];
             const navs = ['nav-overview', 'nav-booking', 'nav-subscription'];
 
@@ -235,6 +276,13 @@
 
         function handleDashboardFormSubmission(event) {
             event.preventDefault();
+            const isInactive = userProfileSession.customer_type === 'Inactive Member';
+            if (isInactive) {
+                alert("Your account is currently inactive. Redirecting to the regular booking page.");
+                window.location.href = 'index.html#booking';
+                return;
+            }
+
             const dateVal = document.getElementById('bookingDate').value;
 
             if (!activeDashTimeState) {
@@ -243,13 +291,23 @@
             }
 
             const referenceId = "MTG-" + Math.floor(100000 + Math.random() * 900000);
+            const activeProfileName = localStorage.getItem('subscriber_name') || 'VIP Member';
+            const timeSlotText = `${activeDashTimeState} - ${activeDashTimeState.startsWith('09') ? '10:00 AM' : activeDashTimeState.startsWith('10') ? '11:00 AM' : activeDashTimeState.startsWith('11') ? '12:00 PM' : '03:00 PM'}`;
 
-            currentAppointments.push({
+            // Save to montage_appointments
+            const appointments = JSON.parse(localStorage.getItem('montage_appointments') || '[]');
+            const newBooking = {
                 id: referenceId,
+                type: 'pending',
                 service: activeDashServiceState,
                 date: dateVal,
-                time: `${activeDashTimeState} - ${activeDashTimeState.startsWith('09') ? '10:00 AM' : activeDashTimeState.startsWith('10') ? '11:00 AM' : activeDashTimeState.startsWith('11') ? '12:00 PM' : '03:00 PM'}`
-            });
+                time: timeSlotText,
+                client: activeProfileName,
+                staff: 'Unassigned',
+                userType: 'subscriber'
+            };
+            appointments.unshift(newBooking);
+            localStorage.setItem('montage_appointments', JSON.stringify(appointments));
 
             alert(`Reservation Authorized!\n\nBooking ID: ${referenceId}`);
             document.getElementById('dashWizardForm').reset();
@@ -257,29 +315,61 @@
             if(masterCatalogPayload.length > 0) {
                 activeDashServiceState = masterCatalogPayload[0].name;
                 activeDashServiceDuration = masterCatalogPayload[0].duration;
-                const priceLabel = userProfileSession.customer_type === 'Subscriber' ? 'Covered by Subscription' : `₱${masterCatalogPayload[0].price}`;
-                document.getElementById('customDashServiceDisplay').innerText = `${activeDashServiceState} — ${priceLabel}`;
+                document.getElementById('customDashServiceDisplay').innerText = `${activeDashServiceState}`;
             }
-
             activeDashTimeState = "";
-            document.getElementById('customDashTimeDisplay').innerText = "Select Target Window...";
+            document.getElementById('customDashTimeDisplay').innerText = "Select Time...";
 
+            loadSubscriberAppointments(activeProfileName);
             renderAppointmentsTable();
             switchView('overview');
         }
 
-        function handleRenewalSubmission(event) {
+        async function handleRenewalSubmission(event) {
             event.preventDefault();
             const fileCtrl = document.getElementById('renewalProofFile');
             if(fileCtrl && fileCtrl.files.length > 0) {
-                alert("Renewal proof submitted. Your plan has been extended.");
+                const file = fileCtrl.files[0];
+                const readFileAsDataUrl = f => new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(f);
+                });
+
+                const proofDataUrl = await readFileAsDataUrl(file);
+                const invoiceId = `INV-${Math.floor(1000 + Math.random() * 9000)}`;
+                const activeProfileName = localStorage.getItem('subscriber_name') || 'VIP Member';
+
+                // Add to montage_invoices in localStorage
+                const invoices = JSON.parse(localStorage.getItem('montage_invoices') || '[]');
+                const newInvoice = {
+                    id: invoiceId,
+                    type: 'subscriber',
+                    status: 'pending',
+                    client: activeProfileName,
+                    service: 'Monthly Subscription Renewal',
+                    total: 1500,
+                    img: proofDataUrl,
+                    date: new Date().toISOString().split('T')[0]
+                };
+                invoices.unshift(newInvoice);
+                localStorage.setItem('montage_invoices', JSON.stringify(invoices));
+
+                alert("GCash renewal proof submitted! Your payment is pending admin approval.");
                 toggleModal('renewalHubModal');
+                fileCtrl.value = '';
             }
         }
 
         function deleteAppointment(appId) {
             if (confirm("Confirm session drop request?")) {
-                currentAppointments = currentAppointments.filter(app => app.id !== appId);
+                let appointments = JSON.parse(localStorage.getItem('montage_appointments') || '[]');
+                appointments = appointments.filter(app => app.id !== appId);
+                localStorage.setItem('montage_appointments', JSON.stringify(appointments));
+
+                const activeProfileName = localStorage.getItem('subscriber_name') || 'VIP Member';
+                loadSubscriberAppointments(activeProfileName);
                 renderAppointmentsTable();
             }
         }
@@ -323,6 +413,7 @@
         function terminateSessionLogout() {
             localStorage.removeItem('subscriber_session_active');
             localStorage.removeItem('subscriber_name');
+            localStorage.removeItem('subscriber_email');
             window.location.href = 'index.html';
         }
 
@@ -331,13 +422,23 @@
               Purpose: Populates the booking menu cards and dropdown items with live service data.
           */
         function fetchAndSyncDashboardDropdown() {
+            let storedServices = localStorage.getItem('montage_services');
+            if (storedServices) {
+                masterCatalogPayload = JSON.parse(storedServices);
+                renderSynchronizedComponents();
+                return;
+            }
+
             fetch('get_services.php')
                 .then(response => {
                     if(!response.ok) throw new Error('Data Schema validation failed.');
                     return response.json();
                 })
                 .then(data => {
-                    if (Array.isArray(data) && data.length > 0) masterCatalogPayload = data;
+                    if (Array.isArray(data) && data.length > 0) {
+                        masterCatalogPayload = data;
+                        localStorage.setItem('montage_services', JSON.stringify(data));
+                    }
                     else throw new Error('Use dynamic fallbacks');
                     renderSynchronizedComponents();
                 })
@@ -349,9 +450,17 @@
                         { name: "Premium Car Wash", price: 600, duration: "1 Hour" },
                         { name: "Under Chassis Wash", price: 350, duration: "30 Mins" }
                     ];
+                    localStorage.setItem('montage_services', JSON.stringify(masterCatalogPayload));
                     renderSynchronizedComponents();
                 });
         }
+
+        window.addEventListener('storage', function(event) {
+            if (event.key === 'montage_services') {
+                masterCatalogPayload = JSON.parse(event.newValue || '[]');
+                renderSynchronizedComponents();
+            }
+        });
 
         function renderSynchronizedComponents() {
             const menuCardsContainer = document.getElementById('dashboard-services-container');
@@ -451,12 +560,86 @@
             const activeProfileName = localStorage.getItem('subscriber_name') || 'VIP Member';
             userProfileSession.name = activeProfileName;
 
+            const email = localStorage.getItem('subscriber_email');
+            const approvedAccounts = JSON.parse(localStorage.getItem('montage_approved_subscribers') || '[]');
+            const activeAccount = approvedAccounts.find(acc => acc.email && acc.email.toLowerCase() === (email || '').toLowerCase());
+
+            if (activeAccount) {
+                userProfileSession.next_billing_date = activeAccount.next_billing_date || 'July 15, 2026';
+                userProfileSession.customer_type = activeAccount.status === 'Verified' ? 'Subscriber' : 'Inactive Member';
+            }
+
             document.getElementById('dashWelcomeName').innerText = activeProfileName;
             document.getElementById('subParamName').innerText = activeProfileName;
             document.getElementById('subParamNextBilling').innerText = userProfileSession.next_billing_date;
 
+            // Set up feedback form with subscriber's name (readonly)
+            const feedbackNameInput = document.getElementById('feedbackName');
+            if (feedbackNameInput) {
+                feedbackNameInput.value = activeProfileName;
+                feedbackNameInput.setAttribute('readonly', 'true');
+                feedbackNameInput.className = "w-full bg-neutral-100 border border-neutral-200 p-3.5 rounded-full text-xs font-bold text-neutral-500 cursor-not-allowed focus:outline-none px-5";
+            }
+
+            loadSubscriberAppointments(activeProfileName);
             renderAppointmentsTable();
             fetchAndSyncDashboardDropdown();
         };
+
+        /* ===================== FEEDBACK FORM MODULE ===================== */
+        let activeRating = 4;
+        function setFeedbackRating(score) {
+            activeRating = score;
+            const hiddenInput = document.getElementById('feedbackRating');
+            if (hiddenInput) hiddenInput.value = score;
+            
+            const stars = document.querySelectorAll('.rating-star');
+            stars.forEach((star, index) => {
+                if (index < score) {
+                    star.className = "rating-star text-amber-500 text-lg hover:scale-110 transition-transform focus:outline-none";
+                } else {
+                    star.className = "rating-star text-neutral-300 text-lg hover:scale-110 transition-transform focus:outline-none";
+                }
+            });
+        }
+
+        function openFeedbackForBooking(bookingId, serviceName) {
+            const bookingInput = document.getElementById('feedbackBookingId');
+            const serviceInput = document.getElementById('feedbackService');
+
+            if (bookingInput) bookingInput.value = bookingId;
+            if (serviceInput) serviceInput.value = serviceName;
+
+            toggleModal('feedbackModal');
+        }
+
+        function submitCustomerFeedback(event) {
+            event.preventDefault();
+            const client = document.getElementById('feedbackName').value.trim();
+            let booking_id = document.getElementById('feedbackBookingId').value.trim();
+            if (!booking_id) {
+                booking_id = "MTG-" + Math.floor(100000 + Math.random() * 900000);
+            }
+            const service = document.getElementById('feedbackService').value;
+            const rating = parseInt(document.getElementById('feedbackRating').value) || 4;
+            const comments = document.getElementById('feedbackComments').value.trim();
+
+            const feedbacks = JSON.parse(localStorage.getItem('montage_feedbacks') || '[]');
+            feedbacks.unshift({ client, booking_id, service, rating, comments });
+            localStorage.setItem('montage_feedbacks', JSON.stringify(feedbacks));
+
+            alert('Thank you! Your feedback has been submitted successfully.');
+            
+            // Reset and close
+            document.getElementById('feedbackForm').reset();
+            const activeProfileName = localStorage.getItem('subscriber_name') || 'VIP Member';
+            document.getElementById('feedbackName').value = activeProfileName;
+            setFeedbackRating(4); // Reset to 4 stars default
+            toggleModal('feedbackModal');
+        }
+
+        window.setFeedbackRating = setFeedbackRating;
+        window.openFeedbackForBooking = openFeedbackForBooking;
+        window.submitCustomerFeedback = submitCustomerFeedback;
 
 

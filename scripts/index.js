@@ -10,6 +10,16 @@
         const PENDING_SUBSCRIPTION_REQUESTS_KEY = 'montage_subscription_requests';
         const APPROVED_SUBSCRIPTION_ACCOUNTS_KEY = 'montage_approved_subscribers';
 
+        const defaultSubscribers = [
+            { id: "sub-1", name: "Alicia Kate Bactasa", email: "alicia@gmail.com", password: "password123", next_billing_date: "2026-07-06", status: "Verified" },
+            { id: "sub-2", name: "Jun Culanag", email: "jun@gmail.com", password: "password123", next_billing_date: "2026-07-03", status: "Rejected / Overdue" },
+            { id: "sub-3", name: "Chris Evans", email: "chris@gmail.com", password: "password123", next_billing_date: "2026-07-15", status: "Verified" }
+        ];
+
+        if (!localStorage.getItem(APPROVED_SUBSCRIPTION_ACCOUNTS_KEY)) {
+            localStorage.setItem(APPROVED_SUBSCRIPTION_ACCOUNTS_KEY, JSON.stringify(defaultSubscribers));
+        }
+
         // Master Catalog Collection Schema map matching specifications exactly
         let masterCatalogServices = [];
 
@@ -173,7 +183,7 @@
             document.getElementById('summaryTotal').innerText = '₱' + parseFloat(activeServicePrice).toLocaleString('en-US', { minimumFractionDigits: 2 });
         }
 
-        function handleFormSubmission(event) {
+        async function handleFormSubmission(event) {
             event.preventDefault();
 
             const selectedDate = document.getElementById('bookingDate').value;
@@ -182,6 +192,58 @@
                 return;
             }
 
+            const paymentProofInput = document.getElementById('paymentProof');
+            const paymentProofFile = paymentProofInput ? paymentProofInput.files[0] : null;
+
+            if (!paymentProofFile) {
+                alert('Please upload your GCash payment proof.');
+                return;
+            }
+
+            const readFileAsDataUrl = file => new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+
+            const proofDataUrl = await readFileAsDataUrl(paymentProofFile);
+
+            // Generate Booking and Invoice IDs
+            const bookingId = `MTG-${Math.floor(100000 + Math.random() * 900000)}`;
+            const invoiceId = `INV-${Math.floor(1000 + Math.random() * 9000)}`;
+            const clientName = document.getElementById('custName').value.trim();
+
+            // Create Booking
+            const appointments = JSON.parse(localStorage.getItem('montage_appointments') || '[]');
+            const newBooking = {
+                id: bookingId,
+                type: 'pending',
+                service: activeServiceState,
+                date: selectedDate,
+                time: activeTimeState,
+                client: clientName,
+                staff: 'Unassigned',
+                userType: 'regular'
+            };
+            appointments.unshift(newBooking);
+            localStorage.setItem('montage_appointments', JSON.stringify(appointments));
+
+            // Create Invoice
+            const invoices = JSON.parse(localStorage.getItem('montage_invoices') || '[]');
+            const newInvoice = {
+                id: invoiceId,
+                type: 'regular',
+                status: 'pending',
+                client: clientName,
+                service: activeServiceState,
+                total: activeServicePrice,
+                img: proofDataUrl,
+                date: new Date().toISOString().split('T')[0]
+            };
+            invoices.unshift(newInvoice);
+            localStorage.setItem('montage_invoices', JSON.stringify(invoices));
+
             // Persistence tracking update configuration block
             if (!currentTimelineLoadRegistry[selectedDate]) {
                 currentTimelineLoadRegistry[selectedDate] = {};
@@ -189,7 +251,7 @@
             currentTimelineLoadRegistry[selectedDate][activeTimeState] = (currentTimelineLoadRegistry[selectedDate][activeTimeState] || 0) + 1;
             localStorage.setItem('montage_timeline_registry', JSON.stringify(currentTimelineLoadRegistry));
 
-            alert(`Booking submitted.\n\nReference ID: MTG-${Math.floor(100000 + Math.random() * 900000)}\n\nPayment proof recorded.`);
+            alert(`Booking submitted!\n\nReference ID: ${bookingId}\n\nPayment proof recorded for review.`);
             document.getElementById('wizardForm').reset();
 
             activeTimeState = "";
@@ -299,6 +361,10 @@
             if (event.key === PENDING_SUBSCRIPTION_REQUESTS_KEY || event.key === APPROVED_SUBSCRIPTION_ACCOUNTS_KEY) {
                 // No live UI on this page needs rerendering, but the listener keeps the flow consistent across tabs.
             }
+            if (event.key === 'montage_services') {
+                masterCatalogServices = JSON.parse(event.newValue || '[]');
+                renderDOMCatalogs();
+            }
         });
 
           /* ===================== LANDING PAGE CATALOG FETCH / RENDER =====================
@@ -306,6 +372,13 @@
               Purpose: Shows available services and pricing even when remote data is unavailable.
           */
         function fetchAndRenderCatalogServices() {
+            let storedServices = localStorage.getItem('montage_services');
+            if (storedServices) {
+                masterCatalogServices = JSON.parse(storedServices);
+                renderDOMCatalogs();
+                return;
+            }
+
             fetch('get_services.php')
                 .then(response => {
                     if (!response.ok) throw new Error('Network resource data schema array parsing error.');
@@ -314,6 +387,7 @@
                 .then(data => {
                     if (Array.isArray(data) && data.length > 0) {
                         masterCatalogServices = data;
+                        localStorage.setItem('montage_services', JSON.stringify(data));
                     } else {
                         throw new Error('Fallback target trigger needed');
                     }
@@ -327,6 +401,7 @@
                         { name: "Premium Car Wash", price: 600, duration: "1 Hour", desc: "Our ultimate preservation suite incorporating full body glass coating protection layers, premium window treatments, and high-gloss wax." },
                         { name: "Under Chassis Wash", price: 350, duration: "30 Mins", desc: "High-pressure multi-directional undercarriage flush targeting mud, corrosive elements, salt buildup, and road grime." }
                     ];
+                    localStorage.setItem('montage_services', JSON.stringify(masterCatalogServices));
                     renderDOMCatalogs();
                 });
         }
@@ -400,4 +475,47 @@
         window.onload = function() {
             fetchAndRenderCatalogServices();
         };
+
+        /* ===================== FEEDBACK FORM MODULE ===================== */
+        let activeRating = 4;
+        function setFeedbackRating(score) {
+            activeRating = score;
+            const hiddenInput = document.getElementById('feedbackRating');
+            if (hiddenInput) hiddenInput.value = score;
+            
+            const stars = document.querySelectorAll('.rating-star');
+            stars.forEach((star, index) => {
+                if (index < score) {
+                    star.className = "rating-star text-amber-500 text-lg hover:scale-110 transition-transform focus:outline-none";
+                } else {
+                    star.className = "rating-star text-neutral-300 text-lg hover:scale-110 transition-transform focus:outline-none";
+                }
+            });
+        }
+
+        function submitCustomerFeedback(event) {
+            event.preventDefault();
+            const client = document.getElementById('feedbackName').value.trim();
+            let booking_id = document.getElementById('feedbackBookingId').value.trim();
+            if (!booking_id) {
+                booking_id = "MTG-" + Math.floor(100000 + Math.random() * 900000);
+            }
+            const service = document.getElementById('feedbackService').value;
+            const rating = parseInt(document.getElementById('feedbackRating').value) || 4;
+            const comments = document.getElementById('feedbackComments').value.trim();
+
+            const feedbacks = JSON.parse(localStorage.getItem('montage_feedbacks') || '[]');
+            feedbacks.unshift({ client, booking_id, service, rating, comments });
+            localStorage.setItem('montage_feedbacks', JSON.stringify(feedbacks));
+
+            alert('Thank you! Your feedback has been submitted successfully.');
+            
+            // Reset and close
+            document.getElementById('feedbackForm').reset();
+            setFeedbackRating(4); // Reset to 4 stars default
+            toggleModal('feedbackModal');
+        }
+
+        window.setFeedbackRating = setFeedbackRating;
+        window.submitCustomerFeedback = submitCustomerFeedback;
 
