@@ -1,1 +1,26 @@
+# === Operating System Files ===
 .DS_Store
+Thumbs.db
+desktop.ini
+
+# === IDE and Editor Settings ===
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# === Database Backups & Local Dumps ===
+*.sql
+backup/
+*.log
+
+# === User Uploaded Assets ===
+uploads/*
+!uploads/.gitkeep
+
+# === Development Configuration Overrides ===
+.env
+api/config.local.php
