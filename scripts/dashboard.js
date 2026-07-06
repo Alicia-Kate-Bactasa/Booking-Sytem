@@ -460,6 +460,27 @@
                 });
         }
 
+        async function fetchDashboardData() {
+            try {
+                const response = await fetch('getData.php');
+
+                if (!response.ok) {
+                    throw new Error(`Request failed with status ${response.status}`);
+                }
+
+                const result = await response.json();
+                const data = result.data || result;
+
+                console.log('Full database data:', data);
+                console.log('Admin table:', data.admin || []);
+                console.log('Subscriber table:', data.subscriber || []);
+                console.log('Service table:', data.service || []);
+                console.log('Customer table:', data.customer || []);
+            } catch (error) {
+                console.error('Failed to load database data:', error);
+            }
+        }
+
         window.addEventListener('storage', function(event) {
             if (event.key === 'montage_services') {
                 masterCatalogPayload = JSON.parse(event.newValue || '[]');
@@ -604,6 +625,7 @@
             loadSubscriberAppointments(activeProfileName);
             renderAppointmentsTable();
             fetchAndSyncDashboardDropdown();
+            fetchDashboardData();
         };
 
         /* ===================== FEEDBACK FORM MODULE ===================== */
