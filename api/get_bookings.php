@@ -21,14 +21,27 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 }
 
 try {
-    // Perform a relational JOIN query to fetch enriched booking information
-    $query = "SELECT b.booking_id, b.time_slot, b.scheduled_date, b.booking_status, s.service_name, c.full_name 
+    // Allow both Admin and Subscriber users to retrieve booking list
+    require_auth(['Admin', 'Subscriber']);
+
+    $query = "SELECT b.booking_id, b.time_slot, b.scheduled_date, b.booking_status, s.service_name, c.full_name, c.customer_type 
               FROM Booking b 
               JOIN Service s ON b.service_id = s.service_id 
-              JOIN Customer c ON b.customer_id = c.customer_id 
-              ORDER BY b.scheduled_date DESC, b.time_slot ASC";
+              JOIN Customer c ON b.customer_id = c.customer_id";
+
+    // If the authenticated user is a Subscriber, filter to return only their own bookings
+    if ($_SESSION['role'] === 'Subscriber') {
+        $query .= " WHERE c.customer_id = :customer_id";
+    }
+
+    $query .= " ORDER BY b.scheduled_date DESC, b.time_slot ASC";
               
     $stmt = $conn->prepare($query);
+
+    if ($_SESSION['role'] === 'Subscriber') {
+        $stmt->bindValue(':customer_id', $_SESSION['customer_id'], PDO::PARAM_INT);
+    }
+
     $stmt->execute();
     
     // Fetch structured records
@@ -37,10 +50,10 @@ try {
     // Return structured rows directly as a JSON array
     echo json_encode($bookings);
 } catch (PDOException $e) {
+    error_log("Failed to fetch bookings: " . $e->getMessage());
     http_response_code(500);
     echo json_encode([
         "status" => "error",
-        "message" => "An error occurred while fetching booking data from the database.",
-        "error" => $e->getMessage()
+        "message" => "An error occurred while fetching booking data from the database."
     ]);
 }

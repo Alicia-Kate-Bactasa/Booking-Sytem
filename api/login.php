@@ -65,17 +65,27 @@ try {
     // ------------------------------------------------------------------
     $adminQuery = "SELECT admin_id, username, email, password 
                    FROM Admin 
-                   WHERE username = :login OR email = :login 
+                   WHERE username = :username OR email = :email 
                    LIMIT 1";
                    
     $adminStmt = $conn->prepare($adminQuery);
-    $adminStmt->bindValue(':login', $login_input, PDO::PARAM_STR);
+    $adminStmt->bindValue(':username', $login_input, PDO::PARAM_STR);
+    $adminStmt->bindValue(':email', $login_input, PDO::PARAM_STR);
     $adminStmt->execute();
     $admin = $adminStmt->fetch();
 
     if ($admin) {
-        // Authenticate using password_verify (hashes) or direct string compare (development fallback)
-        if (password_verify($password, $admin['password']) || $password === $admin['password']) {
+        // Authenticate strictly using secure password_verify hashes
+        if (password_verify($password, $admin['password'])) {
+            if (session_status() === PHP_SESSION_NONE) {
+                session_start();
+            }
+            session_regenerate_id(true);
+            $_SESSION['user_id'] = (int)$admin['admin_id'];
+            $_SESSION['role'] = 'Admin';
+            $_SESSION['username'] = $admin['username'];
+            $_SESSION['email'] = $admin['email'];
+
             http_response_code(200);
             echo json_encode([
                 "status" => "success",
@@ -90,9 +100,10 @@ try {
     // ------------------------------------------------------------------
     // STEP 2: Check Subscriber Table
     // ------------------------------------------------------------------
-    $subQuery = "SELECT subscriber_id, customer_id, email, password 
-                 FROM Subscriber 
-                 WHERE email = :email 
+    $subQuery = "SELECT s.subscriber_id, s.customer_id, s.email, s.password, c.full_name 
+                 FROM Subscriber s
+                 JOIN Customer c ON s.customer_id = c.customer_id
+                 WHERE s.email = :email 
                  LIMIT 1";
                  
     $subStmt = $conn->prepare($subQuery);
@@ -101,14 +112,25 @@ try {
     $subscriber = $subStmt->fetch();
 
     if ($subscriber) {
-        // Authenticate using password_verify (hashes) or direct string compare (development fallback)
-        if (password_verify($password, $subscriber['password']) || $password === $subscriber['password']) {
+        // Authenticate strictly using secure password_verify hashes
+        if (password_verify($password, $subscriber['password'])) {
+            if (session_status() === PHP_SESSION_NONE) {
+                session_start();
+            }
+            session_regenerate_id(true);
+            $_SESSION['user_id'] = (int)$subscriber['subscriber_id'];
+            $_SESSION['role'] = 'Subscriber';
+            $_SESSION['customer_id'] = (int)$subscriber['customer_id'];
+            $_SESSION['email'] = $subscriber['email'];
+            $_SESSION['name'] = $subscriber['full_name'];
+
             http_response_code(200);
             echo json_encode([
                 "status" => "success",
                 "role" => "Subscriber",
                 "customer_id" => (int)$subscriber['customer_id'],
                 "subscriber_id" => (int)$subscriber['subscriber_id'],
+                "full_name" => $subscriber['full_name'],
                 "message" => "Subscriber authorization successful!"
             ]);
             exit();
@@ -123,10 +145,10 @@ try {
     ]);
 
 } catch (PDOException $e) {
+    error_log("Authentication failure: " . $e->getMessage());
     http_response_code(500);
     echo json_encode([
         "status" => "error",
-        "message" => "An error occurred during authentication.",
-        "error" => $e->getMessage()
+        "message" => "An error occurred during authentication."
     ]);
 }

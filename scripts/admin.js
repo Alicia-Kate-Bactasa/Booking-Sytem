@@ -46,19 +46,49 @@ const defaultServices = [
         let subscriberAccounts = [];
 
         function loadAppointments() {
-            try {
-                let data = localStorage.getItem(APPOINTMENTS_KEY);
-                if (!data) {
-                    appointmentsRegistry = defaultAppointments;
-                    localStorage.setItem(APPOINTMENTS_KEY, JSON.stringify(appointmentsRegistry));
-                } else {
-                    appointmentsRegistry = JSON.parse(data);
-                }
-            } catch (e) {
-                console.error("Error parsing appointments:", e);
-                appointmentsRegistry = defaultAppointments;
-                localStorage.setItem(APPOINTMENTS_KEY, JSON.stringify(appointmentsRegistry));
-            }
+            return fetch('api/get_bookings.php')
+                .then(res => {
+                    if (res.status === 401 || res.status === 403) {
+                        alert('Session unauthorized or expired. Redirecting to landing.');
+                        window.location.href = 'index.html';
+                        return [];
+                    }
+                    if (!res.ok) throw new Error('API request failed');
+                    return res.json();
+                })
+                .then(data => {
+                    appointmentsRegistry = data.map(app => {
+                        let type = 'cancelled';
+                        if (app.booking_status === 'Pending Verification' || app.booking_status === 'Confirmed') {
+                            type = 'pending';
+                        } else if (app.booking_status === 'Completed') {
+                            type = 'completed';
+                        }
+                        
+                        return {
+                            id: "MTG-" + app.booking_id,
+                            booking_id: parseInt(app.booking_id, 10),
+                            type: type,
+                            service: app.service_name,
+                            date: app.scheduled_date,
+                            time: app.time_slot,
+                            client: app.full_name,
+                            userType: app.customer_type === 'Subscriber' ? 'subscriber' : 'regular'
+                        };
+                    });
+                    renderBookingSlideData();
+                })
+                .catch(err => {
+                    console.warn("Failed to load bookings from backend, falling back to localStorage:", err);
+                    let data = localStorage.getItem(APPOINTMENTS_KEY);
+                    if (!data) {
+                        appointmentsRegistry = defaultAppointments;
+                        localStorage.setItem(APPOINTMENTS_KEY, JSON.stringify(appointmentsRegistry));
+                    } else {
+                        appointmentsRegistry = JSON.parse(data);
+                    }
+                    renderBookingSlideData();
+                });
         }
 
         function saveAppointments() {
@@ -383,19 +413,60 @@ const defaultServices = [
             });
         }
 
+
         function updateBookingStatus(bookingId, newStatus) {
             if (!confirm(`Are you sure you want to mark booking ${bookingId} as ${newStatus}?`)) {
                 return;
             }
 
-            loadAppointments();
             let booking = appointmentsRegistry.find(app => app.id === bookingId);
-            if (booking) {
+            if (!booking) return;
+
+            let backendStatus = 'Completed';
+            if (newStatus === 'cancelled') {
+                backendStatus = 'Cancelled';
+            } else if (newStatus === 'pending') {
+                backendStatus = 'Pending Verification';
+            }
+
+            const rawId = booking.booking_id || parseInt(bookingId.replace(/\D/g, ''), 10);
+
+            fetch('api/update_booking.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    booking_id: rawId,
+                    booking_status: backendStatus
+                })
+            })
+            .then(res => {
+                if (res.status === 401 || res.status === 403) {
+                    alert('Session expired or unauthorized. Please log in.');
+                    window.location.href = 'index.html';
+                    return;
+                }
+                if (!res.ok) throw new Error('API update request failed.');
+                return res.json();
+            })
+            .then(data => {
+                if (data && data.status === 'success') {
+                    booking.type = newStatus;
+                    saveAppointments();
+                    renderBookingSlideData();
+                    executeAutomatedComplianceAuditLoop();
+                } else {
+                    alert('Error updating booking: ' + (data.message || 'Server error.'));
+                }
+            })
+            .catch(err => {
+                console.warn("Failed to update booking status on backend, falling back to localStorage update:", err);
                 booking.type = newStatus;
                 saveAppointments();
-                alert(`Booking ${bookingId} status has been updated to ${newStatus}.`);
                 renderBookingSlideData();
-            }
+                executeAutomatedComplianceAuditLoop();
+            });
         }
         window.updateBookingStatus = updateBookingStatus;
 

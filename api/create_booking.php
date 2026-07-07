@@ -61,6 +61,14 @@ if (!filter_var($customer_id, FILTER_VALIDATE_INT) || !filter_var($service_id, F
 }
 
 try {
+    // Require authentication (either Subscriber or Admin)
+    require_auth(['Subscriber', 'Admin']);
+
+    // If logged in as Subscriber, enforce security boundaries by overriding customer_id
+    if ($_SESSION['role'] === 'Subscriber') {
+        $customer_id = $_SESSION['customer_id'];
+    }
+
     // Manually specify default booking status as requested
     $booking_status = 'Pending Verification';
 
@@ -92,10 +100,10 @@ try {
         ]);
     }
 } catch (PDOException $e) {
+    error_log("Failed to create booking: " . $e->getMessage());
     http_response_code(500);
     echo json_encode([
         "status" => "error",
-        "message" => "An error occurred while attempting to write booking to the database.",
-        "error" => $e->getMessage()
+        "message" => "An error occurred while attempting to write booking to the database."
     ]);
 }

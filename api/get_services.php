@@ -35,10 +35,10 @@ try {
     // Return the array directly as a JSON response
     echo json_encode($services);
 } catch (PDOException $e) {
+    error_log("Failed to fetch services: " . $e->getMessage());
     http_response_code(500);
     echo json_encode([
         "status" => "error",
-        "message" => "An error occurred while fetching service data from the database.",
-        "error" => $e->getMessage()
+        "message" => "An error occurred while fetching service data from the database."
     ]);
 }

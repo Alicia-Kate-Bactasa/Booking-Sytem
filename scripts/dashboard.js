@@ -13,36 +13,60 @@
         let activeSubTabState = "active";
 
         function loadSubscriberAppointments(activeProfileName) {
-            let data = localStorage.getItem('montage_appointments');
-            let allAppointments = [];
-            
-            const initialApps = [
-                { id: "MTG-849201", type: "pending", service: "Complete Interior Detailing", date: "2026-07-06", time: "09:00 AM", client: "Alicia Kate Bactasa", userType: "subscriber" },
-                { id: "MTG-102554", type: "pending", service: "Standard Car Wash", date: "2026-07-06", time: "11:00 AM", client: "Roberto Gomez", userType: "regular" },
-                { id: "MTG-736215", type: "completed", service: "Premium Car Wash", date: "2026-06-18", time: "09:00 AM", client: "VIP Member", userType: "subscriber" },
-                { id: "MTG-412985", type: "completed", service: "Standard Car Wash", date: "2026-05-12", time: "02:00 PM", client: "VIP Member", userType: "subscriber" },
-                { id: "MTG-903821", type: "cancelled", service: "Deluxe Car Wash", date: "2026-06-25", time: "03:00 PM", client: "Kyle Kenner", userType: "regular" },
-                { id: "MTG-847291", type: "pending", service: "Standard Car Wash", date: "2026-07-14", time: "10:00 AM - 11:00 AM", client: "Alicia Kate Bactasa", userType: "subscriber" }
-            ];
+            return fetch('api/get_bookings.php')
+                .then(res => {
+                    if (res.status === 401 || res.status === 403) {
+                        window.location.href = 'index.html';
+                        return [];
+                    }
+                    if (!res.ok) throw new Error('API fetch failed');
+                    return res.json();
+                })
+                .then(data => {
+                    const mapped = data.map(app => {
+                        let type = 'cancelled';
+                        if (app.booking_status === 'Pending Verification' || app.booking_status === 'Confirmed') {
+                            type = 'pending';
+                        } else if (app.booking_status === 'Completed') {
+                            type = 'completed';
+                        }
+                        
+                        return {
+                            id: "MTG-" + app.booking_id,
+                            booking_id: parseInt(app.booking_id, 10),
+                            type: type,
+                            service: app.service_name,
+                            date: app.scheduled_date,
+                            time: app.time_slot,
+                            client: app.full_name,
+                            userType: app.customer_type === 'Subscriber' ? 'subscriber' : 'regular'
+                        };
+                    });
+                    
+                    currentAppointments = mapped.filter(app => app.type === 'pending');
+                    historyAppointments = mapped.filter(app => app.type === 'completed' || app.type === 'cancelled');
+                    
+                    renderAppointmentsTable();
+                })
+                .catch(err => {
+                    console.warn("Failed to fetch subscriber bookings from database, using localStorage fallback:", err);
+                    let localData = localStorage.getItem('montage_appointments') || '[]';
+                    let allAppointments = JSON.parse(localData);
+                    
+                    const cleanProfileName = activeProfileName.trim().toLowerCase();
+                    const filtered = allAppointments.filter(app => {
+                        const client = (app.client || '').trim().toLowerCase();
+                        return client === cleanProfileName || 
+                               (cleanProfileName === 'vip member' && client.includes('vip')) ||
+                               cleanProfileName.includes(client) || 
+                               client.includes(cleanProfileName);
+                    });
 
-            if (!data) {
-                localStorage.setItem('montage_appointments', JSON.stringify(initialApps));
-                allAppointments = initialApps;
-            } else {
-                allAppointments = JSON.parse(data);
-            }
-
-            const cleanProfileName = activeProfileName.trim().toLowerCase();
-            const filtered = allAppointments.filter(app => {
-                const client = (app.client || '').trim().toLowerCase();
-                return client === cleanProfileName || 
-                       (cleanProfileName === 'vip member' && client.includes('vip')) ||
-                       cleanProfileName.includes(client) || 
-                       client.includes(cleanProfileName);
-            });
-
-            currentAppointments = filtered.filter(app => app.type === 'pending');
-            historyAppointments = filtered.filter(app => app.type === 'completed' || app.type === 'cancelled');
+                    currentAppointments = filtered.filter(app => app.type === 'pending');
+                    historyAppointments = filtered.filter(app => app.type === 'completed' || app.type === 'cancelled');
+                    
+                    renderAppointmentsTable();
+                });
         }
 
           /* ===================== DASHBOARD SYNC STATE =====================
@@ -434,7 +458,7 @@
                 return;
             }
 
-            fetch('get_services.php')
+            fetch('api/get_services.php')
                 .then(response => {
                     if(!response.ok) throw new Error('Data Schema validation failed.');
                     return response.json();
@@ -460,26 +484,7 @@
                 });
         }
 
-        async function fetchDashboardData() {
-            try {
-                const response = await fetch('getData.php');
 
-                if (!response.ok) {
-                    throw new Error(`Request failed with status ${response.status}`);
-                }
-
-                const result = await response.json();
-                const data = result.data || result;
-
-                console.log('Full database data:', data);
-                console.log('Admin table:', data.admin || []);
-                console.log('Subscriber table:', data.subscriber || []);
-                console.log('Service table:', data.service || []);
-                console.log('Customer table:', data.customer || []);
-            } catch (error) {
-                console.error('Failed to load database data:', error);
-            }
-        }
 
         window.addEventListener('storage', function(event) {
             if (event.key === 'montage_services') {
@@ -625,7 +630,6 @@
             loadSubscriberAppointments(activeProfileName);
             renderAppointmentsTable();
             fetchAndSyncDashboardDropdown();
-            fetchDashboardData();
         };
 
         /* ===================== FEEDBACK FORM MODULE ===================== */

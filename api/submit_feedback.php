@@ -68,16 +68,30 @@ if (!filter_var($rating, FILTER_VALIDATE_INT) || $rating < 1 || $rating > 5) {
 }
 
 try {
-    // Check if the referenced booking exists
-    $bookingCheckQuery = "SELECT booking_id FROM Booking WHERE booking_id = :booking_id";
+    // Require authentication (either Subscriber or Admin)
+    require_auth(['Subscriber', 'Admin']);
+
+    // Check if the referenced booking exists and retrieve its customer_id
+    $bookingCheckQuery = "SELECT booking_id, customer_id FROM Booking WHERE booking_id = :booking_id";
     $bookingCheckStmt = $conn->prepare($bookingCheckQuery);
     $bookingCheckStmt->execute([':booking_id' => $booking_id]);
+    $booking = $bookingCheckStmt->fetch();
     
-    if (!$bookingCheckStmt->fetch()) {
+    if (!$booking) {
         http_response_code(404);
         echo json_encode([
             "status" => "error",
             "message" => "Referenced Booking ID does not exist in the database."
+        ]);
+        exit();
+    }
+
+    // If the authenticated user is a Subscriber, check that they own this booking
+    if ($_SESSION['role'] === 'Subscriber' && (int)$booking['customer_id'] !== $_SESSION['customer_id']) {
+        http_response_code(403);
+        echo json_encode([
+            "status" => "error",
+            "message" => "Forbidden. You are not authorized to submit feedback for this booking."
         ]);
         exit();
     }
@@ -114,11 +128,11 @@ try {
             "message" => "Feedback has already been submitted for this booking. You can only leave one review per session."
         ]);
     } else {
+        error_log("Failed to submit feedback: " . $e->getMessage());
         http_response_code(500);
         echo json_encode([
             "status" => "error",
-            "message" => "An error occurred while trying to record feedback.",
-            "error" => $e->getMessage()
+            "message" => "An error occurred while trying to record feedback."
         ]);
     }
 }

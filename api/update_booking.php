@@ -58,6 +58,9 @@ if (!in_array($booking_status, $validStatuses, true)) {
 }
 
 try {
+    // Only allow verified Admin users to update booking statuses
+    require_auth('Admin');
+
     // Check if the booking actually exists before updating
     $checkQuery = "SELECT booking_id FROM Booking WHERE booking_id = :booking_id";
     $checkStmt = $conn->prepare($checkQuery);
@@ -93,10 +96,10 @@ try {
         ]);
     }
 } catch (PDOException $e) {
+    error_log("Failed to update booking status: " . $e->getMessage());
     http_response_code(500);
     echo json_encode([
         "status" => "error",
-        "message" => "An error occurred while trying to update booking status.",
-        "error" => $e->getMessage()
+        "message" => "An error occurred while trying to update booking status."
     ]);
 }

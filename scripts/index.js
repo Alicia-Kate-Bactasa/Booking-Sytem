@@ -266,37 +266,47 @@
             const passwordField = document.getElementById('loginPassword') || (form ? form.querySelector('input[type="password"]') : null);
             const passwordInput = passwordField ? passwordField.value : '';
 
-            if (emailInput === 'admin@gmail.com' && passwordInput === 'montage2026') {
-                localStorage.setItem('isAdminAuthenticated', 'true');
-                window.location.href = 'admin.html';
-                return;
-            }
-
-            toggleModal('loginModal');
-            const approvedAccounts = JSON.parse(localStorage.getItem(APPROVED_SUBSCRIPTION_ACCOUNTS_KEY) || '[]');
-            const approvedAccount = approvedAccounts.find(account => account.email && account.email.toLowerCase() === emailInput.toLowerCase());
-
-            if (!approvedAccount) {
-                const pendingRequests = JSON.parse(localStorage.getItem(PENDING_SUBSCRIPTION_REQUESTS_KEY) || '[]');
-                const pendingRequest = pendingRequests.find(account => account.email && account.email.toLowerCase() === emailInput.toLowerCase());
-                if (pendingRequest) {
-                    alert('Your subscription is still waiting for admin approval.');
-                    return;
+            fetch('api/login.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    username_or_email: emailInput,
+                    password: passwordInput
+                })
+            })
+            .then(res => {
+                if (res.status === 401) {
+                    throw new Error('Invalid credentials. Please verify your email/username and password.');
                 }
-
-                alert('No approved subscription was found for that email yet. Please finish subscription approval first.');
-                return;
-            }
-
-            if (approvedAccount.password && approvedAccount.password !== passwordInput) {
-                alert('The password does not match the approved account.');
-                return;
-            }
-
-            localStorage.setItem('subscriber_session_active', 'true');
-            localStorage.setItem('subscriber_name', approvedAccount.name || approvedAccount.email.split('@')[0].toUpperCase());
-            localStorage.setItem('subscriber_email', approvedAccount.email);
-            window.location.href = 'dashboard.html';
+                if (!res.ok) {
+                    throw new Error('An error occurred during authentication.');
+                }
+                return res.json();
+            })
+            .then(data => {
+                if (data.status === 'success') {
+                    toggleModal('loginModal');
+                    if (data.role === 'Admin') {
+                        localStorage.setItem('isAdminAuthenticated', 'true');
+                        window.location.href = 'admin.html';
+                    } else if (data.role === 'Subscriber') {
+                        localStorage.setItem('subscriber_session_active', 'true');
+                        localStorage.setItem('subscriber_name', data.full_name || emailInput.split('@')[0].toUpperCase());
+                        localStorage.setItem('subscriber_email', emailInput);
+                        localStorage.setItem('customer_id', data.customer_id);
+                        localStorage.setItem('subscriber_id', data.subscriber_id);
+                        window.location.href = 'dashboard.html';
+                    }
+                } else {
+                    alert(data.message || 'Authentication failed.');
+                }
+            })
+            .catch(err => {
+                alert(err.message);
+                console.error('Login error:', err);
+            });
         }
 
         function handleRegistrationStep(event) {
@@ -378,7 +388,7 @@
                 return;
             }
 
-            fetch('get_services.php')
+            fetch('api/get_services.php')
                 .then(response => {
                     if (!response.ok) throw new Error('Network resource data schema array parsing error.');
                     return response.json();

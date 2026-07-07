@@ -132,18 +132,37 @@ if (!move_uploaded_file($fileTmpPath, $destinationPath)) {
 }
 
 try {
-    // Check if the referenced invoice exists before inserting payment records
-    $invoiceCheckQuery = "SELECT invoice_id FROM Invoice WHERE invoice_id = :invoice_id";
+    // Require authentication (either Subscriber or Admin)
+    require_auth(['Subscriber', 'Admin']);
+
+    // Check if the referenced invoice exists and get its customer_id
+    $invoiceCheckQuery = "SELECT invoice_id, customer_id FROM Invoice WHERE invoice_id = :invoice_id";
     $invoiceCheckStmt = $conn->prepare($invoiceCheckQuery);
     $invoiceCheckStmt->execute([':invoice_id' => $invoice_id]);
+    $invoice = $invoiceCheckStmt->fetch();
     
-    if (!$invoiceCheckStmt->fetch()) {
+    if (!$invoice) {
         // Delete uploaded file if the database reference is invalid
-        unlink($destinationPath);
+        if (file_exists($destinationPath)) {
+            unlink($destinationPath);
+        }
         http_response_code(404);
         echo json_encode([
             "status" => "error",
             "message" => "Referenced Invoice ID does not exist in the system database."
+        ]);
+        exit();
+    }
+
+    // If the authenticated user is a Subscriber, ensure they own this invoice
+    if ($_SESSION['role'] === 'Subscriber' && (int)$invoice['customer_id'] !== $_SESSION['customer_id']) {
+        if (file_exists($destinationPath)) {
+            unlink($destinationPath);
+        }
+        http_response_code(403);
+        echo json_encode([
+            "status" => "error",
+            "message" => "Forbidden. You are not authorized to submit payment for this invoice."
         ]);
         exit();
     }
@@ -173,7 +192,9 @@ try {
         ]);
     } else {
         // Delete uploaded file if database insertion fails
-        unlink($destinationPath);
+        if (file_exists($destinationPath)) {
+            unlink($destinationPath);
+        }
         http_response_code(500);
         echo json_encode([
             "status" => "error",
@@ -185,10 +206,10 @@ try {
     if (file_exists($destinationPath)) {
         unlink($destinationPath);
     }
+    error_log("Failed to submit payment: " . $e->getMessage());
     http_response_code(500);
     echo json_encode([
         "status" => "error",
-        "message" => "An error occurred while saving the payment transaction.",
-        "error" => $e->getMessage()
+        "message" => "An error occurred while saving the payment transaction."
     ]);
 }
