@@ -290,15 +290,14 @@
                     const data = responseObj.data || responseObj;
                     toggleModal('loginModal');
                     if (data.role === 'Admin') {
-                        localStorage.setItem('isAdminAuthenticated', 'true');
-                        window.location.href = 'admin.html';
+                        window.location.href = 'api/admin.php';
                     } else if (data.role === 'Subscriber') {
                         localStorage.setItem('subscriber_session_active', 'true');
                         localStorage.setItem('subscriber_name', data.full_name || emailInput.split('@')[0].toUpperCase());
                         localStorage.setItem('subscriber_email', emailInput);
                         localStorage.setItem('customer_id', data.customer_id);
                         localStorage.setItem('subscriber_id', data.subscriber_id);
-                        window.location.href = 'dashboard.html';
+                        window.location.href = 'api/dashboard.php';
                     }
                 } else {
                     alert(responseObj.message || 'Authentication failed.');

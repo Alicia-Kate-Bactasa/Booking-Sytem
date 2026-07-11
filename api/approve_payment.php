@@ -18,6 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 try {
     // Require admin privilege
     require_auth('Admin');
+    verify_csrf_request();
 
     $inputData = json_decode(file_get_contents("php://input"), true);
     

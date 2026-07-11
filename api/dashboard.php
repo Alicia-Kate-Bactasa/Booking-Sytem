@@ -1,9 +1,19 @@
+<?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Subscriber') {
+    header("Location: ../index.html");
+    exit();
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Montage Auto Studio | Member Workspace</title>
+    <meta name="csrf-token" content="<?php echo get_csrf_token(); ?>">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -414,6 +424,6 @@
          Feature: Appointment arrays, member profile state, catalog sync, and modal workflows.
          Purpose: Drives the interactive behavior of the member dashboard and its booking tools.
     -->
-    <script src="scripts/dashboard.js"></script>
+    <script src="../scripts/dashboard.js"></script>
 </body>
 </html>

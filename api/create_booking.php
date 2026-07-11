@@ -55,6 +55,7 @@ if (!filter_var($customer_id, FILTER_VALIDATE_INT) || !filter_var($service_id, F
 try {
     // Require authentication (either Subscriber or Admin)
     require_auth(['Subscriber', 'Admin']);
+    verify_csrf_request();
 
     // If logged in as Subscriber, enforce security boundaries by overriding customer_id
     if ($_SESSION['role'] === 'Subscriber') {

@@ -1,9 +1,19 @@
+<?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Admin') {
+    header("Location: ../index.html");
+    exit();
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Montage Auto Studio - Admin Dashboard</title>
+    <meta name="csrf-token" content="<?php echo get_csrf_token(); ?>">
     <script src="https://cdn.tailwindcss.com"></script>
         <!-- ===================== ADMIN STYLES =====================
             Feature: Global admin shell styling, custom font loading, and scrollbar appearance.
@@ -367,6 +377,6 @@
          Feature: Mock database collections and operational workflows for bookings, invoices, services, and compliance.
          Purpose: Powers the admin dashboard interactions, state changes, and rendered management tables.
     -->
-    <script src="scripts/admin.js"> </script>
+    <script src="../scripts/admin.js"> </script>
 </body>
 </html>

@@ -2,6 +2,8 @@
 //             dashboard.html script
 // ===============================================
 
+const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
   /* ===================== DASHBOARD DATA / STATE =====================
            Feature: Active appointments, past history, and counters for completed sessions.
            Purpose: Supplies the dashboard with the member's booking records and summary metrics.
@@ -13,10 +15,10 @@
         let activeSubTabState = "active";
 
         function loadSubscriberAppointments(activeProfileName) {
-            return fetch('api/get_bookings.php')
+            return fetch('get_bookings.php')
                 .then(res => {
                     if (res.status === 401 || res.status === 403) {
-                        window.location.href = 'index.html';
+                        window.location.href = '../index.html';
                         return [];
                     }
                     if (!res.ok) throw new Error('API fetch failed');
@@ -230,7 +232,7 @@
             const parsedDuration = parseDuration(serviceDuration);
 
             try {
-                const response = await fetch(`api/check_availability.php?scheduled_date=${selectedDate}&duration=${parsedDuration}`);
+                const response = await fetch(`check_availability.php?scheduled_date=${selectedDate}&duration=${parsedDuration}`);
                 const result = await response.json();
 
                 if (result && result.status === 'success' && Array.isArray(result.data)) {
@@ -282,7 +284,7 @@
             }
 
             try {
-                const response = await fetch(`api/check_availability.php?scheduled_date=${selectedDate}&duration=${duration}`);
+                const response = await fetch(`check_availability.php?scheduled_date=${selectedDate}&duration=${duration}`);
                 const result = await response.json();
 
                 if (result && result.status === 'success' && Array.isArray(result.data)) {
@@ -384,7 +386,7 @@
                 const isInactive = userProfileSession.customer_type === 'Inactive Member';
                 if (isInactive) {
                     alert("Your account is currently inactive due to an overdue subscription. You cannot book covered sessions. You will be redirected to the regular booking page to book at retail rates.");
-                    window.location.href = 'index.html#booking';
+                    window.location.href = '../index.html#booking';
                     return;
                 }
             }
@@ -436,7 +438,7 @@
             const isInactive = userProfileSession.customer_type === 'Inactive Member';
             if (isInactive) {
                 alert("Your account is currently inactive. Redirecting to the regular booking page.");
-                window.location.href = 'index.html#booking';
+                window.location.href = '../index.html#booking';
                 return;
             }
 
@@ -471,10 +473,11 @@
             const serviceId = serviceObj ? (serviceObj.service_id || 1) : 1;
 
             if (customerId) {
-                fetch('api/create_booking.php', {
+                fetch('create_booking.php', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': csrfToken
                     },
                     body: JSON.stringify({
                         customer_id: parseInt(customerId, 10),
@@ -486,7 +489,7 @@
                 .then(res => {
                     if (res.status === 401 || res.status === 403) {
                         alert('Session expired or unauthorized. Please log in.');
-                        window.location.href = 'index.html';
+                        window.location.href = '../index.html';
                         return null;
                     }
                     if (!res.ok) throw new Error('API booking failed');
@@ -570,9 +573,12 @@
         async function executeSoftSubscriptionDowngrade() {
             toggleModal('cancelConfirmModal');
             try {
-                const response = await fetch('api/cancel_subscription.php', {
+                const response = await fetch('cancel_subscription.php', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': csrfToken
+                    }
                 });
                 
                 const result = await response.json();
@@ -592,7 +598,13 @@
             localStorage.removeItem('subscriber_session_active');
             localStorage.removeItem('subscriber_name');
             localStorage.removeItem('subscriber_email');
-            window.location.href = 'index.html';
+            fetch('logout.php')
+                .then(() => {
+                    window.location.href = '../index.html';
+                })
+                .catch(() => {
+                    window.location.href = '../index.html';
+                });
         }
 
           /* ===================== DASHBOARD CATALOG FETCH / RENDER =====================
@@ -607,7 +619,7 @@
                 return;
             }
 
-            fetch('api/get_services.php')
+            fetch('get_services.php')
                 .then(response => {
                     if(!response.ok) throw new Error('Data Schema validation failed.');
                     return response.json();
@@ -747,10 +759,10 @@
         });
 
         function syncProfileWithDatabase() {
-            fetch('api/get_profile.php')
+            fetch('get_profile.php')
                 .then(res => {
                     if (res.status === 401 || res.status === 403) {
-                        window.location.href = 'index.html';
+                        window.location.href = '../index.html';
                         return null;
                     }
                     if (!res.ok) throw new Error('Failed to load profile');
@@ -784,7 +796,7 @@
         window.onload = function() {
             const sessionActive = localStorage.getItem('subscriber_session_active');
             if (sessionActive !== 'true') {
-                window.location.href = 'index.html';
+                window.location.href = '../index.html';
                 return;
             }
 

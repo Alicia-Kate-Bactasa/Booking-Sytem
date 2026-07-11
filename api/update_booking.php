@@ -54,6 +54,7 @@ if (!in_array($booking_status, $validStatuses, true)) {
 try {
     // Only allow verified Admin users to update booking statuses
     require_auth('Admin');
+    verify_csrf_request();
 
     // Check if the booking actually exists before updating and fetch details
     $checkQuery = "SELECT b.booking_id, b.customer_id, b.invoice_id, c.customer_type, b.booking_status AS current_status 

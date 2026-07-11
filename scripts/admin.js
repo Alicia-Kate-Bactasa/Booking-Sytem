@@ -2,6 +2,8 @@
 //             admin.html script
 // ===============================================
 
+const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
 
 
 const defaultServices = [
@@ -46,7 +48,7 @@ const defaultServices = [
         let subscriberAccounts = [];
 
         function loadAppointments() {
-            return fetch('api/get_bookings.php')
+            return fetch('get_bookings.php')
                 .then(res => {
                     if (res.status === 401 || res.status === 403) {
                         alert('Session unauthorized or expired. Redirecting to landing.');
@@ -180,11 +182,6 @@ const defaultServices = [
               Purpose: Loads the full management view only after admin access is confirmed.
           */
         window.onload = function() {
-            if (localStorage.getItem('isAdminAuthenticated') !== 'true') {
-                alert('Access Denied. Redirecting to landing page authentication.');
-                window.location.href = 'index.html';
-                return;
-            }
             loadSubscribers();
             loadAppointments();
             loadInvoices();
@@ -280,10 +277,11 @@ const defaultServices = [
             const req = pendingRequests[reqIndex];
 
             // Send approval to the database backend
-            fetch('api/update_subscriber.php', {
+            fetch('update_subscriber.php', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': csrfToken
                 },
                 body: JSON.stringify({
                     email: req.email,
@@ -352,10 +350,11 @@ const defaultServices = [
             const req = pendingRequests[reqIndex];
 
             // Send rejection to the database backend
-            fetch('api/update_subscriber.php', {
+            fetch('update_subscriber.php', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': csrfToken
                 },
                 body: JSON.stringify({
                     email: req.email,
@@ -494,10 +493,11 @@ const defaultServices = [
 
             const rawId = booking.booking_id || parseInt(bookingId.replace(/\D/g, ''), 10);
 
-            fetch('api/update_booking.php', {
+            fetch('update_booking.php', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': csrfToken
                 },
                 body: JSON.stringify({
                     booking_id: rawId,
@@ -863,7 +863,7 @@ const defaultServices = [
 
             if (proposedDuration !== originalDuration) {
                 try {
-                    const response = await fetch(`api/check_service_bookings.php?service_name=${encodeURIComponent(targetServiceName)}`);
+                    const response = await fetch(`check_service_bookings.php?service_name=${encodeURIComponent(targetServiceName)}`);
                     const result = await response.json();
                     if (result && result.status === 'success' && result.has_bookings) {
                         const confirmChange = confirm(`Warning: There are ${result.booking_count} active future bookings scheduled for this service. Changing the duration from ${originalDuration} mins to ${proposedDuration} mins may corrupt scheduling. Are you sure you want to proceed?`);
@@ -1102,7 +1102,13 @@ const defaultServices = [
 
         function adminLogout() {
             localStorage.removeItem('isAdminAuthenticated');
-            window.location.href = 'index.html';
+            fetch('logout.php')
+                .then(() => {
+                    window.location.href = '../index.html';
+                })
+                .catch(() => {
+                    window.location.href = '../index.html';
+                });
         }
 
         /* ===================== FEEDBACKS AUDIT LOG ===================== */

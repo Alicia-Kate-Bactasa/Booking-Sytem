@@ -53,6 +53,7 @@ if ($status !== 'Approved' && $status !== 'Rejected') {
 try {
     // Require admin privileges
     require_auth('Admin');
+    verify_csrf_request();
 
     // Retrieve the subscription and customer information
     $subQuery = "SELECT s.subscription_id, s.customer_id, s.plan_status 

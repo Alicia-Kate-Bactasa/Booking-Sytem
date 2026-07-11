@@ -18,6 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 try {
     // Require subscriber authentication
     require_auth('Subscriber');
+    verify_csrf_request();
 
     $customer_id = $_SESSION['customer_id'];
 
