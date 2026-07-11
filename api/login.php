@@ -55,11 +55,12 @@ try {
     // ------------------------------------------------------------------
     $userQuery = "SELECT user_id, email, username, password, role 
                   FROM User 
-                  WHERE username = :login_input OR email = :login_input 
+                  WHERE username = :username_input OR email = :email_input 
                   LIMIT 1";
                    
     $userStmt = $conn->prepare($userQuery);
-    $userStmt->bindValue(':login_input', $login_input, PDO::PARAM_STR);
+    $userStmt->bindValue(':username_input', $login_input, PDO::PARAM_STR);
+    $userStmt->bindValue(':email_input', $login_input, PDO::PARAM_STR);
     $userStmt->execute();
     $user = $userStmt->fetch();
 
