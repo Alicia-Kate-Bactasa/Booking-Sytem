@@ -151,11 +151,15 @@ try {
 
 // === SECTION: ERROR HANDLING ===
 } catch (PDOException $e) {
-    error_log("Authentication failure: " . $e->getMessage());
+    // Write detailed error message to server's error log
+    error_log("Authentication failure: [Code " . $e->getCode() . "] " . $e->getMessage() . "\nTrace: " . $e->getTraceAsString());
+    
     http_response_code(500);
     echo json_encode([
         "status" => "error",
-        "message" => "An error occurred during authentication."
+        "message" => "An error occurred during authentication.",
+        "debug_error" => $e->getMessage(),
+        "debug_code" => $e->getCode()
     ]);
 }
 ?>
