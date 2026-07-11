@@ -706,6 +706,7 @@ const defaultServices = [
                 (inv.status === 'Paid' || inv.status === 'Rejected') && 
                 matchesPaymentFilter(inv)
             );
+            // Handled
 
             // Handle Interactive Sorting Filter Rules Inline
             if (sortVal === 'date-desc') processedRecords.sort((a, b) => new Date(b.date) - new Date(a.date));
