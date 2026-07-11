@@ -1,15 +1,11 @@
 <?php
-/**
- * Get Services Endpoint
- * 
- * Retrieves the catalog of active services from the database.
- * Filters by availability and returns them in ascending order of their IDs.
- */
+// === SECTION: HEADER & CORS ===
+header("Content-Type: application/json; charset=UTF-8");
 
-// Include database configuration and CORS headers
-require_once __DIR__ . '/config.php';
+// === SECTION: CENTRALIZED CONNECTION ===
+require_once 'config.php';
 
-// Validate HTTP request method
+// === SECTION: REQUEST METHOD VALIDATION ===
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     http_response_code(405);
     echo json_encode([
@@ -19,11 +15,21 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     exit();
 }
 
+// === SECTION: DATABASE QUERY & EXECUTION ===
 try {
     // Prepare and execute database query matching the specified schema fields
-    $query = "SELECT service_id, service_name, var_price, service_duration, service_description 
+    $query = "SELECT service_id, 
+                     service_name, 
+                     service_name AS name, 
+                     service_price, 
+                     service_price AS price, 
+                     service_category,
+                     CONCAT(service_duration, ' Mins') AS duration, 
+                     service_duration, 
+                     service_description AS `desc`, 
+                     service_description AS description,
+                     service_description 
               FROM Service 
-              WHERE is_available = 1 
               ORDER BY service_id ASC";
               
     $stmt = $conn->prepare($query);
@@ -32,8 +38,14 @@ try {
     // Fetch all active service rows
     $services = $stmt->fetchAll();
     
-    // Return the array directly as a JSON response
-    echo json_encode($services);
+    // === SECTION: SUCCESS RESPONSE ===
+    http_response_code(200);
+    echo json_encode([
+        "status" => "success",
+        "data" => $services
+    ]);
+
+// === SECTION: ERROR HANDLING ===
 } catch (PDOException $e) {
     error_log("Failed to fetch services: " . $e->getMessage());
     http_response_code(500);
@@ -42,3 +54,4 @@ try {
         "message" => "An error occurred while fetching service data from the database."
     ]);
 }
+?>

@@ -56,10 +56,11 @@ const defaultServices = [
                     if (!res.ok) throw new Error('API request failed');
                     return res.json();
                 })
-                .then(data => {
+                .then(responseObj => {
+                    const data = (responseObj && responseObj.status === 'success') ? responseObj.data : (Array.isArray(responseObj) ? responseObj : []);
                     appointmentsRegistry = data.map(app => {
                         let type = 'cancelled';
-                        if (app.booking_status === 'Pending Verification' || app.booking_status === 'Confirmed') {
+                        if (app.booking_status === 'Pending Verification' || app.booking_status === 'Confirmed' || app.booking_status === 'Pending' || app.booking_status === 'Paid') {
                             type = 'pending';
                         } else if (app.booking_status === 'Completed') {
                             type = 'completed';
@@ -277,32 +278,63 @@ const defaultServices = [
             }
 
             const req = pendingRequests[reqIndex];
-            loadSubscribers(); // make sure it's up to date
 
-            const today = new Date();
-            const nextBillingDate = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+            // Send approval to the database backend
+            fetch('api/update_subscriber.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    email: req.email,
+                    status: 'Approved'
+                })
+            })
+            .then(res => {
+                if (res.status === 401 || res.status === 403) {
+                    alert('Session expired or unauthorized. Please log in.');
+                    window.location.href = 'index.html';
+                    return null;
+                }
+                if (!res.ok) throw new Error('API approval request failed.');
+                return res.json();
+            })
+            .then(data => {
+                if (data && data.status === 'success') {
+                    loadSubscribers(); // make sure it's up to date
 
-            const newSubscriber = {
-                id: req.id,
-                name: req.name,
-                email: req.email,
-                password: req.password,
-                next_billing_date: nextBillingDate,
-                status: "Verified",
-                proof_image: req.proof_image || "https://images.unsplash.com/photo-1554415707-6e8cfc93fe23?auto=format&fit=crop&q=80&w=400",
-                created_at: req.created_at || new Date().toISOString()
-            };
+                    const today = new Date();
+                    const nextBillingDate = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-            subscriberAccounts.push(newSubscriber);
-            saveSubscribers();
+                    const newSubscriber = {
+                        id: req.id,
+                        name: req.name,
+                        email: req.email,
+                        password: req.password,
+                        next_billing_date: nextBillingDate,
+                        status: "Verified",
+                        proof_image: req.proof_image || "https://images.unsplash.com/photo-1554415707-6e8cfc93fe23?auto=format&fit=crop&q=80&w=400",
+                        created_at: req.created_at || new Date().toISOString()
+                    };
 
-            // Remove from pending
-            pendingRequests.splice(reqIndex, 1);
-            localStorage.setItem(PENDING_SUBSCRIPTION_REQUESTS_KEY, JSON.stringify(pendingRequests));
+                    subscriberAccounts.push(newSubscriber);
+                    saveSubscribers();
 
-            alert(`Subscription request for ${req.name} has been approved. The subscriber account is now active.`);
-            renderPendingSubscriptions();
-            executeAutomatedComplianceAuditLoop();
+                    // Remove from pending
+                    pendingRequests.splice(reqIndex, 1);
+                    localStorage.setItem(PENDING_SUBSCRIPTION_REQUESTS_KEY, JSON.stringify(pendingRequests));
+
+                    alert(`Subscription request for ${req.name} has been approved. The subscriber account is now active in the database and UI.`);
+                    renderPendingSubscriptions();
+                    executeAutomatedComplianceAuditLoop();
+                } else if (data) {
+                    alert(data.message || 'Failed to approve subscription.');
+                }
+            })
+            .catch(err => {
+                console.error('Subscription approval error:', err);
+                alert('An error occurred during database approval. Please try again.');
+            });
         }
 
         function rejectSubscription(requestId) {
@@ -318,11 +350,42 @@ const defaultServices = [
             }
 
             const req = pendingRequests[reqIndex];
-            pendingRequests.splice(reqIndex, 1);
-            localStorage.setItem(PENDING_SUBSCRIPTION_REQUESTS_KEY, JSON.stringify(pendingRequests));
 
-            alert(`Subscription request for ${req.name} has been rejected.`);
-            renderPendingSubscriptions();
+            // Send rejection to the database backend
+            fetch('api/update_subscriber.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    email: req.email,
+                    status: 'Rejected'
+                })
+            })
+            .then(res => {
+                if (res.status === 401 || res.status === 403) {
+                    alert('Session expired or unauthorized. Please log in.');
+                    window.location.href = 'index.html';
+                    return null;
+                }
+                if (!res.ok) throw new Error('API rejection request failed.');
+                return res.json();
+            })
+            .then(data => {
+                if (data && data.status === 'success') {
+                    pendingRequests.splice(reqIndex, 1);
+                    localStorage.setItem(PENDING_SUBSCRIPTION_REQUESTS_KEY, JSON.stringify(pendingRequests));
+
+                    alert(`Subscription request for ${req.name} has been rejected in the database and UI.`);
+                    renderPendingSubscriptions();
+                } else if (data) {
+                    alert(data.message || 'Failed to reject subscription.');
+                }
+            })
+            .catch(err => {
+                console.error('Subscription rejection error:', err);
+                alert('An error occurred during database rejection. Please try again.');
+            });
         }
 
         window.approveSubscription = approveSubscription;
@@ -792,10 +855,34 @@ const defaultServices = [
             });
         }
 
-        function saveServiceModifications(index) {
+        async function saveServiceModifications(index) {
             const services = JSON.parse(localStorage.getItem('montage_services') || '[]');
-            const proposedDuration = document.getElementById(`edit-duration-${index}`).value;
-            const originalDuration = services[index].duration;
+            const proposedDuration = parseInt(document.getElementById(`edit-duration-${index}`).value, 10);
+            const originalDuration = parseInt(services[index].duration, 10);
+            const targetServiceName = services[index].name;
+
+            if (proposedDuration !== originalDuration) {
+                try {
+                    const response = await fetch(`api/check_service_bookings.php?service_name=${encodeURIComponent(targetServiceName)}`);
+                    const result = await response.json();
+                    if (result && result.status === 'success' && result.has_bookings) {
+                        const confirmChange = confirm(`Warning: There are ${result.booking_count} active future bookings scheduled for this service. Changing the duration from ${originalDuration} mins to ${proposedDuration} mins may corrupt scheduling. Are you sure you want to proceed?`);
+                        if (!confirmChange) {
+                            document.getElementById(`edit-duration-${index}`).value = originalDuration;
+                            return;
+                        }
+                    }
+                } catch (err) {
+                    console.error("Backend validation failed, proceeding with local check:", err);
+                    const isReferencedInActiveCalendar = appointmentsRegistry.some(app => app.service === targetServiceName && app.type === 'pending');
+                    if (isReferencedInActiveCalendar) {
+                        alert("Duration changes are locked while this service is already booked.");
+                        document.getElementById(`edit-duration-${index}`).value = originalDuration;
+                        return;
+                    }
+                }
+            }
+
             const lastUpdatedAt = new Date().toLocaleString('en-US', {
                 month: 'long',
                 day: '2-digit',
@@ -803,17 +890,6 @@ const defaultServices = [
                 hour: 'numeric',
                 minute: '2-digit',
             });
-
-            if (proposedDuration !== originalDuration) {
-                const targetServiceName = services[index].name;
-                const isReferencedInActiveCalendar = appointmentsRegistry.some(app => app.service === targetServiceName && app.type === 'pending');
-
-                if (isReferencedInActiveCalendar) {
-                    alert("Duration changes are locked while this service is already booked.");
-                    document.getElementById(`edit-duration-${index}`).value = originalDuration;
-                    return;
-                }
-            }
 
             services[index].name = document.getElementById(`edit-name-${index}`).value;
             services[index].desc = document.getElementById(`edit-desc-${index}`).value;
@@ -825,6 +901,7 @@ const defaultServices = [
             alert('Catalog configuration modifications saved. Changes will immediately reflect across user interfaces.');
             renderAdminServices();
         }
+        window.saveServiceModifications = saveServiceModifications;
 
         function deleteService(index) {
             const services = JSON.parse(localStorage.getItem('montage_services') || '[]');

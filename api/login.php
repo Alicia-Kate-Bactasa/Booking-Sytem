@@ -1,20 +1,11 @@
 <?php
-/**
- * User Login Endpoint
- * 
- * Authenticates users for the decoupled application. Handles credentials
- * sequentially by first checking the Admin table (by username or email) and
- * then checking the Subscriber table (by email). Supports both hashed passwords
- * (production standard) and raw password checks (development fallback).
- * 
- * Returns status, role (Admin/Subscriber), respective identifier key
- * (admin_id or customer_id), and a success message on successful login.
- */
+// === SECTION: HEADER & CORS ===
+header("Content-Type: application/json; charset=UTF-8");
 
-// Include database configuration and CORS headers
-require_once __DIR__ . '/config.php';
+// === SECTION: CENTRALIZED CONNECTION ===
+require_once 'config.php';
 
-// Validate HTTP request method
+// === SECTION: REQUEST METHOD VALIDATION ===
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode([
@@ -24,10 +15,9 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit();
 }
 
-// Read raw body input and decode JSON payload
+// === SECTION: INPUT HANDLING ===
 $inputData = json_decode(file_get_contents("php://input"), true);
 
-// Verify JSON payload was successfully parsed
 if ($inputData === null) {
     http_response_code(400);
     echo json_encode([
@@ -37,7 +27,6 @@ if ($inputData === null) {
     exit();
 }
 
-// Extracted variables supporting flexible incoming key namings
 $login_input = null;
 if (!empty($inputData['username_or_email'])) {
     $login_input = trim($inputData['username_or_email']);
@@ -49,7 +38,7 @@ if (!empty($inputData['username_or_email'])) {
 
 $password = isset($inputData['password']) ? $inputData['password'] : null;
 
-// Validate mandatory parameters
+// === SECTION: INPUT VALIDATION ===
 if (empty($login_input) || empty($password)) {
     http_response_code(400);
     echo json_encode([
@@ -59,81 +48,97 @@ if (empty($login_input) || empty($password)) {
     exit();
 }
 
+// === SECTION: DATABASE QUERY & AUTHENTICATION ===
 try {
     // ------------------------------------------------------------------
-    // STEP 1: Check Admin Table
+    // STEP 1: Query User Table
     // ------------------------------------------------------------------
-    $adminQuery = "SELECT admin_id, username, email, password 
-                   FROM Admin 
-                   WHERE username = :username OR email = :email 
-                   LIMIT 1";
+    $userQuery = "SELECT user_id, email, username, password, role 
+                  FROM User 
+                  WHERE username = :login_input OR email = :login_input 
+                  LIMIT 1";
                    
-    $adminStmt = $conn->prepare($adminQuery);
-    $adminStmt->bindValue(':username', $login_input, PDO::PARAM_STR);
-    $adminStmt->bindValue(':email', $login_input, PDO::PARAM_STR);
-    $adminStmt->execute();
-    $admin = $adminStmt->fetch();
+    $userStmt = $conn->prepare($userQuery);
+    $userStmt->bindValue(':login_input', $login_input, PDO::PARAM_STR);
+    $userStmt->execute();
+    $user = $userStmt->fetch();
 
-    if ($admin) {
-        // Authenticate strictly using secure password_verify hashes
-        if (password_verify($password, $admin['password'])) {
+    if ($user) {
+        // Support both password_verify and plaintext password fallback (for seeded testing credentials)
+        if (password_verify($password, $user['password']) || $password === $user['password']) {
             if (session_status() === PHP_SESSION_NONE) {
                 session_start();
             }
             session_regenerate_id(true);
-            $_SESSION['user_id'] = (int)$admin['admin_id'];
-            $_SESSION['role'] = 'Admin';
-            $_SESSION['username'] = $admin['username'];
-            $_SESSION['email'] = $admin['email'];
+            
+            if ($user['role'] === 'Admin') {
+                $_SESSION['user_id'] = (int)$user['user_id'];
+                $_SESSION['role'] = 'Admin';
+                $_SESSION['username'] = $user['username'];
+                $_SESSION['email'] = $user['email'];
 
-            http_response_code(200);
-            echo json_encode([
-                "status" => "success",
-                "role" => "Admin",
-                "admin_id" => (int)$admin['admin_id'],
-                "message" => "Admin authorization successful!"
-            ]);
-            exit();
-        }
-    }
+                // === SECTION: SUCCESS RESPONSE ===
+                http_response_code(200);
+                echo json_encode([
+                    "status" => "success",
+                    "data" => [
+                        "role" => "Admin",
+                        "admin_id" => (int)$user['user_id'],
+                        "message" => "Admin authorization successful!"
+                    ]
+                ]);
+                exit();
+            } else {
+                // Fetch associated Customer record
+                $customerQuery = "SELECT customer_id, full_name, phone_number, customer_type 
+                                  FROM Customer 
+                                  WHERE user_id = :user_id 
+                                  LIMIT 1";
+                $customerStmt = $conn->prepare($customerQuery);
+                $customerStmt->bindValue(':user_id', $user['user_id'], PDO::PARAM_INT);
+                $customerStmt->execute();
+                $customer = $customerStmt->fetch();
 
-    // ------------------------------------------------------------------
-    // STEP 2: Check Subscriber Table
-    // ------------------------------------------------------------------
-    $subQuery = "SELECT s.subscriber_id, s.customer_id, s.email, s.password, c.full_name 
-                 FROM Subscriber s
-                 JOIN Customer c ON s.customer_id = c.customer_id
-                 WHERE s.email = :email 
-                 LIMIT 1";
-                 
-    $subStmt = $conn->prepare($subQuery);
-    $subStmt->bindValue(':email', $login_input, PDO::PARAM_STR);
-    $subStmt->execute();
-    $subscriber = $subStmt->fetch();
+                $customer_id = 0;
+                $full_name = '';
+                $subscription_id = 0;
 
-    if ($subscriber) {
-        // Authenticate strictly using secure password_verify hashes
-        if (password_verify($password, $subscriber['password'])) {
-            if (session_status() === PHP_SESSION_NONE) {
-                session_start();
+                if ($customer) {
+                    $customer_id = (int)$customer['customer_id'];
+                    $full_name = $customer['full_name'];
+
+                    // Fetch Subscription details
+                    $subQuery = "SELECT subscription_id FROM Subscription WHERE customer_id = :customer_id LIMIT 1";
+                    $subStmt = $conn->prepare($subQuery);
+                    $subStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+                    $subStmt->execute();
+                    $subscription = $subStmt->fetch();
+                    if ($subscription) {
+                        $subscription_id = (int)$subscription['subscription_id'];
+                    }
+                }
+
+                // If Subscription ID is not available, default to user_id for backward compatibility
+                $_SESSION['user_id'] = $subscription_id ? $subscription_id : (int)$user['user_id'];
+                $_SESSION['role'] = 'Subscriber';
+                $_SESSION['customer_id'] = $customer_id;
+                $_SESSION['email'] = $user['email'];
+                $_SESSION['name'] = $full_name;
+
+                // === SECTION: SUCCESS RESPONSE ===
+                http_response_code(200);
+                echo json_encode([
+                    "status" => "success",
+                    "data" => [
+                        "role" => "Subscriber",
+                        "customer_id" => $customer_id,
+                        "subscriber_id" => $_SESSION['user_id'],
+                        "full_name" => $full_name,
+                        "message" => "Subscriber authorization successful!"
+                    ]
+                ]);
+                exit();
             }
-            session_regenerate_id(true);
-            $_SESSION['user_id'] = (int)$subscriber['subscriber_id'];
-            $_SESSION['role'] = 'Subscriber';
-            $_SESSION['customer_id'] = (int)$subscriber['customer_id'];
-            $_SESSION['email'] = $subscriber['email'];
-            $_SESSION['name'] = $subscriber['full_name'];
-
-            http_response_code(200);
-            echo json_encode([
-                "status" => "success",
-                "role" => "Subscriber",
-                "customer_id" => (int)$subscriber['customer_id'],
-                "subscriber_id" => (int)$subscriber['subscriber_id'],
-                "full_name" => $subscriber['full_name'],
-                "message" => "Subscriber authorization successful!"
-            ]);
-            exit();
         }
     }
 
@@ -144,6 +149,7 @@ try {
         "message" => "Invalid credentials. Please verify your email/username and password."
     ]);
 
+// === SECTION: ERROR HANDLING ===
 } catch (PDOException $e) {
     error_log("Authentication failure: " . $e->getMessage());
     http_response_code(500);
@@ -152,3 +158,4 @@ try {
         "message" => "An error occurred during authentication."
     ]);
 }
+?>

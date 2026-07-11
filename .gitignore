@@ -24,3 +24,11 @@ uploads/*
 # === Development Configuration Overrides ===
 .env
 api/config.local.php
+
+# Ignore the real database configuration file containing secrets
+api/config.php
+
+# Ignore any local text logs or OS system files
+*.log
+.DS_Store
+Thumbs.db

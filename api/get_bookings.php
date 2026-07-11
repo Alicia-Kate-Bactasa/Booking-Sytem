@@ -1,16 +1,11 @@
 <?php
-/**
- * Get Bookings Endpoint
- * 
- * Executes a relational JOIN query to merge bookings with their corresponding 
- * Customer and Service details, allowing administrative tools to render 
- * human-readable customer names and service names rather than raw ID integers.
- */
+// === SECTION: HEADER & CORS ===
+header("Content-Type: application/json; charset=UTF-8");
 
-// Include database configuration and CORS headers
-require_once __DIR__ . '/config.php';
+// === SECTION: CENTRALIZED CONNECTION ===
+require_once 'config.php';
 
-// Validate HTTP request method
+// === SECTION: REQUEST METHOD VALIDATION ===
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     http_response_code(405);
     echo json_encode([
@@ -20,11 +15,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     exit();
 }
 
+// === SECTION: DATABASE QUERY & EXECUTION ===
 try {
     // Allow both Admin and Subscriber users to retrieve booking list
     require_auth(['Admin', 'Subscriber']);
 
-    $query = "SELECT b.booking_id, b.time_slot, b.scheduled_date, b.booking_status, s.service_name, c.full_name, c.customer_type 
+    $query = "SELECT b.booking_id, b.time_slot, b.scheduled_date, b.booking_status, b.bay_number, b.purchased_price, s.service_name, c.full_name, c.customer_type 
               FROM Booking b 
               JOIN Service s ON b.service_id = s.service_id 
               JOIN Customer c ON b.customer_id = c.customer_id";
@@ -47,8 +43,14 @@ try {
     // Fetch structured records
     $bookings = $stmt->fetchAll();
     
-    // Return structured rows directly as a JSON array
-    echo json_encode($bookings);
+    // === SECTION: SUCCESS RESPONSE ===
+    http_response_code(200);
+    echo json_encode([
+        "status" => "success",
+        "data" => $bookings
+    ]);
+
+// === SECTION: ERROR HANDLING ===
 } catch (PDOException $e) {
     error_log("Failed to fetch bookings: " . $e->getMessage());
     http_response_code(500);
@@ -57,3 +59,4 @@ try {
         "message" => "An error occurred while fetching booking data from the database."
     ]);
 }
+?>

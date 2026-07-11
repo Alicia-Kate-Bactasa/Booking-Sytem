@@ -22,10 +22,11 @@
                     if (!res.ok) throw new Error('API fetch failed');
                     return res.json();
                 })
-                .then(data => {
+                .then(responseObj => {
+                    const data = (responseObj && responseObj.status === 'success') ? responseObj.data : (Array.isArray(responseObj) ? responseObj : []);
                     const mapped = data.map(app => {
                         let type = 'cancelled';
-                        if (app.booking_status === 'Pending Verification' || app.booking_status === 'Confirmed') {
+                        if (app.booking_status === 'Pending Verification' || app.booking_status === 'Confirmed' || app.booking_status === 'Pending' || app.booking_status === 'Paid') {
                             type = 'pending';
                         } else if (app.booking_status === 'Completed') {
                             type = 'completed';
@@ -199,12 +200,128 @@
             if (targetMenu) targetMenu.classList.toggle('hidden');
         }
 
+        function parseDuration(durationStr) {
+            if (!durationStr) return 30;
+            if (typeof durationStr === 'number') return durationStr;
+            const clean = durationStr.toString().toLowerCase();
+            if (clean.includes('hour') || clean.includes('hr')) {
+                const val = parseFloat(clean);
+                return isNaN(val) ? 60 : val * 60;
+            }
+            const val = parseInt(clean, 10);
+            return isNaN(val) ? 30 : val;
+        }
+
+        async function generateTimeSlots(serviceDuration) {
+            const dateInputEl = document.getElementById('bookingDate');
+            if (!dateInputEl) return;
+            const selectedDate = dateInputEl.value;
+            const timeContainer = document.getElementById('dashTimeDropdownMenu');
+            if (!timeContainer) return;
+
+            // Clear previous time slots
+            timeContainer.innerHTML = '';
+
+            if (!selectedDate) {
+                timeContainer.innerHTML = `<p class="p-4 text-xs text-neutral-400 font-semibold text-center">Please select a date first</p>`;
+                return;
+            }
+
+            const parsedDuration = parseDuration(serviceDuration);
+
+            try {
+                const response = await fetch(`api/check_availability.php?scheduled_date=${selectedDate}&duration=${parsedDuration}`);
+                const result = await response.json();
+
+                if (result && result.status === 'success' && Array.isArray(result.data)) {
+                    if (result.data.length === 0) {
+                        timeContainer.innerHTML = `<p class="p-4 text-xs text-red-500 font-semibold text-center">Fully Booked for this date</p>`;
+                    } else {
+                        result.data.forEach(slot => {
+                            const btn = document.createElement('button');
+                            btn.type = 'button';
+                            btn.className = "w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors uppercase tracking-wider";
+                            btn.innerText = slot.display_label;
+                            btn.onclick = () => selectDashboardTimeItem(slot.time_slot, slot.display_label);
+                            timeContainer.appendChild(btn);
+                        });
+                    }
+                } else {
+                    timeContainer.innerHTML = `<p class="p-4 text-xs text-red-500 font-semibold text-center">Failed to load time slots</p>`;
+                }
+            } catch (err) {
+                console.error("Error generating time slots:", err);
+                timeContainer.innerHTML = `<p class="p-4 text-xs text-red-500 font-semibold text-center">Error loading slots</p>`;
+            }
+        }
+        window.generateTimeSlots = generateTimeSlots;
+
+        async function generateRescheduleTimeSlots() {
+            const dateInputEl = document.getElementById('reschDate');
+            if (!dateInputEl) return;
+            const selectedDate = dateInputEl.value;
+            const timeContainer = document.getElementById('reschTimeDropdownMenu');
+            if (!timeContainer) return;
+
+            timeContainer.innerHTML = '';
+
+            if (!selectedDate) {
+                timeContainer.innerHTML = `<p class="p-4 text-xs text-neutral-400 font-semibold text-center">Please select a date first</p>`;
+                return;
+            }
+
+            let duration = 30; // default fallback
+            if (selectedRescheduleId) {
+                const booking = (appointmentsRegistry || []).find(app => app.id === selectedRescheduleId);
+                if (booking) {
+                    const serviceObj = (masterCatalogPayload || []).find(s => s.name === booking.service || s.service_name === booking.service);
+                    if (serviceObj) {
+                        duration = parseDuration(serviceObj.service_duration || serviceObj.duration);
+                    }
+                }
+            }
+
+            try {
+                const response = await fetch(`api/check_availability.php?scheduled_date=${selectedDate}&duration=${duration}`);
+                const result = await response.json();
+
+                if (result && result.status === 'success' && Array.isArray(result.data)) {
+                    if (result.data.length === 0) {
+                        timeContainer.innerHTML = `<p class="p-4 text-xs text-red-500 font-semibold text-center">Fully Booked for this date</p>`;
+                    } else {
+                        result.data.forEach(slot => {
+                            const btn = document.createElement('button');
+                            btn.type = 'button';
+                            btn.className = "w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors uppercase tracking-wider";
+                            btn.innerText = slot.display_label;
+                            btn.onclick = () => selectModalReschTimeItem(slot.time_slot, slot.display_label);
+                            timeContainer.appendChild(btn);
+                        });
+                    }
+                } else {
+                    timeContainer.innerHTML = `<p class="p-4 text-xs text-red-500 font-semibold text-center">Failed to load time slots</p>`;
+                }
+            } catch (err) {
+                console.error("Error generating reschedule time slots:", err);
+                timeContainer.innerHTML = `<p class="p-4 text-xs text-red-500 font-semibold text-center">Error loading slots</p>`;
+            }
+        }
+        window.generateRescheduleTimeSlots = generateRescheduleTimeSlots;
+
         function selectDashboardServiceItem(value, duration, displayLabel) {
             activeDashServiceState = value;
             activeDashServiceDuration = duration;
             document.getElementById('customDashServiceDisplay').innerText = displayLabel;
             document.getElementById('dashServiceDropdownMenu').classList.add('hidden');
             updateSummary();
+            
+            // Clear current time slot selection to avoid mismatch
+            activeDashTimeState = null;
+            const customDashTimeDisplay = document.getElementById('customDashTimeDisplay');
+            if (customDashTimeDisplay) {
+                customDashTimeDisplay.innerText = "Choose a time...";
+            }
+            generateTimeSlots(duration);
         }
 
         function selectDashboardTimeItem(value, displayLabel) {
@@ -293,6 +410,16 @@
                 warningElement.classList.add('hidden');
             }
             updateSummary();
+
+            if (warningElementId === 'capacityWarning') {
+                if (activeDashServiceDuration) {
+                    generateTimeSlots(activeDashServiceDuration);
+                } else {
+                    generateTimeSlots(30);
+                }
+            } else if (warningElementId === 'reschCapacityWarning') {
+                generateRescheduleTimeSlots();
+            }
         }
 
         function updateSummary() {
@@ -337,6 +464,43 @@
             };
             appointments.unshift(newBooking);
             localStorage.setItem('montage_appointments', JSON.stringify(appointments));
+
+            // Save to database if customer is logged in
+            const customerId = localStorage.getItem('customer_id');
+            const serviceObj = (masterCatalogPayload || []).find(s => s.service_name === activeDashServiceState || s.name === activeDashServiceState);
+            const serviceId = serviceObj ? (serviceObj.service_id || 1) : 1;
+
+            if (customerId) {
+                fetch('api/create_booking.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        customer_id: parseInt(customerId, 10),
+                        service_id: parseInt(serviceId, 10),
+                        scheduled_date: dateVal,
+                        time_slot: activeDashTimeState
+                    })
+                })
+                .then(res => {
+                    if (res.status === 401 || res.status === 403) {
+                        alert('Session expired or unauthorized. Please log in.');
+                        window.location.href = 'index.html';
+                        return null;
+                    }
+                    if (!res.ok) throw new Error('API booking failed');
+                    return res.json();
+                })
+                .then(data => {
+                    if (data && data.status === 'success') {
+                        loadSubscriberAppointments(activeProfileName);
+                    }
+                })
+                .catch(err => {
+                    console.error('Database booking error:', err);
+                });
+            }
 
             alert(`Reservation Authorized!\n\nBooking ID: ${referenceId}`);
             document.getElementById('dashWizardForm').reset();
@@ -403,40 +567,25 @@
             }
         }
 
-        function executeSoftSubscriptionDowngrade() {
+        async function executeSoftSubscriptionDowngrade() {
             toggleModal('cancelConfirmModal');
-
-            const statusTag = document.getElementById('accountStatusTag');
-            const toggleBtn = document.getElementById('cancelPlanToggleBtn');
-            const tierDisplay = document.getElementById('currentTierDisplay');
-            const paymentSummary = document.getElementById('paymentStatusSummary');
-
-            userProfileSession.customer_type = 'Regular';
-            document.getElementById('subParamType').innerText = 'Regular';
-
-            if (statusTag) {
-                statusTag.className = "text-xs bg-amber-50 text-amber-700 font-bold px-4 py-2 rounded-full border border-amber-200 flex items-center gap-1.5 self-start sm:self-center";
-                statusTag.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500 inline-block"></span>INACTIVE`;
+            try {
+                const response = await fetch('api/cancel_subscription.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const result = await response.json();
+                if (!response.ok || result.status !== 'success') {
+                    throw new Error(result.message || 'Cancellation request failed.');
+                }
+                
+                alert("State Machine Updated: " + result.message);
+                location.reload();
+            } catch (err) {
+                alert("Error during cancellation: " + err.message);
+                console.error(err);
             }
-
-            if (tierDisplay) {
-                tierDisplay.innerHTML = `Standard Individual Pricing <span class="text-xs font-bold tracking-widest text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200 ml-2 uppercase">Subscription Cancelled</span>`;
-            }
-
-            if (paymentSummary) {
-                paymentSummary.className = "border-t border-dashed border-neutral-300 pt-4 flex justify-between items-center text-sm font-bold text-dark bg-neutral-100 p-3 rounded-xl border border-neutral-200";
-                paymentSummary.innerHTML = `Requires Walk-in Settlement`;
-            }
-
-            if (toggleBtn) {
-                toggleBtn.innerText = "Reactivate Subscription Plan";
-                toggleBtn.className = "w-full bg-dark text-light text-xs font-bold tracking-widest uppercase py-4 rounded-full transition-all text-center hover:bg-neutral-800 shadow-sm";
-                toggleBtn.onclick = function() { location.reload(); };
-            }
-
-            // Sync booking layout parameters back to standard currency rules instantly
-            fetchAndSyncDashboardDropdown();
-            alert("State Machine Updated: VIP privileges terminated. Booking prices restored to standard retail metrics.");
         }
 
         function terminateSessionLogout() {
@@ -463,7 +612,8 @@
                     if(!response.ok) throw new Error('Data Schema validation failed.');
                     return response.json();
                 })
-                .then(data => {
+                .then(responseObj => {
+                    const data = (responseObj && responseObj.status === 'success') ? responseObj.data : responseObj;
                     if (Array.isArray(data) && data.length > 0) {
                         masterCatalogPayload = data;
                         localStorage.setItem('montage_services', JSON.stringify(data));
@@ -596,6 +746,41 @@
             }
         });
 
+        function syncProfileWithDatabase() {
+            fetch('api/get_profile.php')
+                .then(res => {
+                    if (res.status === 401 || res.status === 403) {
+                        window.location.href = 'index.html';
+                        return null;
+                    }
+                    if (!res.ok) throw new Error('Failed to load profile');
+                    return res.json();
+                })
+                .then(data => {
+                    if (data && data.status === 'success') {
+                        const prof = data.data || data.profile;
+                        userProfileSession.name = prof.full_name;
+                        userProfileSession.customer_type = prof.plan_status === 'Active' ? 'Subscriber' : 'Inactive Member';
+                        userProfileSession.next_billing_date = prof.next_billing_date || 'Awaiting Payment Approval';
+
+                        document.getElementById('dashWelcomeName').innerText = prof.full_name;
+                        document.getElementById('subParamName').innerText = prof.full_name;
+                        document.getElementById('subParamNextBilling').innerText = userProfileSession.next_billing_date;
+
+                        const customerTypeEl = document.getElementById('subParamType');
+                        if (customerTypeEl) {
+                            customerTypeEl.innerText = userProfileSession.customer_type;
+                        }
+
+                        // Re-render services so covered prices match current coverages
+                        renderSynchronizedComponents();
+                    }
+                })
+                .catch(err => {
+                    console.warn("Failed to sync profile with database:", err);
+                });
+        }
+
         window.onload = function() {
             const sessionActive = localStorage.getItem('subscriber_session_active');
             if (sessionActive !== 'true') {
@@ -630,6 +815,7 @@
             loadSubscriberAppointments(activeProfileName);
             renderAppointmentsTable();
             fetchAndSyncDashboardDropdown();
+            syncProfileWithDatabase();
         };
 
         /* ===================== FEEDBACK FORM MODULE ===================== */

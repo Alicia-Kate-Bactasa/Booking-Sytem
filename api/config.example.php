@@ -1,11 +1,10 @@
 <?php
 /**
- * Database Configuration and Connection Script
- * 
- * Establishes a secure PDO connection to the MySQL database "montage_carwash_db".
- * Sets appropriate CORS (Cross-Origin Resource Sharing) headers to allow seamless
- * communication with decoupled frontend applications, and configures PDO to use
- * safe UTF-8 encoding and throw exceptions on error.
+ * Database Configuration Template (Safe for GitHub Version Control)
+ * * Instructions:
+ * 1. Copy this template file and rename the copy to 'config.php'.
+ * 2. Keep 'config.php' untracked by Git via your .gitignore settings.
+ * 3. Provide your environment credentials below.
  */
 
 // Establish CORS and JSON response headers supporting credentials
@@ -19,7 +18,7 @@ header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 
-// Handle preflight OPTIONS request gracefully for cross-origin requests
+// Handle preflight OPTIONS requests gracefully
 if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit();
@@ -36,9 +35,8 @@ if (session_status() === PHP_SESSION_NONE && isset($_SERVER['REQUEST_METHOD'])) 
 }
 
 /**
- * Checks if the current session is authenticated for a given role or roles.
- * Terminating the request with a JSON response if unauthorized.
- * * @param string|array $allowedRoles Roles permitted to access the resource
+ * Enforces role-based authentication check blocks.
+ * @param string|array $allowedRoles Roles permitted to access the resource
  */
 function require_auth($allowedRoles) {
     if (session_status() === PHP_SESSION_NONE) {
@@ -66,31 +64,25 @@ function require_auth($allowedRoles) {
 }
 
 // =========================================================================
-// PRODUCTION DATABASE BOUNDARY - DCISM REMOTE SERVER CONFIGURATION
+// ENVIRONMENT DATABASE BOUNDARY SETTINGS (Fill locally; do not push)
 // =========================================================================
-$host = "localhost";                       // Kept as localhost since PHP and MySQL run on the same machine
-$db_name = "s22104079_montageAutoStudio";  // Your live full database name
-$username = "s22104079_montageAutoStudio"; // Your DCISM username is identical to the full DB name
-$password = "b00kn0t!";      // REPLACE WITH THE PASSWORD YOU SET IN ADMIN.DCISM.ORG
+$host = "localhost";
+$db_name = "YOUR_DATABASE_NAME_HERE"; // e.g., s22104079_montageAutoStudio
+$username = "YOUR_USERNAME_HERE";      // Identical to DB name on DCISM live server
+$password = "YOUR_PASSWORD_HERE";      // Your live database panel password secret
 $conn = null;
 
 try {
-    // Establish connection using PDO with forced UTF-8 (utf8mb4) encoding
     $conn = new PDO("mysql:host=" . $host . ";dbname=" . $db_name . ";charset=utf8mb4", $username, $password);
-    
-    // Configure PDO attributes
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
     $conn->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
 } catch (PDOException $exception) {
-    // Log the error message to the system log instead of leaking credentials to response
     error_log("Database connection failed: " . $exception->getMessage());
-    
-    // Respond with a clean 500 server error JSON if the database connection fails
     http_response_code(500);
     echo json_encode([
         "status" => "error",
-        "message" => "Remote database sync offline. Please ensure the database server is configured correctly."
+        "message" => "Database connection offline. Verify local environment credentials."
     ]);
     exit();
 }

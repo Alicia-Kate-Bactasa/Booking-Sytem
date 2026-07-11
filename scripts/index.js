@@ -285,8 +285,9 @@
                 }
                 return res.json();
             })
-            .then(data => {
-                if (data.status === 'success') {
+            .then(responseObj => {
+                if (responseObj.status === 'success') {
+                    const data = responseObj.data || responseObj;
                     toggleModal('loginModal');
                     if (data.role === 'Admin') {
                         localStorage.setItem('isAdminAuthenticated', 'true');
@@ -300,7 +301,7 @@
                         window.location.href = 'dashboard.html';
                     }
                 } else {
-                    alert(data.message || 'Authentication failed.');
+                    alert(responseObj.message || 'Authentication failed.');
                 }
             })
             .catch(err => {
@@ -325,6 +326,25 @@
                 return;
             }
 
+            const nameVal = document.getElementById('subRegName').value.trim();
+            const emailVal = document.getElementById('subRegEmail').value.trim().toLowerCase();
+            const passwordVal = document.getElementById('subRegPassword').value;
+
+            // Show a submitting state or disable button
+            const submitBtn = event.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn ? submitBtn.innerText : '';
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerText = 'Submitting Registration...';
+            }
+
+            // Create FormData payload
+            const formData = new FormData();
+            formData.append('name', nameVal);
+            formData.append('email', emailVal);
+            formData.append('password', passwordVal);
+            formData.append('proof_of_payment', paymentProofFile);
+
             const readFileAsDataUrl = file => new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onload = () => resolve(reader.result);
@@ -332,27 +352,50 @@
                 reader.readAsDataURL(file);
             });
 
-            const proofDataUrl = await readFileAsDataUrl(paymentProofFile);
-            const pendingRequests = JSON.parse(localStorage.getItem(PENDING_SUBSCRIPTION_REQUESTS_KEY) || '[]');
-            const pendingRequest = {
-                id: `SUB-${Math.floor(100000 + Math.random() * 900000)}`,
-                name: document.getElementById('subRegName').value.trim(),
-                email: document.getElementById('subRegEmail').value.trim().toLowerCase(),
-                password: document.getElementById('subRegPassword').value,
-                payment_method: 'GCash',
-                proof_image: proofDataUrl,
-                proof_name: paymentProofFile.name,
-                status: 'Pending admin approval',
-                created_at: new Date().toISOString()
-            };
+            try {
+                // Post data to the database register endpoint
+                const response = await fetch('api/register.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const responseObj = await response.json();
+                
+                if (response.ok && responseObj.status === 'success') {
+                    const data = responseObj.data || responseObj;
+                    const proofDataUrl = await readFileAsDataUrl(paymentProofFile);
+                    const pendingRequests = JSON.parse(localStorage.getItem(PENDING_SUBSCRIPTION_REQUESTS_KEY) || '[]');
+                    const pendingRequest = {
+                        id: `SUB-${data.subscriber_id || Math.floor(100000 + Math.random() * 900000)}`,
+                        name: nameVal,
+                        email: emailVal,
+                        password: passwordVal,
+                        payment_method: 'GCash',
+                        proof_image: proofDataUrl,
+                        proof_name: paymentProofFile.name,
+                        status: 'Pending admin approval',
+                        created_at: new Date().toISOString()
+                    };
 
-            pendingRequests.unshift(pendingRequest);
-            localStorage.setItem(PENDING_SUBSCRIPTION_REQUESTS_KEY, JSON.stringify(pendingRequests));
+                    pendingRequests.unshift(pendingRequest);
+                    localStorage.setItem(PENDING_SUBSCRIPTION_REQUESTS_KEY, JSON.stringify(pendingRequests));
 
-            toggleModal('subPaymentModal');
-            toggleModal('subPendingModal');
-            document.getElementById('subPaymentModal').querySelector('form').reset();
-            document.getElementById('availSubModal').querySelector('form').reset();
+                    toggleModal('subPaymentModal');
+                    toggleModal('subPendingModal');
+                    document.getElementById('subPaymentModal').querySelector('form').reset();
+                    document.getElementById('availSubModal').querySelector('form').reset();
+                } else {
+                    alert(responseObj.message || 'Registration failed. Please check your inputs and try again.');
+                }
+            } catch (err) {
+                console.error('Registration error:', err);
+                alert('An error occurred during registration. Please check your database connection and try again.');
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = originalText;
+                }
+            }
         }
 
         window.addEventListener('click', function(e) {
@@ -393,7 +436,8 @@
                     if (!response.ok) throw new Error('Network resource data schema array parsing error.');
                     return response.json();
                 })
-                .then(data => {
+                .then(responseObj => {
+                    const data = (responseObj && responseObj.status === 'success') ? responseObj.data : responseObj;
                     if (Array.isArray(data) && data.length > 0) {
                         masterCatalogServices = data;
                         localStorage.setItem('montage_services', JSON.stringify(data));
