@@ -128,13 +128,6 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Admin') {
                     </div>
                 </div>
 
-                <div class="flex justify-between items-center bg-white border border-neutral-200 p-6 rounded-[2rem] shadow-sm">
-                    <div class="flex gap-2 bg-neutral-100 p-1 rounded-full text-[11px] font-bold uppercase tracking-wider">
-                        <button onclick="switchPaymentFilter('regular')" id="paymentFilterBtn-regular" class="px-4 py-1.5 rounded-full bg-white text-black shadow-sm transition-all focus:outline-none">Regular Bookings</button>
-                        <button onclick="switchPaymentFilter('membership')" id="paymentFilterBtn-membership" class="px-4 py-1.5 rounded-full text-neutral-500 hover:text-black transition-all focus:outline-none">Membership Fees (₱1,500)</button>
-                        <button onclick="switchPaymentFilter('subscriber-free')" id="paymentFilterBtn-subscriber-free" class="px-4 py-1.5 rounded-full text-neutral-500 hover:text-black transition-all focus:outline-none">Free Subscriber Bookings (₱0)</button>
-                    </div>
-                </div>
 
                 <div id="ledger-slide-pending-workspace" class="space-y-6">
                     <div class="bg-white border border-neutral-200 rounded-[2rem] overflow-hidden shadow-sm">

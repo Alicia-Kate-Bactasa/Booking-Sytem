@@ -595,114 +595,49 @@ const defaultServices = [
             const tbody = table.querySelector('tbody');
             if(!tbody) return;
 
-            const isRegular = activePaymentFilter === 'regular';
-
-            if (isRegular) {
-                thead.innerHTML = `
-                    <tr class="border-b border-neutral-200 bg-neutral-50 font-bold text-neutral-400 uppercase tracking-wider text-[11px]">
-                        <th class="p-5">Payment ID</th>
-                        <th class="p-5">Customer</th>
-                        <th class="p-5">Service</th>
-                        <th class="p-5">Amount</th>
-                        <th class="p-5 text-center">Proof Image</th>
-                        <th class="p-5 text-right">Actions</th>
-                    </tr>
-                `;
-            } else {
-                thead.innerHTML = `
-                    <tr class="border-b border-neutral-200 bg-neutral-50 font-bold text-neutral-400 uppercase tracking-wider text-[11px]">
-                        <th class="p-5">Payment ID</th>
-                        <th class="p-5">Customer</th>
-                        <th class="p-5">Billing Type / Service</th>
-                        <th class="p-5">Supposed Billing Date</th>
-                        <th class="p-5">Amount</th>
-                        <th class="p-5 text-center">Proof Image</th>
-                        <th class="p-5 text-right">Actions</th>
-                    </tr>
-                `;
-            }
+            thead.innerHTML = `
+                <tr class="border-b border-neutral-200 bg-neutral-50 font-bold text-neutral-400 uppercase tracking-wider text-[11px]">
+                    <th class="p-5">Payment ID</th>
+                    <th class="p-5">Customer</th>
+                    <th class="p-5">Service</th>
+                    <th class="p-5">Amount</th>
+                    <th class="p-5 text-center">Proof Image</th>
+                    <th class="p-5 text-right">Actions</th>
+                </tr>
+            `;
 
             tbody.innerHTML = '';
             const filteredInvoices = invoicesCollection.filter(inv => inv.status === 'pending' && matchesPaymentFilter(inv));
 
             if(filteredInvoices.length === 0) {
-                const colSpan = isRegular ? 6 : 7;
-                tbody.innerHTML = `<tr><td colspan="${colSpan}" class="p-8 text-center text-neutral-400 font-medium font-mono">No payment proofs waiting for review.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-neutral-400 font-medium font-mono">No payment proofs waiting for review.</td></tr>`;
                 return;
             }
 
             filteredInvoices.forEach(inv => {
-                let billingDate = '—';
-                if (inv.type === 'subscriber') {
-                    const subAcc = subscriberAccounts.find(s => s.name.trim().toLowerCase() === inv.client.trim().toLowerCase());
-                    billingDate = subAcc ? subAcc.next_billing_date : 'N/A';
-                }
-
-                if (isRegular) {
-                    tbody.innerHTML += `
-                        <tr class="hover:bg-neutral-50/60 transition-colors">
-                            <td class="p-5 font-bold font-mono text-black">${inv.id}</td>
-                            <td class="p-5 text-black font-semibold">${inv.client}</td>
-                            <td class="p-5">
-                                <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-neutral-100 text-neutral-700">${inv.service}</span>
-                            </td>
-                            <td class="p-5 font-bold text-neutral-900">₱${(inv.total || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
-                            <td class="p-5 text-center">
-                                ${inv.img ? `
-                                <div onclick="launchProofLightbox('${inv.img}')" class="w-12 h-16 bg-neutral-100 border border-neutral-200 rounded-lg overflow-hidden mx-auto cursor-pointer group hover:border-black transition-all relative">
-                                    <img src="${inv.img}" alt="Proof" class="w-full h-full object-cover">
-                                    <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-[8px] font-bold text-white uppercase tracking-wider">View</div>
-                                </div>` : `<span class="text-neutral-400 text-[10px]">No Proof Uploaded</span>`}
-                            </td>
-                            <td class="p-5 text-right space-x-2">
-                                <button onclick="evaluateRemittanceRoute('${inv.id}', 'Paid')" class="bg-black text-white px-3 py-1.5 rounded-full text-[10px] font-bold tracking-wider uppercase hover:bg-neutral-800 transition-all">Approve</button>
-                                <button onclick="evaluateRemittanceRoute('${inv.id}', 'Rejected')" class="bg-white border border-neutral-200 hover:border-red-200 hover:bg-red-50 text-red-600 px-3 py-1.5 rounded-full text-[10px] font-bold tracking-wider uppercase transition-all">Reject</button>
-                            </td>
-                        </tr>
-                    `;
-                } else {
-                    tbody.innerHTML += `
-                        <tr class="hover:bg-neutral-50/60 transition-colors">
-                            <td class="p-5 font-bold font-mono text-black">${inv.id}</td>
-                            <td class="p-5 text-black font-semibold">${inv.client}</td>
-                            <td class="p-5">
-                                <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-amber-50 text-amber-800 border border-amber-100">${inv.service}</span>
-                            </td>
-                            <td class="p-5 font-mono text-neutral-500 font-bold">${billingDate}</td>
-                            <td class="p-5 font-bold text-neutral-900">₱${(inv.total || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
-                            <td class="p-5 text-center">
-                                ${inv.img ? `
-                                <div onclick="launchProofLightbox('${inv.img}')" class="w-12 h-16 bg-neutral-100 border border-neutral-200 rounded-lg overflow-hidden mx-auto cursor-pointer group hover:border-black transition-all relative">
-                                    <img src="${inv.img}" alt="Proof" class="w-full h-full object-cover">
-                                    <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-[8px] font-bold text-white uppercase tracking-wider">View</div>
-                                </div>` : `<span class="text-neutral-400 text-[10px]">No Proof Uploaded</span>`}
-                            </td>
-                            <td class="p-5 text-right space-x-2">
-                                <button onclick="evaluateRemittanceRoute('${inv.id}', 'Paid')" class="bg-black text-white px-3 py-1.5 rounded-full text-[10px] font-bold tracking-wider uppercase hover:bg-neutral-800 transition-all">Approve</button>
-                                <button onclick="evaluateRemittanceRoute('${inv.id}', 'Rejected')" class="bg-white border border-neutral-200 hover:border-red-200 hover:bg-red-50 text-red-600 px-3 py-1.5 rounded-full text-[10px] font-bold tracking-wider uppercase transition-all">Reject</button>
-                            </td>
-                        </tr>
-                    `;
-                }
+                tbody.innerHTML += `
+                    <tr class="hover:bg-neutral-50/60 transition-colors">
+                        <td class="p-5 font-bold font-mono text-black">${inv.id}</td>
+                        <td class="p-5 text-black font-semibold">${inv.client}</td>
+                        <td class="p-5">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-neutral-100 text-neutral-700">${inv.service}</span>
+                        </td>
+                        <td class="p-5 font-bold text-neutral-900">₱${(inv.total || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                        <td class="p-5 text-center">
+                            ${inv.img ? `
+                            <div onclick="launchProofLightbox('${inv.img}')" class="w-12 h-16 bg-neutral-100 border border-neutral-200 rounded-lg overflow-hidden mx-auto cursor-pointer group hover:border-black transition-all relative">
+                                <img src="${inv.img}" alt="Proof" class="w-full h-full object-cover">
+                                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-[8px] font-bold text-white uppercase tracking-wider">View</div>
+                            </div>` : `<span class="text-neutral-400 text-[10px]">No Proof Uploaded</span>`}
+                        </td>
+                        <td class="p-5 text-right space-x-2">
+                            <button onclick="evaluateRemittanceRoute('${inv.id}', 'Paid')" class="bg-black text-white px-3 py-1.5 rounded-full text-[10px] font-bold tracking-wider uppercase hover:bg-neutral-800 transition-all">Approve</button>
+                            <button onclick="evaluateRemittanceRoute('${inv.id}', 'Rejected')" class="bg-white border border-neutral-200 hover:border-red-200 hover:bg-red-50 text-red-600 px-3 py-1.5 rounded-full text-[10px] font-bold tracking-wider uppercase transition-all">Reject</button>
+                        </td>
+                    </tr>
+                `;
             });
         }
-
-        function switchPaymentFilter(filterId) {
-            activePaymentFilter = filterId;
-            ['regular', 'membership', 'subscriber-free'].forEach(f => {
-                const btn = document.getElementById(`paymentFilterBtn-${f}`);
-                if (btn) {
-                    if (f === filterId) {
-                        btn.className = "px-4 py-1.5 rounded-full bg-white text-black shadow-sm transition-all focus:outline-none";
-                    } else {
-                        btn.className = "px-4 py-1.5 rounded-full text-neutral-500 hover:text-black transition-all focus:outline-none";
-                    }
-                }
-            });
-            renderInvoicePendingTable();
-            renderArchiveLedgerTable();
-        }
-        window.switchPaymentFilter = switchPaymentFilter;
 
         function renderArchiveLedgerTable() {
             const table = document.getElementById('invoiceArchiveTableBody').closest('table');
@@ -712,33 +647,16 @@ const defaultServices = [
             const tbody = table.querySelector('tbody');
             if(!tbody) return;
 
-            const isRegular = activePaymentFilter === 'regular';
-
-            // Render Header dynamically based on category
-            if (isRegular) {
-                thead.innerHTML = `
-                    <tr class="border-b border-neutral-200 bg-neutral-50 font-bold text-neutral-400 uppercase tracking-wider text-[11px]">
-                        <th class="p-5">Payment ID</th>
-                        <th class="p-5">Customer</th>
-                        <th class="p-5">Service</th>
-                        <th class="p-5">Amount</th>
-                        <th class="p-5">Date</th>
-                        <th class="p-5 text-right">Status</th>
-                    </tr>
-                `;
-            } else {
-                thead.innerHTML = `
-                    <tr class="border-b border-neutral-200 bg-neutral-50 font-bold text-neutral-400 uppercase tracking-wider text-[11px]">
-                        <th class="p-5">Payment ID</th>
-                        <th class="p-5">Customer</th>
-                        <th class="p-5">Billing Type / Service</th>
-                        <th class="p-5">Supposed Billing Date</th>
-                        <th class="p-5">Amount</th>
-                        <th class="p-5">Date</th>
-                        <th class="p-5 text-right">Status</th>
-                    </tr>
-                `;
-            }
+            thead.innerHTML = `
+                <tr class="border-b border-neutral-200 bg-neutral-50 font-bold text-neutral-400 uppercase tracking-wider text-[11px]">
+                    <th class="p-5">Payment ID</th>
+                    <th class="p-5">Customer</th>
+                    <th class="p-5">Service</th>
+                    <th class="p-5">Amount</th>
+                    <th class="p-5">Date</th>
+                    <th class="p-5 text-right">Status</th>
+                </tr>
+            `;
 
             tbody.innerHTML = '';
             const sortVal = document.getElementById('archiveSortDropdown').value;
@@ -748,7 +666,6 @@ const defaultServices = [
                 (inv.status === 'Paid' || inv.status === 'Rejected') && 
                 matchesPaymentFilter(inv)
             );
-            // Handled
 
             // Handle Interactive Sorting Filter Rules Inline
             if (sortVal === 'date-desc') processedRecords.sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -757,8 +674,7 @@ const defaultServices = [
             if (sortVal === 'value-asc') processedRecords.sort((a, b) => a.total - b.total);
 
             if (processedRecords.length === 0) {
-                const colSpan = isRegular ? 6 : 7;
-                tbody.innerHTML = `<tr><td colspan="${colSpan}" class="p-8 text-center text-neutral-400 font-medium font-mono">No historical records found.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-neutral-400 font-medium font-mono">No historical records found.</td></tr>`;
                 return;
             }
 
@@ -768,33 +684,16 @@ const defaultServices = [
                     ? `<span class="px-2.5 py-1 text-[9px] uppercase tracking-wider font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">Approved</span>`
                     : `<span class="px-2.5 py-1 text-[9px] uppercase tracking-wider font-bold rounded-full bg-red-50 text-red-600 border border-red-100">Rejected</span>`;
 
-                if (isRegular) {
-                    tbody.innerHTML += `
-                        <tr class="hover:bg-neutral-50/60 transition-colors">
-                            <td class="p-5 font-bold font-mono text-neutral-400">${inv.id}</td>
-                            <td class="p-5 text-black font-semibold">${inv.client}</td>
-                            <td class="p-5">${inv.service}</td>
-                            <td class="p-5 font-bold text-neutral-900">₱${inv.total.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
-                            <td class="p-5 text-neutral-500">${inv.date}</td>
-                            <td class="p-5 text-right">${statusBadge}</td>
-                        </tr>
-                    `;
-                } else {
-                    const subAcc = subscriberAccounts.find(s => s.name.trim().toLowerCase() === inv.client.trim().toLowerCase());
-                    const billingDate = subAcc ? subAcc.next_billing_date : 'N/A';
-
-                    tbody.innerHTML += `
-                        <tr class="hover:bg-neutral-50/60 transition-colors">
-                            <td class="p-5 font-bold font-mono text-neutral-400">${inv.id}</td>
-                            <td class="p-5 text-black font-semibold">${inv.client}</td>
-                            <td class="p-5">${inv.service}</td>
-                            <td class="p-5 font-mono text-neutral-500 font-bold">${billingDate}</td>
-                            <td class="p-5 font-bold text-neutral-900">₱${inv.total.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
-                            <td class="p-5 text-neutral-500">${inv.date}</td>
-                            <td class="p-5 text-right">${statusBadge}</td>
-                        </tr>
-                    `;
-                }
+                tbody.innerHTML += `
+                    <tr class="hover:bg-neutral-50/60 transition-colors">
+                        <td class="p-5 font-bold font-mono text-neutral-400">${inv.id}</td>
+                        <td class="p-5 text-black font-semibold">${inv.client}</td>
+                        <td class="p-5">${inv.service}</td>
+                        <td class="p-5 font-bold text-neutral-900">₱${inv.total.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                        <td class="p-5 text-neutral-500">${inv.date}</td>
+                        <td class="p-5 text-right">${statusBadge}</td>
+                    </tr>
+                `;
             });
         }
 
