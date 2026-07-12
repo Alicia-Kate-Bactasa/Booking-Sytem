@@ -30,7 +30,8 @@ try {
                     JOIN Invoice i ON b.invoice_id = i.invoice_id
                     JOIN Payment p ON i.invoice_id = p.invoice_id
                     WHERE p.payment_status = 'Pending Approval' 
-                      AND b.booking_status = 'Pending Verification'";
+                      AND b.booking_status = 'Pending Verification'
+                      AND i.invoice_status = 'Pending'";
     $verifyStmt = $conn->prepare($verifyQuery);
     $verifyStmt->execute();
     $pending_verifications = $verifyStmt->fetchAll();
@@ -48,7 +49,8 @@ try {
                  JOIN Payment p ON i.invoice_id = p.invoice_id
                  WHERE p.payment_status = 'Pending Approval'
                    AND s.plan_status = 'Payment Pending'
-                   AND i.invoice_type = 'Monthly Roster'";
+                   AND i.invoice_type = 'Monthly Roster'
+                   AND i.invoice_status = 'Pending'";
     $regStmt = $conn->prepare($regQuery);
     $regStmt->execute();
     $pending_registrations = $regStmt->fetchAll();

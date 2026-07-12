@@ -587,7 +587,7 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
             formData.append('proof_of_payment', file);
 
             try {
-                const response = await fetch('subscriptions/submit_renewal.php', {
+                const response = await fetch('subscriptions/submit_renewal_payment.php', {
                     method: 'POST',
                     headers: {
                         'X-CSRF-Token': csrfToken
@@ -864,34 +864,8 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                             customerTypeEl.innerText = userProfileSession.customer_type;
                         }
 
-                        // Deactivate button if already paid or pending approval for double-payment protection
-                        const payBtn = document.getElementById('uploadPaymentProofBtn');
-                        if (payBtn) {
-                            payBtn.innerText = "Pay Next Monthly Renewal Bill";
-                            if (prof.renewal_accounted_for) {
-                                payBtn.disabled = false; // Keep enabled so click works
-                                payBtn.removeAttribute('onclick');
-                                payBtn.className = "w-full bg-neutral-200 text-neutral-400 text-xs font-bold py-4 rounded-full transition-all text-center cursor-pointer border border-neutral-300 focus:outline-none";
-                                
-                                if (prof.renewal_status === 'Pending Approval') {
-                                    const msg = `Payment Verification in Progress:\n\nYour payment proof for the upcoming billing cycle (${userProfileSession.next_billing_date}) has already been submitted and is currently awaiting admin verification.\n\nPlease wait for approval.`;
-                                    payBtn.setAttribute('title', msg);
-                                    payBtn.onclick = () => {
-                                        showErrorModal(msg, true);
-                                    };
-                                } else {
-                                    const msg = `Monthly Renewal Completed:\n\nYour subscription renewal for the billing cycle ending on ${userProfileSession.next_billing_date} has already been paid and verified.\n\nDouble-payment protection is active. You will be able to submit payment for the next cycle once the current billing period completes.`;
-                                    payBtn.setAttribute('title', msg);
-                                    payBtn.onclick = () => {
-                                        showErrorModal(msg, true);
-                                    };
-                                }
-                            } else {
-                                payBtn.className = "w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-4 rounded-full transition-all text-center shadow-sm focus:outline-none";
-                                payBtn.removeAttribute('title');
-                                payBtn.onclick = () => toggleModal('renewalHubModal');
-                            }
-                        }
+                        // Handle renewal button states dynamically via state-machine
+                        updateRenewalButtonState(prof);
 
                         // Re-render services so covered prices match current coverages
                         renderSynchronizedComponents();
@@ -1041,9 +1015,43 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
             }
         }
 
+        function updateRenewalButtonState(prof) {
+            const payBtn = document.getElementById('payRenewalBtn');
+            if (!payBtn) return;
+
+            if (prof.plan_status === 'Active') {
+                if (prof.renewal_accounted_for) {
+                    payBtn.disabled = true;
+                    payBtn.removeAttribute('onclick');
+                    payBtn.className = "w-full bg-neutral-200 text-neutral-400 text-xs font-bold py-4 rounded-full transition-all text-center cursor-not-allowed border border-neutral-300 focus:outline-none";
+
+                    if (prof.renewal_status === 'Payment Awaiting Approval') {
+                        payBtn.innerText = "Payment awaiting admin approval.";
+                    } else if (prof.renewal_status === 'Paid') {
+                        payBtn.innerText = "Next month paid.";
+                    }
+                } else {
+                    payBtn.disabled = false;
+                    payBtn.innerText = "Pay Next Monthly Renewal";
+                    payBtn.className = "w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-4 rounded-full transition-all text-center shadow-sm focus:outline-none";
+                    payBtn.onclick = () => toggleModal('renewalHubModal');
+                }
+            } else {
+                payBtn.disabled = true;
+                payBtn.removeAttribute('onclick');
+                payBtn.className = "w-full bg-neutral-200 text-neutral-400 text-xs font-bold py-4 rounded-full transition-all text-center cursor-not-allowed border border-neutral-300 focus:outline-none";
+                if (prof.plan_status === 'Payment Pending') {
+                    payBtn.innerText = "Payment awaiting admin approval.";
+                } else {
+                    payBtn.innerText = "Subscription Expired";
+                }
+            }
+        }
+
         window.setFeedbackRating = setFeedbackRating;
         window.openFeedbackForBooking = openFeedbackForBooking;
         window.submitCustomerFeedback = submitCustomerFeedback;
         window.toggleSidebar = toggleSidebar;
+        window.updateRenewalButtonState = updateRenewalButtonState;
 
 

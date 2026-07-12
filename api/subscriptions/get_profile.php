@@ -62,16 +62,16 @@ try {
 
     $customer_id = (int)$profile['customer_id'];
     
-    // Check pending renewal payment
-    $pendingQuery = "SELECT p.payment_id FROM Payment p
-                     JOIN Invoice i ON p.invoice_id = i.invoice_id
-                     WHERE i.customer_id = :customer_id
-                       AND i.invoice_type = 'Monthly Roster'
-                       AND p.payment_status = 'Pending Approval' LIMIT 1";
-    $pendingStmt = $conn->prepare($pendingQuery);
-    $pendingStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
-    $pendingStmt->execute();
-    $hasPending = (bool)$pendingStmt->fetch();
+    // Check if a pending invoice exists of type 'Monthly Roster' and status 'Pending'
+    $pendingInvoiceQuery = "SELECT invoice_id FROM Invoice 
+                            WHERE customer_id = :customer_id 
+                              AND invoice_type = 'Monthly Roster'
+                              AND invoice_status = 'Pending'
+                            LIMIT 1";
+    $pendingInvoiceStmt = $conn->prepare($pendingInvoiceQuery);
+    $pendingInvoiceStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+    $pendingInvoiceStmt->execute();
+    $hasPendingInvoice = (bool)$pendingInvoiceStmt->fetch();
 
     // Check if user has already prepaid (last_billing_date is in the future)
     $prepaid = false;
@@ -82,8 +82,8 @@ try {
         }
     }
 
-    $renewal_accounted_for = $hasPending || $prepaid;
-    $renewal_status = $hasPending ? 'Pending Approval' : ($prepaid ? 'Paid' : null);
+    $renewal_accounted_for = $hasPendingInvoice || $prepaid;
+    $renewal_status = $hasPendingInvoice ? 'Payment Awaiting Approval' : ($prepaid ? 'Paid' : null);
 
     // === SECTION: SUCCESS RESPONSE ===
     echo json_encode([
