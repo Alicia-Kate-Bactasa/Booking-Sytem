@@ -583,6 +583,17 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                 submitBtn.innerText = 'Submitting Proof...';
             }
 
+            // Immediately lock the dashboard button to prevent double click/spam before response
+            const payBtn = document.getElementById('payRenewalBtn');
+            if (payBtn) {
+                payBtn.disabled = false; // enabled to capture info clicks
+                payBtn.innerText = "Payment awaiting admin approval.";
+                payBtn.className = "w-full bg-neutral-200 text-neutral-400 text-xs font-bold py-4 rounded-full transition-all text-center cursor-pointer border border-neutral-300 focus:outline-none";
+                payBtn.onclick = () => {
+                    showErrorModal("Payment awaiting admin approval.", true);
+                };
+            }
+
             const formData = new FormData();
             formData.append('proof_of_payment', file);
 
@@ -603,10 +614,12 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                     syncProfileWithDatabase();
                 } else {
                     showErrorModal(result.message || 'Failed to submit renewal payment.');
+                    syncProfileWithDatabase(); // Revert button if failed
                 }
             } catch (err) {
                 console.error('Renewal error:', err);
                 showErrorModal('An error occurred during renewal submission. Please try again.');
+                syncProfileWithDatabase(); // Revert button if failed
             } finally {
                 if (submitBtn) {
                     submitBtn.disabled = false;
