@@ -425,6 +425,6 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Subscriber') {
          Feature: Appointment arrays, member profile state, catalog sync, and modal workflows.
          Purpose: Drives the interactive behavior of the member dashboard and its booking tools.
     -->
-    <script src="../scripts/dashboard.js"></script>
+    <script src="../scripts/dashboard.js?v=1.0.1"></script>
 </body>
 </html>

@@ -377,6 +377,6 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Admin') {
          Feature: Mock database collections and operational workflows for bookings, invoices, services, and compliance.
          Purpose: Powers the admin dashboard interactions, state changes, and rendered management tables.
     -->
-    <script src="../scripts/admin.js"> </script>
+    <script src="../scripts/admin.js?v=1.0.1"></script>
 </body>
 </html>
