@@ -39,25 +39,23 @@ try {
     }
 
     // 2. Guard against double payment within the active billing cycle:
-    // Check if they already paid their invoice in the last 28 days
-    $recentPaidQuery = "SELECT p.payment_id, p.payment_date 
-                        FROM Payment p
-                        JOIN Invoice i ON p.invoice_id = i.invoice_id
-                        WHERE i.customer_id = :customer_id
-                          AND i.invoice_type = 'Monthly Roster'
-                          AND p.payment_status = 'Paid'
-                          AND p.payment_date >= DATE_SUB(NOW(), INTERVAL 28 DAY)
-                        LIMIT 1";
-    $recentPaidStmt = $conn->prepare($recentPaidQuery);
-    $recentPaidStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
-    $recentPaidStmt->execute();
-    if ($recentPaidStmt->fetch()) {
-        http_response_code(400);
-        echo json_encode([
-            "status" => "error",
-            "message" => "Double Payment Blocked: Your subscription is currently active and paid. One payment per month only."
-        ]);
-        exit();
+    // Check if the subscription is already prepaid (last_billing_date is in the future)
+    $subQuery = "SELECT last_billing_date, plan_status FROM Subscription WHERE customer_id = :customer_id LIMIT 1";
+    $subStmt = $conn->prepare($subQuery);
+    $subStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+    $subStmt->execute();
+    $sub = $subStmt->fetch();
+
+    $today = date('Y-m-d');
+    if ($sub && $sub['plan_status'] === 'Active' && !empty($sub['last_billing_date'])) {
+        if ($sub['last_billing_date'] > $today) {
+            http_response_code(400);
+            echo json_encode([
+                "status" => "error",
+                "message" => "Double Payment Blocked: You have already paid for the upcoming billing cycle."
+            ]);
+            exit();
+        }
     }
 
     // 3. Verify that proof of payment file was uploaded
