@@ -167,14 +167,36 @@ try {
         log_system_event($conn, 'Subscription Downgraded', "Subscription for Customer ID {$customer_id} manually set to Expired by Admin.");
 
     } else {
-        // Reject subscription request
-        // Update Subscription plan_status = 'Expired' (archived)
-        $updateSub = "UPDATE Subscription 
-                      SET plan_status = 'Expired' 
-                      WHERE customer_id = :customer_id";
-        $stmtSub = $conn->prepare($updateSub);
-        $stmtSub->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
-        $stmtSub->execute();
+        // Reject subscription request or renewal
+        // Fetch current subscription plan status and next billing date
+        $checkQuery = "SELECT plan_status, next_billing_date FROM Subscription WHERE customer_id = :customer_id LIMIT 1";
+        $checkStmt = $conn->prepare($checkQuery);
+        $checkStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+        $checkStmt->execute();
+        $subInfo = $checkStmt->fetch();
+
+        $today = date('Y-m-d');
+        if ($subInfo && $subInfo['plan_status'] === 'Active' && !empty($subInfo['next_billing_date']) && $subInfo['next_billing_date'] >= $today) {
+            // Early renewal rejection: Keep current subscription Active because they're already paid up for their current cycle.
+            // We just reject the payment upload, allowing them to try again.
+            log_system_event($conn, 'Renewal Payment Rejected', "Subscription renewal payment for Customer ID {$customer_id} rejected by Admin. Subscription remains Active for current cycle.");
+        } else {
+            // Rejection of new signup or expired renewal: set subscription status to 'Expired'
+            $updateSub = "UPDATE Subscription 
+                          SET plan_status = 'Expired' 
+                          WHERE customer_id = :customer_id";
+            $stmtSub = $conn->prepare($updateSub);
+            $stmtSub->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+            $stmtSub->execute();
+            
+            // Revert Customer type to Regular
+            $updateCust = "UPDATE Customer SET customer_type = 'Regular' WHERE customer_id = :customer_id";
+            $stmtCust = $conn->prepare($updateCust);
+            $stmtCust->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+            $stmtCust->execute();
+
+            log_system_event($conn, 'Subscription Registration Rejected', "Subscription signup request for Customer ID {$customer_id} rejected by Admin. plan_status set to Expired.");
+        }
 
         // Update Payment status to 'Rejected'
         $updatePay = "UPDATE Payment p
@@ -186,8 +208,6 @@ try {
         $stmtPay = $conn->prepare($updatePay);
         $stmtPay->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
         $stmtPay->execute();
-
-        log_system_event($conn, 'Subscription Rejected', "Subscription request for Customer ID {$customer_id} rejected by Admin. plan_status archived as Expired.");
     }
 
     $conn->commit();
