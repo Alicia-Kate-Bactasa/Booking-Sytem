@@ -119,11 +119,25 @@ try {
                         $plan_status = $subscription['plan_status'];
 
                         // Enforce: User should not be able to log in / open an account that hasn't been approved yet
-                        if ($plan_status !== 'Active') {
+                        if ($plan_status === 'Payment Pending') {
                             http_response_code(403);
                             echo json_encode([
                                 "status" => "error",
                                 "message" => "Your subscriber account is pending admin approval. You will be able to access your account once your subscription and payment have been verified by an admin."
+                            ]);
+                            exit();
+                        } elseif ($plan_status === 'Expired') {
+                            http_response_code(403);
+                            echo json_encode([
+                                "status" => "error",
+                                "message" => "Your subscription registration has been rejected or has expired. Please contact support or resubmit registration."
+                            ]);
+                            exit();
+                        } elseif ($plan_status !== 'Active') {
+                            http_response_code(403);
+                            echo json_encode([
+                                "status" => "error",
+                                "message" => "Your subscription account is inactive. Please contact support."
                             ]);
                             exit();
                         }

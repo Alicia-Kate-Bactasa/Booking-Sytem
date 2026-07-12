@@ -154,9 +154,9 @@ try {
 
     } else {
         // Reject subscription request
-        // Update Subscription plan_status = 'Payment Pending' (awaiting retry)
+        // Update Subscription plan_status = 'Expired' (archived)
         $updateSub = "UPDATE Subscription 
-                      SET plan_status = 'Payment Pending' 
+                      SET plan_status = 'Expired' 
                       WHERE customer_id = :customer_id";
         $stmtSub = $conn->prepare($updateSub);
         $stmtSub->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);

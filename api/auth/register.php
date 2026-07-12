@@ -187,7 +187,7 @@ try {
     $customerStmt->bindValue(':user_id', $user_id, PDO::PARAM_INT);
     $customerStmt->bindValue(':full_name', $name, PDO::PARAM_STR);
     $customerStmt->bindValue(':phone_number', 'N/A', PDO::PARAM_STR);
-    $customerStmt->bindValue(':customer_type', 'Subscriber', PDO::PARAM_STR);
+    $customerStmt->bindValue(':customer_type', 'Regular', PDO::PARAM_STR);
     $customerStmt->execute();
     $customer_id = (int)$conn->lastInsertId();
 

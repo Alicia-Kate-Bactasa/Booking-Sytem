@@ -163,8 +163,8 @@ try {
         $stmtInv->execute();
 
         if ($invoice['invoice_type'] === 'Monthly Roster') {
-            // Set Subscription to Payment Pending
-            $updateSub = "UPDATE Subscription SET plan_status = 'Payment Pending' WHERE customer_id = :customer_id";
+            // Set Subscription to Expired (archived)
+            $updateSub = "UPDATE Subscription SET plan_status = 'Expired' WHERE customer_id = :customer_id";
             $stmtSub = $conn->prepare($updateSub);
             $stmtSub->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
             $stmtSub->execute();
