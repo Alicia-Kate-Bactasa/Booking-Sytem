@@ -113,7 +113,7 @@ try {
     }
 
     // Create uploads directory if it does not exist
-    $uploadDir = __DIR__ . '/../uploads/';
+    $uploadDir = __DIR__ . '/../../uploads/';
     if (!is_dir($uploadDir)) {
         mkdir($uploadDir, 0755, true);
     }

@@ -114,7 +114,7 @@ if (!in_array($mimeType, $allowedMimeTypes, true)) {
 }
 
 // Create uploads directory if it does not exist
-$uploadDir = __DIR__ . '/../uploads/';
+$uploadDir = __DIR__ . '/../../uploads/';
 if (!is_dir($uploadDir)) {
     if (!mkdir($uploadDir, 0755, true)) {
         http_response_code(500);
