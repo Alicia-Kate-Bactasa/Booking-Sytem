@@ -61,6 +61,62 @@
             if(targetedMenu) targetedMenu.classList.toggle('hidden');
         }
 
+        function parseDuration(durationStr) {
+            if (!durationStr) return 30;
+            const num = parseInt(durationStr, 10);
+            if (isNaN(num)) return 30;
+            if (durationStr.toLowerCase().includes('hour')) {
+                return num * 60;
+            }
+            return num;
+        }
+
+        async function fetchAvailableTimeSlots() {
+            const dateInput = document.getElementById('bookingDate').value;
+            const timeContainer = document.getElementById('timeDropdownMenu');
+            const warningElement = document.getElementById('capacityWarning');
+            if (!timeContainer) return;
+
+            if (warningElement) {
+                if (dateInput && new Date(dateInput).getUTCDay() === 6) {
+                    warningElement.innerText = "Saturday bookings are limited to 16 cars.";
+                    warningElement.classList.remove('hidden');
+                } else {
+                    warningElement.classList.add('hidden');
+                }
+            }
+
+            if (!dateInput || !activeServiceDuration) {
+                timeContainer.innerHTML = `<p class="p-4 text-xs text-neutral-400 font-semibold text-center">Please select a service and date first</p>`;
+                return;
+            }
+
+            const durationMinutes = parseDuration(activeServiceDuration);
+
+            try {
+                const response = await fetch(`api/bookings/check_availability.php?scheduled_date=${dateInput}&duration=${durationMinutes}`);
+                const result = await response.json();
+
+                if (result && result.status === 'success' && Array.isArray(result.data)) {
+                    timeContainer.innerHTML = '';
+                    if (result.data.length === 0) {
+                        timeContainer.innerHTML = `<p class="p-4 text-xs text-red-500 font-semibold text-center">Fully Booked for this date</p>`;
+                    } else {
+                        result.data.forEach(slot => {
+                            const btn = document.createElement('button');
+                            btn.type = 'button';
+                            btn.className = "w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors uppercase tracking-wider";
+                            btn.innerText = slot.display_label;
+                            btn.onclick = () => selectCustomTime(slot.time_slot, slot.display_label);
+                            timeContainer.appendChild(btn);
+                        });
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to fetch available time slots:", err);
+            }
+        }
+
         function selectCustomItem(value, price, duration, label) {
             activeServiceState = value;
             activeServicePrice = price;
@@ -68,15 +124,15 @@
 
             document.getElementById('customServiceDisplay').innerText = label;
             document.getElementById('serviceDropdownMenu').classList.add('hidden');
-            evaluateTimelineValidationGuards();
+            
+            activeTimeState = "";
+            document.getElementById('customTimeDisplay').innerText = "Choose a time...";
+            
+            fetchAvailableTimeSlots();
             updateSummary();
         }
 
         function selectCustomTime(value, label) {
-            const dateInput = document.getElementById('bookingDate').value;
-            if (isTimeSlotTimelineExceeded(dateInput, value, activeServiceDuration)) {
-                return; // Guard layout verification intercept
-            }
             activeTimeState = value;
             document.getElementById('customTimeDisplay').innerText = label;
             document.getElementById('timeDropdownMenu').classList.add('hidden');
@@ -90,89 +146,20 @@
             document.getElementById('customServiceDisplay').innerText = label;
 
             window.location.href = '#booking-wizard';
-            evaluateTimelineValidationGuards();
+            
+            activeTimeState = "";
+            document.getElementById('customTimeDisplay').innerText = "Choose a time...";
+            
+            fetchAvailableTimeSlots();
             updateSummary();
         }
 
         function handleDateChange() {
-            evaluateTimelineValidationGuards();
+            activeTimeState = "";
+            document.getElementById('customTimeDisplay').innerText = "Choose a time...";
+            
+            fetchAvailableTimeSlots();
             updateSummary();
-        }
-
-          /* ===================== LANDING PAGE TIMELINE VALIDATION =====================
-              Feature: Slot locking, day-of-week checks, and capacity warnings for bookings.
-              Purpose: Prevents users from choosing time windows that exceed studio availability.
-          */
-        function evaluateTimelineValidationGuards() {
-            const selectedDate = document.getElementById('bookingDate').value;
-            const timeButtons = document.querySelectorAll('#timeDropdownMenu button');
-            const warningElement = document.getElementById('capacityWarning');
-            let structuralLockoutTriggered = false;
-
-            timeButtons.forEach(button => {
-                const hourSlot = button.getAttribute('data-time');
-
-                if (selectedDate && activeServiceDuration) {
-                    const isLocked = isTimeSlotTimelineExceeded(selectedDate, hourSlot, activeServiceDuration);
-                    if (isLocked) {
-                        button.className = "w-full text-left px-6 py-3.5 text-xs font-semibold bg-neutral-100 text-neutral-400 line-through cursor-not-allowed uppercase tracking-wider";
-                        button.setAttribute('disabled', 'true');
-                        if (activeTimeState === hourSlot) {
-                            activeTimeState = "";
-                            document.getElementById('customTimeDisplay').innerText = "Time Slot...";
-                        }
-                        structuralLockoutTriggered = true;
-                    } else {
-                        button.className = "w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors uppercase tracking-wider";
-                        button.removeAttribute('disabled');
-                    }
-                } else {
-                    button.className = "w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors uppercase tracking-wider";
-                    button.removeAttribute('disabled');
-                }
-            });
-
-            if (structuralLockoutTriggered) {
-                warningElement.innerText = "Selected time interval spans cross-slots exceeding our global bay capacity.";
-                warningElement.classList.remove('hidden');
-            } else if (selectedDate && new Date(selectedDate).getUTCDay() === 6) {
-                warningElement.innerText = "Saturday bookings are limited to 16 cars.";
-                warningElement.classList.remove('hidden');
-            } else {
-                warningElement.classList.add('hidden');
-            }
-        }
-
-        function isTimeSlotTimelineExceeded(date, targetHour, durationString) {
-            if (!date) return false;
-
-            // Map index timeline structures
-            const structuralSlots = ["09:00 AM", "10:00 AM", "11:00 AM", "02:00 PM", "03:00 PM"];
-            const indexPointer = structuralSlots.indexOf(targetHour);
-            if (indexPointer === -1) return false;
-
-            // Determine explicit hour spanning blocks based on parsed string limits
-            let operationalSpanningBlocks = 1;
-            if (durationString.includes("Hour") || durationString.includes("1 Hour")) operationalSpanningBlocks = 1;
-            if (durationString.includes("1.5 Hours") || durationString.includes("2 Hours")) operationalSpanningBlocks = 2;
-            if (durationString.includes("3 Hours")) operationalSpanningBlocks = 3;
-            if (durationString.includes("4 Hours")) operationalSpanningBlocks = 4;
-
-            const targetDateRegistry = currentTimelineLoadRegistry[date] || {};
-
-            for (let i = 0; i < operationalSpanningBlocks; i++) {
-                const evaluateIndex = indexPointer + i;
-                if (evaluateIndex >= structuralSlots.length) {
-                    return true; // Overlap flags locked if it runs past operating limits
-                }
-                const currentSlotKey = structuralSlots[evaluateIndex];
-                const activeOccupancyLoad = targetDateRegistry[currentSlotKey] || 0;
-
-                if (activeOccupancyLoad >= GLOBAL_BAY_CAPACITY_CEILING) {
-                    return true;
-                }
-            }
-            return false;
         }
 
         function updateSummary() {
@@ -200,64 +187,53 @@
                 return;
             }
 
-            const readFileAsDataUrl = file => new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = reject;
-                reader.readAsDataURL(file);
-            });
-
-            const proofDataUrl = await readFileAsDataUrl(paymentProofFile);
-
-            // Generate Booking and Invoice IDs
-            const bookingId = `MTG-${Math.floor(100000 + Math.random() * 900000)}`;
-            const invoiceId = `INV-${Math.floor(1000 + Math.random() * 9000)}`;
             const clientName = document.getElementById('custName').value.trim();
+            const clientPhone = document.getElementById('custPhone').value.trim();
 
-            // Create Booking
-            const appointments = JSON.parse(localStorage.getItem('montage_appointments') || '[]');
-            const newBooking = {
-                id: bookingId,
-                type: 'pending',
-                service: activeServiceState,
-                date: selectedDate,
-                time: activeTimeState,
-                client: clientName,
-                userType: 'regular'
-            };
-            appointments.unshift(newBooking);
-            localStorage.setItem('montage_appointments', JSON.stringify(appointments));
-
-            // Create Invoice
-            const invoices = JSON.parse(localStorage.getItem('montage_invoices') || '[]');
-            const newInvoice = {
-                id: invoiceId,
-                type: 'regular',
-                status: 'pending',
-                client: clientName,
-                service: activeServiceState,
-                total: activeServicePrice,
-                img: proofDataUrl,
-                date: new Date().toISOString().split('T')[0]
-            };
-            invoices.unshift(newInvoice);
-            localStorage.setItem('montage_invoices', JSON.stringify(invoices));
-
-            // Persistence tracking update configuration block
-            if (!currentTimelineLoadRegistry[selectedDate]) {
-                currentTimelineLoadRegistry[selectedDate] = {};
+            const submitBtn = event.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn ? submitBtn.innerText : '';
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerText = 'Submitting Booking...';
             }
-            currentTimelineLoadRegistry[selectedDate][activeTimeState] = (currentTimelineLoadRegistry[selectedDate][activeTimeState] || 0) + 1;
-            localStorage.setItem('montage_timeline_registry', JSON.stringify(currentTimelineLoadRegistry));
 
-            alert(`Booking submitted!\n\nReference ID: ${bookingId}\n\nPayment proof recorded for review.`);
-            document.getElementById('wizardForm').reset();
+            const formData = new FormData();
+            formData.append('name', clientName);
+            formData.append('phone', clientPhone);
+            formData.append('service_name', activeServiceState);
+            formData.append('date', selectedDate);
+            formData.append('time', activeTimeState);
+            formData.append('proof_of_payment', paymentProofFile);
 
-            activeTimeState = "";
-            document.getElementById('customTimeDisplay').innerText = "Time Slot...";
-            evaluateTimelineValidationGuards();
-            updateSummary();
+            try {
+                const response = await fetch('api/bookings/create_guest_booking.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+
+                if (response.ok && result.status === 'success') {
+                    alert(`Booking submitted successfully!\n\nReference ID: ${result.data.booking_id}\n\nPayment proof recorded for review.`);
+                    document.getElementById('wizardForm').reset();
+                    
+                    activeTimeState = "";
+                    document.getElementById('customTimeDisplay').innerText = "Choose a time...";
+                    fetchAvailableTimeSlots();
+                    updateSummary();
+                } else {
+                    alert(result.message || 'Failed to submit booking.');
+                }
+            } catch (err) {
+                console.error("Booking error:", err);
+                alert('An error occurred during booking. Please try again.');
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = originalText;
+                }
+            }
         }
+
 
         function simulateLoginRedirect(event) {
             event.preventDefault();
@@ -266,7 +242,7 @@
             const passwordField = document.getElementById('loginPassword') || (form ? form.querySelector('input[type="password"]') : null);
             const passwordInput = passwordField ? passwordField.value : '';
 
-            fetch('api/login.php', {
+            fetch('api/auth/login.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -277,13 +253,17 @@
                 })
             })
             .then(res => {
-                if (res.status === 401) {
-                    throw new Error('Invalid credentials. Please verify your email/username and password.');
+                if (res.ok) {
+                    return res.json();
                 }
-                if (!res.ok) {
+                return res.json().then(errData => {
+                    throw new Error(errData.message || 'An error occurred during authentication.');
+                }).catch(() => {
+                    if (res.status === 401) {
+                        throw new Error('Invalid credentials. Please verify your email/username and password.');
+                    }
                     throw new Error('An error occurred during authentication.');
-                }
-                return res.json();
+                });
             })
             .then(responseObj => {
                 if (responseObj.status === 'success') {
@@ -344,16 +324,10 @@
             formData.append('password', passwordVal);
             formData.append('proof_of_payment', paymentProofFile);
 
-            const readFileAsDataUrl = file => new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = reject;
-                reader.readAsDataURL(file);
-            });
 
             try {
                 // Post data to the database register endpoint
-                const response = await fetch('api/register.php', {
+                const response = await fetch('api/auth/register.php', {
                     method: 'POST',
                     body: formData
                 });
@@ -361,24 +335,6 @@
                 const responseObj = await response.json();
                 
                 if (response.ok && responseObj.status === 'success') {
-                    const data = responseObj.data || responseObj;
-                    const proofDataUrl = await readFileAsDataUrl(paymentProofFile);
-                    const pendingRequests = JSON.parse(localStorage.getItem(PENDING_SUBSCRIPTION_REQUESTS_KEY) || '[]');
-                    const pendingRequest = {
-                        id: `SUB-${data.subscriber_id || Math.floor(100000 + Math.random() * 900000)}`,
-                        name: nameVal,
-                        email: emailVal,
-                        password: passwordVal,
-                        payment_method: 'GCash',
-                        proof_image: proofDataUrl,
-                        proof_name: paymentProofFile.name,
-                        status: 'Pending admin approval',
-                        created_at: new Date().toISOString()
-                    };
-
-                    pendingRequests.unshift(pendingRequest);
-                    localStorage.setItem(PENDING_SUBSCRIPTION_REQUESTS_KEY, JSON.stringify(pendingRequests));
-
                     toggleModal('subPaymentModal');
                     toggleModal('subPendingModal');
                     document.getElementById('subPaymentModal').querySelector('form').reset();
@@ -423,16 +379,9 @@
               Purpose: Shows available services and pricing even when remote data is unavailable.
           */
         function fetchAndRenderCatalogServices() {
-            let storedServices = localStorage.getItem('montage_services');
-            if (storedServices) {
-                masterCatalogServices = JSON.parse(storedServices);
-                renderDOMCatalogs();
-                return;
-            }
-
-            fetch('api/get_services.php')
+            fetch('api/services/get_services.php')
                 .then(response => {
-                    if (!response.ok) throw new Error('Network resource data schema array parsing error.');
+                    if (!response.ok) throw new Error('Database fetch failed.');
                     return response.json();
                 })
                 .then(responseObj => {
@@ -446,7 +395,7 @@
                     renderDOMCatalogs();
                 })
                 .catch(err => {
-                    // Standardized Master Catalog Data Schema Fallback Allocation
+                    console.warn("Using fallback services due to connection failure:", err);
                     masterCatalogServices = [
                         { name: "Standard Car Wash", price: 250, duration: "30 Mins", desc: "An essential exterior foam cleaning treatment utilizing scratch-free microfiber wash mitts and deep wheel cleaning." },
                         { name: "Deluxe Car Wash", price: 400, duration: "45 Mins", desc: "Full cabin deep cleaning, sterilization, leather restoration, fabric stain extraction, and anti-bac odor elimination treatments." },
@@ -461,12 +410,20 @@
         function renderDOMCatalogs() {
             const menuCardsContainer = document.getElementById('index-services-container');
             const wizardDropdownWrapper = document.getElementById('dropdown-services-wrapper');
+            const feedbackSelect = document.getElementById('feedbackService');
 
             if (menuCardsContainer) menuCardsContainer.innerHTML = '';
             if (wizardDropdownWrapper) wizardDropdownWrapper.innerHTML = '';
+            if (feedbackSelect) feedbackSelect.innerHTML = '';
 
             masterCatalogServices.forEach((service, index) => {
-                // Render Menu Cards
+                if (feedbackSelect) {
+                    const opt = document.createElement('option');
+                    opt.value = service.name;
+                    opt.innerText = service.name;
+                    feedbackSelect.appendChild(opt);
+                }
+
                 if (menuCardsContainer) {
                     const isPremiumVariant = service.price >= 600;
                     let cardHTML = '';
@@ -503,7 +460,6 @@
                     menuCardsContainer.innerHTML += cardHTML;
                 }
 
-                // Render Dynamic Dropdown items inside Wizard Component
                 if (wizardDropdownWrapper) {
                     const optionButtonHTML = `
                         <button type="button" onclick="selectCustomItem('${service.name}', ${service.price}, '${service.duration}', '${service.name} — ₱${service.price}')" class="w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors flex justify-between items-center">
@@ -514,7 +470,6 @@
                 }
             });
 
-            // Auto-initialize standard default configuration indices cleanly
             if (masterCatalogServices.length > 0) {
                 activeServiceState = masterCatalogServices[0].name;
                 activeServicePrice = masterCatalogServices[0].price;
@@ -552,7 +507,7 @@
             const rating = parseInt(document.getElementById('feedbackRating').value) || 5;
             const comments = document.getElementById('feedbackComments').value.trim();
 
-            fetch('api/submit_feedback.php', {
+            fetch('api/feedback/submit_feedback.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

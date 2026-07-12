@@ -46,9 +46,10 @@ const defaultServices = [
         let appointmentsRegistry = [];
         let invoicesCollection = [];
         let subscriberAccounts = [];
+        let pendingRequests = [];
 
         function loadAppointments() {
-            return fetch('get_bookings.php')
+            return fetch('bookings/get_bookings.php')
                 .then(res => {
                     if (res.status === 401 || res.status === 403) {
                         alert('Session unauthorized or expired. Redirecting to landing.');
@@ -99,19 +100,25 @@ const defaultServices = [
         }
 
         function loadInvoices() {
-            try {
-                let data = localStorage.getItem(INVOICES_KEY);
-                if (!data) {
+            return fetch('payments/get_invoices.php')
+                .then(res => {
+                    if (res.status === 401 || res.status === 403) {
+                        return [];
+                    }
+                    if (!res.ok) throw new Error('API request failed');
+                    return res.json();
+                })
+                .then(responseObj => {
+                    invoicesCollection = (responseObj && responseObj.status === 'success') ? responseObj.data : (Array.isArray(responseObj) ? responseObj : []);
+                    renderInvoicePendingTable();
+                    renderArchiveLedgerTable();
+                })
+                .catch(err => {
+                    console.warn("Failed to load invoices from database, using fallback:", err);
                     invoicesCollection = defaultInvoices;
-                    localStorage.setItem(INVOICES_KEY, JSON.stringify(invoicesCollection));
-                } else {
-                    invoicesCollection = JSON.parse(data);
-                }
-            } catch (e) {
-                console.error("Error parsing invoices:", e);
-                invoicesCollection = defaultInvoices;
-                localStorage.setItem(INVOICES_KEY, JSON.stringify(invoicesCollection));
-            }
+                    renderInvoicePendingTable();
+                    renderArchiveLedgerTable();
+                });
         }
 
         function saveInvoices() {
@@ -119,23 +126,60 @@ const defaultServices = [
         }
 
         function loadSubscribers() {
-            try {
-                let data = localStorage.getItem(APPROVED_SUBSCRIPTION_ACCOUNTS_KEY);
-                if (!data) {
+            return fetch('subscriptions/get_subscribers.php')
+                .then(res => {
+                    if (res.status === 401 || res.status === 403) {
+                        return [];
+                    }
+                    if (!res.ok) throw new Error('API request failed');
+                    return res.json();
+                })
+                .then(responseObj => {
+                    subscriberAccounts = (responseObj && responseObj.status === 'success') ? responseObj.data : (Array.isArray(responseObj) ? responseObj : []);
+                    executeAutomatedComplianceAuditLoop();
+                })
+                .catch(err => {
+                    console.warn("Failed to load subscribers from database, using fallback:", err);
                     subscriberAccounts = defaultSubscribers;
-                    localStorage.setItem(APPROVED_SUBSCRIPTION_ACCOUNTS_KEY, JSON.stringify(subscriberAccounts));
-                } else {
-                    subscriberAccounts = JSON.parse(data);
-                }
-            } catch (e) {
-                console.error("Error parsing subscribers:", e);
-                subscriberAccounts = defaultSubscribers;
-                localStorage.setItem(APPROVED_SUBSCRIPTION_ACCOUNTS_KEY, JSON.stringify(subscriberAccounts));
-            }
+                    executeAutomatedComplianceAuditLoop();
+                });
         }
 
         function saveSubscribers() {
             localStorage.setItem(APPROVED_SUBSCRIPTION_ACCOUNTS_KEY, JSON.stringify(subscriberAccounts));
+        }
+
+        function loadPendingSubscriptions() {
+            return fetch('admin/get_admin_dashboard_data.php')
+                .then(res => {
+                    if (res.status === 401 || res.status === 403) {
+                        return null;
+                    }
+                    if (!res.ok) throw new Error('Failed to fetch admin dashboard datasets');
+                    return res.json();
+                })
+                .then(responseObj => {
+                    if (responseObj && responseObj.status === 'success' && responseObj.data) {
+                        const regs = responseObj.data.pending_registrations || [];
+                        pendingRequests = regs.map(reg => {
+                            return {
+                                id: `SUB-${reg.subscription_id}`,
+                                subscription_id: parseInt(reg.subscription_id, 10),
+                                name: reg.full_name,
+                                email: reg.email,
+                                phone: reg.phone_number,
+                                proof_image: '../' + reg.proof_of_payment,
+                                created_at: reg.created_at
+                            };
+                        });
+                        renderPendingSubscriptions();
+                    }
+                })
+                .catch(err => {
+                    console.warn("Failed to load pending subscriptions from database, falling back to localStorage:", err);
+                    pendingRequests = JSON.parse(localStorage.getItem(PENDING_SUBSCRIPTION_REQUESTS_KEY) || '[]');
+                    renderPendingSubscriptions();
+                });
         }
 
         let activeUserTypeFilter = "all";
@@ -143,12 +187,12 @@ const defaultServices = [
         function switchBookingUserFilter(filterId) {
             activeUserTypeFilter = filterId;
             ['all', 'regular', 'subscriber'].forEach(f => {
-                const btn = document.getElementById(`bookingFilterBtn-${f}`);
+                const btn = document.getElementById(`userFilterBtn-${f}`);
                 if (btn) {
                     if (f === filterId) {
-                        btn.className = "px-3.5 py-1.5 rounded-full bg-white text-black shadow-sm transition-all focus:outline-none";
+                        btn.className = "px-3 py-1.5 rounded-full bg-white text-black shadow-sm transition-all focus:outline-none";
                     } else {
-                        btn.className = "px-3.5 py-1.5 rounded-full text-neutral-500 hover:text-black transition-all focus:outline-none";
+                        btn.className = "px-3 py-1.5 rounded-full text-neutral-500 hover:text-black transition-all focus:outline-none";
                     }
                 }
             });
@@ -156,13 +200,31 @@ const defaultServices = [
         }
         window.switchBookingUserFilter = switchBookingUserFilter;
 
+        let activeBookingSlide = "pending";
+
+        function switchBookingSlide(slideId) {
+            activeBookingSlide = slideId;
+            ['pending', 'completed', 'cancelled'].forEach(s => {
+                const btn = document.getElementById(`slideBtn-${s}`);
+                if (btn) {
+                    if (s === slideId) {
+                        btn.className = "text-xs font-bold uppercase tracking-wider px-4 py-2 rounded-full bg-white text-black shadow-sm transition-all focus:outline-none";
+                    } else {
+                        btn.className = "text-xs font-semibold uppercase tracking-wider px-4 py-2 rounded-full text-neutral-500 hover:text-black transition-all focus:outline-none";
+                    }
+                }
+            });
+            document.getElementById('booking-slide-title').innerText = `${slideId.charAt(0).toUpperCase() + slideId.slice(1)} Bookings`;
+            renderBookingSlideData();
+        }
+        window.switchBookingSlide = switchBookingSlide;
+
 
 
           /* ===================== ADMIN ACTIVE STATE =====================
               Feature: Tracks the currently selected booking slide, payment category filter, and active ticket target.
               Purpose: Keeps the UI selection state synchronized with the admin actions being performed.
           */
-        let activeBookingSlide = "pending";
         let activeLedgerSlide = "pending-workspace";
         let activePaymentFilter = "regular";
 
@@ -185,12 +247,11 @@ const defaultServices = [
             loadSubscribers();
             loadAppointments();
             loadInvoices();
-            initializeServiceCatalogData();
-            executeAutomatedComplianceAuditLoop();
+            loadPendingSubscriptions();
+            loadServices();
             renderBookingSlideData();
             renderInvoicePendingTable();
             renderArchiveLedgerTable();
-            renderAdminServices();
             renderPendingSubscriptions();
             renderFeedbacks();
 
@@ -204,17 +265,13 @@ const defaultServices = [
         window.addEventListener('storage', function(event) {
             if (event.key === PENDING_SUBSCRIPTION_REQUESTS_KEY || event.key === APPROVED_SUBSCRIPTION_ACCOUNTS_KEY) {
                 loadSubscribers();
-                renderPendingSubscriptions();
-                executeAutomatedComplianceAuditLoop();
+                loadPendingSubscriptions();
             }
             if (event.key === APPOINTMENTS_KEY) {
                 loadAppointments();
-                renderBookingSlideData();
             }
             if (event.key === INVOICES_KEY) {
                 loadInvoices();
-                renderInvoicePendingTable();
-                renderArchiveLedgerTable();
             }
             if (event.key === 'montage_feedbacks') {
                 renderFeedbacks();
@@ -267,17 +324,13 @@ const defaultServices = [
         }
 
         function approveSubscription(requestId) {
-            let pendingRequests = JSON.parse(localStorage.getItem(PENDING_SUBSCRIPTION_REQUESTS_KEY) || '[]');
-            const reqIndex = pendingRequests.findIndex(r => r.id === requestId);
-            if (reqIndex === -1) {
+            const req = pendingRequests.find(r => r.id === requestId);
+            if (!req) {
                 alert('Subscription request not found.');
                 return;
             }
 
-            const req = pendingRequests[reqIndex];
-
-            // Send approval to the database backend
-            fetch('update_subscriber.php', {
+            fetch('subscriptions/update_subscriber.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -299,32 +352,9 @@ const defaultServices = [
             })
             .then(data => {
                 if (data && data.status === 'success') {
-                    loadSubscribers(); // make sure it's up to date
-
-                    const today = new Date();
-                    const nextBillingDate = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-
-                    const newSubscriber = {
-                        id: req.id,
-                        name: req.name,
-                        email: req.email,
-                        password: req.password,
-                        next_billing_date: nextBillingDate,
-                        status: "Verified",
-                        proof_image: req.proof_image || "https://images.unsplash.com/photo-1554415707-6e8cfc93fe23?auto=format&fit=crop&q=80&w=400",
-                        created_at: req.created_at || new Date().toISOString()
-                    };
-
-                    subscriberAccounts.push(newSubscriber);
-                    saveSubscribers();
-
-                    // Remove from pending
-                    pendingRequests.splice(reqIndex, 1);
-                    localStorage.setItem(PENDING_SUBSCRIPTION_REQUESTS_KEY, JSON.stringify(pendingRequests));
-
-                    alert(`Subscription request for ${req.name} has been approved. The subscriber account is now active in the database and UI.`);
-                    renderPendingSubscriptions();
-                    executeAutomatedComplianceAuditLoop();
+                    alert(`Subscription request for ${req.name} has been approved.`);
+                    loadPendingSubscriptions();
+                    loadSubscribers();
                 } else if (data) {
                     alert(data.message || 'Failed to approve subscription.');
                 }
@@ -340,17 +370,13 @@ const defaultServices = [
                 return;
             }
 
-            let pendingRequests = JSON.parse(localStorage.getItem(PENDING_SUBSCRIPTION_REQUESTS_KEY) || '[]');
-            const reqIndex = pendingRequests.findIndex(r => r.id === requestId);
-            if (reqIndex === -1) {
+            const req = pendingRequests.find(r => r.id === requestId);
+            if (!req) {
                 alert('Subscription request not found.');
                 return;
             }
 
-            const req = pendingRequests[reqIndex];
-
-            // Send rejection to the database backend
-            fetch('update_subscriber.php', {
+            fetch('subscriptions/update_subscriber.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -372,11 +398,9 @@ const defaultServices = [
             })
             .then(data => {
                 if (data && data.status === 'success') {
-                    pendingRequests.splice(reqIndex, 1);
-                    localStorage.setItem(PENDING_SUBSCRIPTION_REQUESTS_KEY, JSON.stringify(pendingRequests));
-
-                    alert(`Subscription request for ${req.name} has been rejected in the database and UI.`);
-                    renderPendingSubscriptions();
+                    alert(`Subscription request for ${req.name} has been rejected.`);
+                    loadPendingSubscriptions();
+                    loadSubscribers();
                 } else if (data) {
                     alert(data.message || 'Failed to reject subscription.');
                 }
@@ -493,7 +517,7 @@ const defaultServices = [
 
             const rawId = booking.booking_id || parseInt(bookingId.replace(/\D/g, ''), 10);
 
-            fetch('update_booking.php', {
+            fetch('bookings/update_booking.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -762,57 +786,94 @@ const defaultServices = [
         }
 
         function evaluateRemittanceRoute(invoiceId, resolutionStatus) {
-            let match = invoicesCollection.find(i => i.id === invoiceId);
-            if(match) {
-                match.status = resolutionStatus;
-                match.date = new Date().toISOString().split('T')[0];
-                saveInvoices();
-
-                // If it's a subscriber card approval, update subscriber table state flags
-                if (match.type === 'subscriber' && resolutionStatus === 'Paid') {
-                    let account = subscriberAccounts.find(s => s.name === match.client);
-                    if(account) {
-                        account.status = "Verified";
-                        const today = new Date();
-                        const nextBillingDate = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-                        account.next_billing_date = nextBillingDate;
-                        if (match.img) {
-                            account.proof_image = match.img;
-                        }
-                        saveSubscribers();
-                    }
+            const rawId = parseInt(invoiceId.replace(/\D/g, ''), 10);
+            fetch('payments/approve_payment.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': csrfToken
+                },
+                body: JSON.stringify({
+                    invoice_id: rawId,
+                    status: resolutionStatus
+                })
+            })
+            .then(res => {
+                if (res.status === 401 || res.status === 403) {
+                    alert('Session expired or unauthorized. Please log in.');
+                    window.location.href = 'index.html';
+                    return;
                 }
-            }
-            alert(`Payment status for ${invoiceId} updated to ${resolutionStatus}.`);
-            renderInvoicePendingTable();
-            renderArchiveLedgerTable();
+                if (!res.ok) throw new Error('API update request failed.');
+                return res.json();
+            })
+            .then(data => {
+                if (data && data.status === 'success') {
+                    alert(`Payment status for ${invoiceId} updated to ${resolutionStatus}.`);
+                    loadInvoices();
+                    loadSubscribers();
+                    loadAppointments();
+                } else {
+                    alert('Error updating payment: ' + (data.message || 'Server error.'));
+                }
+            })
+            .catch(err => {
+                console.error("Failed to update payment status:", err);
+                alert("An error occurred. Please verify your connection.");
+            });
         }
 
           /* ===================== MODULE 3: UNIFIED SERVICE CATALOG EDITOR =====================
               Feature: Editable service name, description, duration, and price fields stored in localStorage.
               Purpose: Lets the admin update catalog details while protecting referenced active bookings.
           */
-        function initializeServiceCatalogData() {
-            try {
-                let data = localStorage.getItem('montage_services');
-                if (!data) {
-                    localStorage.setItem('montage_services', JSON.stringify(defaultServices));
-                } else {
-                    JSON.parse(data);
-                }
-            } catch (e) {
-                console.error("Error parsing service catalog:", e);
-                localStorage.setItem('montage_services', JSON.stringify(defaultServices));
-            }
+        let masterCatalogServices = [];
+        function loadServices() {
+            return fetch('services/get_services.php')
+                .then(res => {
+                    if (res.status === 401 || res.status === 403) {
+                        return [];
+                    }
+                    if (!res.ok) throw new Error('API request failed');
+                    return res.json();
+                })
+                .then(responseObj => {
+                    const data = (responseObj && responseObj.status === 'success') ? responseObj.data : (Array.isArray(responseObj) ? responseObj : []);
+                    masterCatalogServices = data.map(s => {
+                        return {
+                            service_id: parseInt(s.service_id || s.id, 10),
+                            name: s.service_name || s.name,
+                            desc: s.service_description || s.desc,
+                            duration: s.service_duration || s.duration,
+                            price: parseFloat(s.service_price || s.price),
+                            category: s.service_category || 'Detailing'
+                        };
+                    });
+                    renderAdminServices();
+                })
+                .catch(err => {
+                    console.warn("Failed to load services from database, using fallback:", err);
+                    masterCatalogServices = defaultServices.map((s, idx) => {
+                        return {
+                            service_id: idx + 1,
+                            name: s.name,
+                            desc: s.desc,
+                            duration: s.duration,
+                            price: s.price,
+                            category: 'Detailing'
+                        };
+                    });
+                    renderAdminServices();
+                });
         }
+        window.loadServices = loadServices;
 
         function renderAdminServices() {
-            const services = JSON.parse(localStorage.getItem('montage_services') || '[]');
             const container = document.getElementById('services-crud-grid');
             if(!container) return;
             container.innerHTML = '';
 
-            services.forEach((service, index) => {
+            masterCatalogServices.forEach((service, index) => {
                 container.innerHTML += `
                     <div class="bg-white border border-neutral-200 rounded-[2rem] p-6 flex flex-col justify-between space-y-6 shadow-sm hover:border-neutral-300 transition-all">
                         <div>
@@ -829,12 +890,8 @@ const defaultServices = [
                                 <textarea id="edit-desc-${index}" class="w-full text-xs text-neutral-600 bg-transparent border border-transparent hover:border-neutral-300 focus:border-black rounded p-1 h-16 resize-none focus:outline-none transition-all">${service.desc || ''}</textarea>
                             </div>
                             <div class="mt-4">
-                                <label class="block text-[10px] uppercase font-bold tracking-wider text-neutral-400 mb-1">Duration</label>
+                                <label class="block text-[10px] uppercase font-bold tracking-wider text-neutral-400 mb-1">Duration (Mins)</label>
                                 <input type="text" id="edit-duration-${index}" value="${service.duration}" class="w-full font-semibold text-neutral-700 bg-transparent border-b border-transparent hover:border-neutral-300 focus:border-black py-1 focus:outline-none text-xs transition-all">
-                            </div>
-                            <div class="mt-4">
-                                <label class="block text-[10px] uppercase font-bold tracking-wider text-neutral-400 mb-1">Last Updated</label>
-                                <input type="text" id="edit-last-updated-at-${index}" value="${service.last_updated_at || 'July 05, 2026 9:00 AM'}" class="w-full font-semibold text-neutral-700 bg-transparent border-b border-transparent hover:border-neutral-300 focus:border-black py-1 focus:outline-none text-xs transition-all" readonly>
                             </div>
                         </div>
                         <div class="border-t border-neutral-100 pt-4 flex justify-between items-center">
@@ -857,14 +914,14 @@ const defaultServices = [
         }
 
         async function saveServiceModifications(index) {
-            const services = JSON.parse(localStorage.getItem('montage_services') || '[]');
             const proposedDuration = parseInt(document.getElementById(`edit-duration-${index}`).value, 10);
-            const originalDuration = parseInt(services[index].duration, 10);
-            const targetServiceName = services[index].name;
+            const originalDuration = parseInt(masterCatalogServices[index].duration, 10);
+            const targetServiceName = masterCatalogServices[index].name;
+            const serviceId = masterCatalogServices[index].service_id;
 
             if (proposedDuration !== originalDuration) {
                 try {
-                    const response = await fetch(`check_service_bookings.php?service_name=${encodeURIComponent(targetServiceName)}`);
+                    const response = await fetch(`services/check_service_bookings.php?service_name=${encodeURIComponent(targetServiceName)}`);
                     const result = await response.json();
                     if (result && result.status === 'success' && result.has_bookings) {
                         const confirmChange = confirm(`Warning: There are ${result.booking_count} active future bookings scheduled for this service. Changing the duration from ${originalDuration} mins to ${proposedDuration} mins may corrupt scheduling. Are you sure you want to proceed?`);
@@ -884,42 +941,96 @@ const defaultServices = [
                 }
             }
 
-            const lastUpdatedAt = new Date().toLocaleString('en-US', {
-                month: 'long',
-                day: '2-digit',
-                year: 'numeric',
-                hour: 'numeric',
-                minute: '2-digit',
+            const name = document.getElementById(`edit-name-${index}`).value.trim();
+            const desc = document.getElementById(`edit-desc-${index}`).value.trim();
+            const price = parseFloat(document.getElementById(`edit-price-${index}`).value);
+
+            if (!name || isNaN(proposedDuration) || isNaN(price)) {
+                alert('Please enter valid service details.');
+                return;
+            }
+
+            fetch('services/update_service.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': csrfToken
+                },
+                body: JSON.stringify({
+                    service_id: serviceId,
+                    name: name,
+                    desc: desc,
+                    duration: proposedDuration,
+                    price: price
+                })
+            })
+            .then(res => {
+                if (res.status === 401 || res.status === 403) {
+                    alert('Session expired or unauthorized. Please log in.');
+                    window.location.href = 'index.html';
+                    return;
+                }
+                if (!res.ok) throw new Error('API update request failed.');
+                return res.json();
+            })
+            .then(data => {
+                if (data && data.status === 'success') {
+                    alert('Service package updated successfully!');
+                    loadServices();
+                } else {
+                    alert(data.message || 'Failed to update service.');
+                }
+            })
+            .catch(err => {
+                console.error("Update service error:", err);
+                alert("An error occurred. Please verify your connection.");
             });
-
-            services[index].name = document.getElementById(`edit-name-${index}`).value;
-            services[index].desc = document.getElementById(`edit-desc-${index}`).value;
-            services[index].duration = proposedDuration;
-            services[index].price = parseFloat(document.getElementById(`edit-price-${index}`).value);
-            services[index].last_updated_at = lastUpdatedAt;
-
-            localStorage.setItem('montage_services', JSON.stringify(services));
-            alert('Catalog configuration modifications saved. Changes will immediately reflect across user interfaces.');
-            renderAdminServices();
         }
         window.saveServiceModifications = saveServiceModifications;
 
         function deleteService(index) {
-            const services = JSON.parse(localStorage.getItem('montage_services') || '[]');
-            const targetServiceName = services[index].name;
+            const service = masterCatalogServices[index];
+            const targetServiceName = service.name;
+            const serviceId = service.service_id;
 
             const isReferencedInActiveCalendar = appointmentsRegistry.some(app => app.service === targetServiceName && app.type === 'pending');
-
             if (isReferencedInActiveCalendar) {
                 alert("This service package is locked because there are currently active pending bookings scheduled for it.");
                 return;
             }
 
             if (confirm(`Are you sure you want to permanently delete "${targetServiceName}" from the catalog?`)) {
-                services.splice(index, 1);
-                localStorage.setItem('montage_services', JSON.stringify(services));
-                alert('Service package removed from catalog.');
-                renderAdminServices();
+                fetch('services/delete_service.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': csrfToken
+                    },
+                    body: JSON.stringify({
+                        service_id: serviceId
+                    })
+                })
+                .then(res => {
+                    if (res.status === 401 || res.status === 403) {
+                        alert('Session expired or unauthorized. Please log in.');
+                        window.location.href = 'index.html';
+                        return;
+                    }
+                    if (!res.ok) throw new Error('API delete request failed.');
+                    return res.json();
+                })
+                .then(data => {
+                    if (data && data.status === 'success') {
+                        alert('Service package removed from catalog.');
+                        loadServices();
+                    } else {
+                        alert(data.message || 'Failed to delete service.');
+                    }
+                })
+                .catch(err => {
+                    console.error("Delete service error:", err);
+                    alert("An error occurred. Please verify your connection.");
+                });
             }
         }
         window.deleteService = deleteService;
@@ -936,30 +1047,44 @@ const defaultServices = [
                 return;
             }
 
-            const services = JSON.parse(localStorage.getItem('montage_services') || '[]');
-            const newService = {
-                name: name,
-                desc: desc,
-                duration: duration,
-                price: price,
-                last_updated_at: new Date().toLocaleString('en-US', {
-                    month: 'long',
-                    day: '2-digit',
-                    year: 'numeric',
-                    hour: 'numeric',
-                    minute: '2-digit',
+            const parsedDuration = parseInt(duration, 10);
+
+            fetch('services/create_service.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': csrfToken
+                },
+                body: JSON.stringify({
+                    name: name,
+                    desc: desc,
+                    duration: parsedDuration,
+                    price: price
                 })
-            };
-
-            services.push(newService);
-            localStorage.setItem('montage_services', JSON.stringify(services));
-
-            alert(`Service package "${name}" successfully added to catalog!`);
-            
-            document.getElementById('addServiceForm').reset();
-            toggleModal('addServiceModal');
-
-            renderAdminServices();
+            })
+            .then(res => {
+                if (res.status === 401 || res.status === 403) {
+                    alert('Session expired or unauthorized. Please log in.');
+                    window.location.href = 'index.html';
+                    return;
+                }
+                if (!res.ok) throw new Error('API submission failed.');
+                return res.json();
+            })
+            .then(data => {
+                if (data && data.status === 'success') {
+                    alert(`Service package "${name}" successfully added to catalog!`);
+                    document.getElementById('addServiceForm').reset();
+                    toggleModal('addServiceModal');
+                    loadServices();
+                } else {
+                    alert(data.message || 'Failed to add service.');
+                }
+            })
+            .catch(err => {
+                console.error("Create service error:", err);
+                alert("An error occurred. Please verify your connection.");
+            });
         }
         window.handleNewServiceSubmission = handleNewServiceSubmission;
 
@@ -1103,7 +1228,7 @@ const defaultServices = [
 
         function adminLogout() {
             localStorage.removeItem('isAdminAuthenticated');
-            fetch('logout.php')
+            fetch('auth/logout.php')
                 .then(() => {
                     window.location.href = '../index.html';
                 })
@@ -1135,7 +1260,7 @@ const defaultServices = [
             const container = document.getElementById('feedback-entries-container');
             if (!container) return;
 
-            fetch('get_feedbacks.php')
+            fetch('feedback/get_feedbacks.php')
                 .then(res => {
                     if (res.status === 401 || res.status === 403) {
                         return null;

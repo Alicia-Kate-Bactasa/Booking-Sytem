@@ -121,6 +121,22 @@ function verify_csrf_request() {
     }
 }
 
+/**
+ * Logs a system event into the System_Logs table.
+ */
+function log_system_event($conn, $event_type, $description) {
+    try {
+        $query = "INSERT INTO System_Logs (event_type, description, created_at) VALUES (:event_type, :description, NOW())";
+        $stmt = $conn->prepare($query);
+        $stmt->bindValue(':event_type', $event_type, PDO::PARAM_STR);
+        $stmt->bindValue(':description', $description, PDO::PARAM_STR);
+        $stmt->execute();
+    } catch (PDOException $e) {
+        error_log("Failed to write to System_Logs: " . $e->getMessage());
+    }
+}
+
+
 // =========================================================================
 // PRODUCTION DATABASE BOUNDARY - DCISM REMOTE SERVER CONFIGURATION
 // =========================================================================

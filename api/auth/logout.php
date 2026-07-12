@@ -5,7 +5,7 @@
  * Securely destroys the current session and clears session cookies,
  * logging the user out from the server-side.
  */
-require_once 'config.php';
+require_once '../config.php';
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();

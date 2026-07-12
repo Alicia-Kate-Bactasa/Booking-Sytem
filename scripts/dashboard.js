@@ -15,7 +15,7 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
         let activeSubTabState = "active";
 
         function loadSubscriberAppointments(activeProfileName) {
-            return fetch('get_bookings.php')
+            return fetch('bookings/get_bookings.php')
                 .then(res => {
                     if (res.status === 401 || res.status === 403) {
                         window.location.href = '../index.html';
@@ -232,7 +232,7 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
             const parsedDuration = parseDuration(serviceDuration);
 
             try {
-                const response = await fetch(`check_availability.php?scheduled_date=${selectedDate}&duration=${parsedDuration}`);
+                const response = await fetch(`bookings/check_availability.php?scheduled_date=${selectedDate}&duration=${parsedDuration}`);
                 const result = await response.json();
 
                 if (result && result.status === 'success' && Array.isArray(result.data)) {
@@ -284,7 +284,7 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
             }
 
             try {
-                const response = await fetch(`check_availability.php?scheduled_date=${selectedDate}&duration=${duration}`);
+                const response = await fetch(`bookings/check_availability.php?scheduled_date=${selectedDate}&duration=${duration}`);
                 const result = await response.json();
 
                 if (result && result.status === 'success' && Array.isArray(result.data)) {
@@ -473,7 +473,7 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
             const serviceId = serviceObj ? (serviceObj.service_id || 1) : 1;
 
             if (customerId) {
-                fetch('create_booking.php', {
+                fetch('bookings/create_booking.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -573,7 +573,7 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
         async function executeSoftSubscriptionDowngrade() {
             toggleModal('cancelConfirmModal');
             try {
-                const response = await fetch('cancel_subscription.php', {
+                const response = await fetch('subscriptions/cancel_subscription.php', {
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json',
@@ -598,7 +598,7 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
             localStorage.removeItem('subscriber_session_active');
             localStorage.removeItem('subscriber_name');
             localStorage.removeItem('subscriber_email');
-            fetch('logout.php')
+            fetch('auth/logout.php')
                 .then(() => {
                     window.location.href = '../index.html';
                 })
@@ -619,7 +619,7 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                 return;
             }
 
-            fetch('get_services.php')
+            fetch('services/get_services.php')
                 .then(response => {
                     if(!response.ok) throw new Error('Data Schema validation failed.');
                     return response.json();
@@ -759,7 +759,7 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
         });
 
         function syncProfileWithDatabase() {
-            fetch('get_profile.php')
+            fetch('subscriptions/get_profile.php')
                 .then(res => {
                     if (res.status === 401 || res.status === 403) {
                         window.location.href = '../index.html';
@@ -864,7 +864,7 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
             const rating = parseInt(document.getElementById('feedbackRating').value) || 5;
             const comments = document.getElementById('feedbackComments').value.trim();
 
-            fetch('submit_feedback.php', {
+            fetch('feedback/submit_feedback.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

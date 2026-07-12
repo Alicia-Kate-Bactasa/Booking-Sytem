@@ -3,7 +3,7 @@
 header("Content-Type: application/json; charset=UTF-8");
 
 // === SECTION: CENTRALIZED CONNECTION ===
-require_once 'config.php';
+require_once '../config.php';
 
 // === SECTION: REQUEST METHOD VALIDATION ===
 if ($_SERVER['REQUEST_METHOD'] !== 'GET' && $_SERVER['REQUEST_METHOD'] !== 'POST') {

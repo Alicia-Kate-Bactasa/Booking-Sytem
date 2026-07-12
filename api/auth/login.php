@@ -3,7 +3,7 @@
 header("Content-Type: application/json; charset=UTF-8");
 
 // === SECTION: CENTRALIZED CONNECTION ===
-require_once 'config.php';
+require_once '../config.php';
 
 // === SECTION: REQUEST METHOD VALIDATION ===
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -109,13 +109,24 @@ try {
                     $full_name = $customer['full_name'];
 
                     // Fetch Subscription details
-                    $subQuery = "SELECT subscription_id FROM Subscription WHERE customer_id = :customer_id LIMIT 1";
+                    $subQuery = "SELECT subscription_id, plan_status FROM Subscription WHERE customer_id = :customer_id LIMIT 1";
                     $subStmt = $conn->prepare($subQuery);
                     $subStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
                     $subStmt->execute();
                     $subscription = $subStmt->fetch();
                     if ($subscription) {
                         $subscription_id = (int)$subscription['subscription_id'];
+                        $plan_status = $subscription['plan_status'];
+
+                        // Enforce: User should not be able to log in / open an account that hasn't been approved yet
+                        if ($plan_status !== 'Active') {
+                            http_response_code(403);
+                            echo json_encode([
+                                "status" => "error",
+                                "message" => "Your subscriber account is pending admin approval. You will be able to access your account once your subscription and payment have been verified by an admin."
+                            ]);
+                            exit();
+                        }
                     }
                 }
 
