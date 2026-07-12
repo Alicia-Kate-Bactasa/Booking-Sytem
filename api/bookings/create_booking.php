@@ -65,8 +65,8 @@ try {
     // Start transaction
     $conn->beginTransaction();
 
-    // 1. Retrieve the service price
-    $serviceQuery = "SELECT service_price FROM Service WHERE service_id = :service_id LIMIT 1";
+    // 1. Retrieve the service price and duration
+    $serviceQuery = "SELECT service_price, service_duration FROM Service WHERE service_id = :service_id LIMIT 1";
     $serviceStmt = $conn->prepare($serviceQuery);
     $serviceStmt->bindValue(':service_id', $service_id, PDO::PARAM_INT);
     $serviceStmt->execute();
