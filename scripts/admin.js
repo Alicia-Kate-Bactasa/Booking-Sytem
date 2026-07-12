@@ -284,7 +284,7 @@ const defaultServices = [
             }
 
             if (pendingRequests.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-neutral-400 font-medium font-mono">No pending subscriptions for review.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-neutral-400 font-medium font-mono">No pending subscriptions for review.</td></tr>`;
                 return;
             }
 
@@ -295,6 +295,7 @@ const defaultServices = [
                         <td class="p-5 font-bold font-mono text-black">${req.id}</td>
                         <td class="p-5 text-black font-semibold">${req.name}</td>
                         <td class="p-5">${req.email}</td>
+                        <td class="p-5 font-medium text-neutral-500">First Month (Registration)</td>
                         <td class="p-5 text-center">
                             <div onclick="launchProofLightbox('${req.proof_image}')" class="w-12 h-16 bg-neutral-100 border border-neutral-200 rounded-lg overflow-hidden mx-auto cursor-pointer group hover:border-black transition-all relative">
                                 <img src="${req.proof_image}" alt="Proof" class="w-full h-full object-cover">

@@ -237,6 +237,7 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Admin') {
                                         <th class="p-5">Request ID</th>
                                         <th class="p-5">Candidate</th>
                                         <th class="p-5">Email</th>
+                                        <th class="p-5">Payment Type</th>
                                         <th class="p-5 text-center">GCash Proof</th>
                                         <th class="p-5">Date Submitted</th>
                                         <th class="p-5 text-right">Actions</th>
@@ -480,6 +481,6 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Admin') {
         </div>
     </div>
 
-    <script src="../scripts/admin.js?v=1.0.2"></script>
+    <script src="../scripts/admin.js?v=1.0.3"></script>
 </body>
 </html>
