@@ -1033,21 +1033,20 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
             if (!payBtn) return;
 
             if (prof.plan_status === 'Active') {
-                if (prof.renewal_accounted_for) {
-                    if (prof.renewal_status === 'Payment Awaiting Approval') {
-                        payBtn.disabled = false; // Enabled so click is captured
-                        payBtn.innerText = "Payment awaiting admin approval.";
-                        payBtn.className = "w-full bg-neutral-200 text-neutral-400 text-xs font-bold py-4 rounded-full transition-all text-center cursor-pointer border border-neutral-300 focus:outline-none";
-                        payBtn.onclick = () => {
-                            showErrorModal("Payment awaiting admin approval.", true);
-                        };
-                    } else if (prof.renewal_status === 'Paid') {
-                        // Deactivated until a day after next billing date
-                        payBtn.disabled = true;
-                        payBtn.innerText = "Next month paid.";
-                        payBtn.removeAttribute('onclick');
-                        payBtn.className = "w-full bg-neutral-200 text-neutral-400 text-xs font-bold py-4 rounded-full transition-all text-center cursor-not-allowed border border-neutral-300 focus:outline-none";
-                    }
+                if (prof.renewal_status === 'Payment Awaiting Approval') {
+                    payBtn.disabled = false; // Enabled so click is captured
+                    payBtn.innerText = "Payment awaiting admin approval.";
+                    payBtn.className = "w-full bg-neutral-200 text-neutral-400 text-xs font-bold py-4 rounded-full transition-all text-center cursor-pointer border border-neutral-300 focus:outline-none";
+                    payBtn.onclick = () => {
+                        showErrorModal("Payment awaiting admin approval.", true);
+                    };
+                } else if (prof.renewal_status === 'Locked') {
+                    payBtn.disabled = false; // Enabled so click is captured
+                    payBtn.innerText = "Pay Next Monthly Renewal";
+                    payBtn.className = "w-full bg-neutral-200 text-neutral-400 text-xs font-bold py-4 rounded-full transition-all text-center cursor-pointer border border-neutral-300 focus:outline-none";
+                    payBtn.onclick = () => {
+                        showErrorModal("Renewal is not yet available.", true);
+                    };
                 } else {
                     payBtn.disabled = false;
                     payBtn.innerText = "Pay Next Monthly Renewal";

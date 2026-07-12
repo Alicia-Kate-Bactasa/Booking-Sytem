@@ -81,17 +81,25 @@ try {
     $pendingInvoiceStmt->execute();
     $hasPendingInvoice = (bool)$pendingInvoiceStmt->fetch();
 
-    // Check if user has already prepaid (last_billing_date is in the future)
-    $prepaid = false;
+    // Check if user is locked (current date is before or on next_billing_date)
     $today = date('Y-m-d');
-    if ($profile['plan_status'] === 'Active' && !empty($profile['last_billing_date'])) {
-        if ($profile['last_billing_date'] > $today) {
-            $prepaid = true;
+    $is_locked = false;
+    if ($profile['plan_status'] === 'Active' && !empty($profile['next_billing_date'])) {
+        if ($profile['next_billing_date'] >= $today) {
+            $is_locked = true;
         }
     }
 
-    $renewal_accounted_for = $hasPendingInvoice || $prepaid;
-    $renewal_status = $hasPendingInvoice ? 'Payment Awaiting Approval' : ($prepaid ? 'Paid' : null);
+    $renewal_status = null;
+    if ($hasPendingInvoice) {
+        $renewal_status = 'Payment Awaiting Approval';
+    } elseif ($is_locked) {
+        $renewal_status = 'Locked';
+    } else {
+        $renewal_status = 'Active';
+    }
+
+    $renewal_accounted_for = $hasPendingInvoice || $is_locked;
 
     // === SECTION: SUCCESS RESPONSE ===
     echo json_encode([

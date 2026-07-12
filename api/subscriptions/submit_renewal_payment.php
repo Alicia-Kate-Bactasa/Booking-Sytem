@@ -46,12 +46,12 @@ try {
     $sub = $subStmt->fetch();
 
     $today = date('Y-m-d');
-    if ($sub && $sub['plan_status'] === 'Active' && !empty($sub['last_billing_date'])) {
-        if ($sub['last_billing_date'] > $today) {
+    if ($sub && $sub['plan_status'] === 'Active' && !empty($sub['next_billing_date'])) {
+        if ($sub['next_billing_date'] >= $today) {
             http_response_code(400);
             echo json_encode([
                 "status" => "error",
-                "message" => "Double Payment Blocked: You have already paid for the upcoming billing cycle."
+                "message" => "Double Payment Blocked: Renewal is not yet available."
             ]);
             exit();
         }
