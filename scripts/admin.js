@@ -53,7 +53,7 @@ const defaultServices = [
                 .then(res => {
                     if (res.status === 401 || res.status === 403) {
                         alert('Session unauthorized or expired. Redirecting to landing.');
-                        window.location.href = 'index.html';
+                        window.location.href = '../index.html';
                         return [];
                     }
                     if (!res.ok) throw new Error('API request failed');
@@ -109,7 +109,13 @@ const defaultServices = [
                     return res.json();
                 })
                 .then(responseObj => {
-                    invoicesCollection = (responseObj && responseObj.status === 'success') ? responseObj.data : (Array.isArray(responseObj) ? responseObj : []);
+                    const data = (responseObj && responseObj.status === 'success') ? responseObj.data : (Array.isArray(responseObj) ? responseObj : []);
+                    invoicesCollection = data.map(inv => {
+                        if (inv.img && !inv.img.startsWith('http') && !inv.img.startsWith('data:') && !inv.img.startsWith('../')) {
+                            inv.img = '../' + inv.img;
+                        }
+                        return inv;
+                    });
                     renderInvoicePendingTable();
                     renderArchiveLedgerTable();
                 })
@@ -344,7 +350,7 @@ const defaultServices = [
             .then(res => {
                 if (res.status === 401 || res.status === 403) {
                     alert('Session expired or unauthorized. Please log in.');
-                    window.location.href = 'index.html';
+                    window.location.href = '../index.html';
                     return null;
                 }
                 if (!res.ok) throw new Error('API approval request failed.');
@@ -390,7 +396,7 @@ const defaultServices = [
             .then(res => {
                 if (res.status === 401 || res.status === 403) {
                     alert('Session expired or unauthorized. Please log in.');
-                    window.location.href = 'index.html';
+                    window.location.href = '../index.html';
                     return null;
                 }
                 if (!res.ok) throw new Error('API rejection request failed.');
@@ -531,7 +537,7 @@ const defaultServices = [
             .then(res => {
                 if (res.status === 401 || res.status === 403) {
                     alert('Session expired or unauthorized. Please log in.');
-                    window.location.href = 'index.html';
+                    window.location.href = '../index.html';
                     return;
                 }
                 if (!res.ok) throw new Error('API update request failed.');
@@ -801,7 +807,7 @@ const defaultServices = [
             .then(res => {
                 if (res.status === 401 || res.status === 403) {
                     alert('Session expired or unauthorized. Please log in.');
-                    window.location.href = 'index.html';
+                    window.location.href = '../index.html';
                     return;
                 }
                 if (!res.ok) throw new Error('API update request failed.');
@@ -967,7 +973,7 @@ const defaultServices = [
             .then(res => {
                 if (res.status === 401 || res.status === 403) {
                     alert('Session expired or unauthorized. Please log in.');
-                    window.location.href = 'index.html';
+                    window.location.href = '../index.html';
                     return;
                 }
                 if (!res.ok) throw new Error('API update request failed.');
@@ -1013,7 +1019,7 @@ const defaultServices = [
                 .then(res => {
                     if (res.status === 401 || res.status === 403) {
                         alert('Session expired or unauthorized. Please log in.');
-                        window.location.href = 'index.html';
+                        window.location.href = '../index.html';
                         return;
                     }
                     if (!res.ok) throw new Error('API delete request failed.');
@@ -1065,7 +1071,7 @@ const defaultServices = [
             .then(res => {
                 if (res.status === 401 || res.status === 403) {
                     alert('Session expired or unauthorized. Please log in.');
-                    window.location.href = 'index.html';
+                    window.location.href = '../index.html';
                     return;
                 }
                 if (!res.ok) throw new Error('API submission failed.');
