@@ -118,8 +118,8 @@ try {
         $stmtInv->bindValue(':invoice_id', $invoice_id, PDO::PARAM_INT);
         $stmtInv->execute();
 
-        // Also update associated Booking status to Paid for walk-ins (complying with updated ENUM value)
-        $updateBook = "UPDATE Booking SET booking_status = 'Paid' WHERE invoice_id = :invoice_id AND booking_status = 'Pending Verification'";
+        // Also update associated Booking status to Confirmed for walk-ins (complying with updated ENUM value)
+        $updateBook = "UPDATE Booking SET booking_status = 'Confirmed' WHERE invoice_id = :invoice_id AND booking_status = 'Pending Verification'";
         $stmtBook = $conn->prepare($updateBook);
         $stmtBook->bindValue(':invoice_id', $invoice_id, PDO::PARAM_INT);
         $stmtBook->execute();

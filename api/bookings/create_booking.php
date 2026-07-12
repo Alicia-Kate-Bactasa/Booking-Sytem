@@ -171,12 +171,19 @@ try {
     $customer = $custStmt->fetch();
 
     $invoice_id = null;
-    $booking_status = 'Pending Verification';
+    $booking_status = 'Pending';
 
     if ($customer && $customer['customer_type'] === 'Subscriber') {
-        // Active subscribers do not require per-booking invoices (linked invoice_id set to NULL)
-        $invoice_id = null;
-        $booking_status = 'Pending'; // Straight to Scheduled/Pending
+        // Zero-Value Invoices: To maintain a complete activity ledger, every booking generates an Invoice row
+        // For subscribers: total_amount is 0.00; invoice_status is marked 'Included'
+        $invoiceQuery = "INSERT INTO Invoice (customer_id, total_amount, invoice_type, invoice_status) 
+                         VALUES (:customer_id, 0.00, 'Single Detailing', 'Included')";
+        $invoiceStmt = $conn->prepare($invoiceQuery);
+        $invoiceStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+        $invoiceStmt->execute();
+        $invoice_id = (int)$conn->lastInsertId();
+        
+        $booking_status = 'Pending'; // Straight to Pending
     } else {
         // Create a standard Pending Invoice for walk-in/regular customer
         $invoiceQuery = "INSERT INTO Invoice (customer_id, total_amount, invoice_type, invoice_status) 

@@ -172,7 +172,7 @@ try {
     $stmt = $conn->prepare($query);
     
     $stmt->bindValue(':invoice_id', $invoice_id, PDO::PARAM_INT);
-    $stmt->bindValue(':amount', $amount, PDO::PARAM_INT);
+    $stmt->bindValue(':amount', $amount, PDO::PARAM_STR);
     $stmt->bindValue(':payment_method', $payment_method, PDO::PARAM_STR);
     $stmt->bindValue(':proof_of_payment', $databaseSavedPath, PDO::PARAM_STR);
     $stmt->bindValue(':payment_status', $payment_status, PDO::PARAM_STR);

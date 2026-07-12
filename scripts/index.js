@@ -42,6 +42,25 @@
             document.getElementById(modalId).classList.toggle('hidden');
         }
 
+        function showErrorModal(message) {
+            const modal = document.getElementById('globalErrorModal');
+            const msgElement = document.getElementById('globalErrorMessage');
+            const okBtn = document.getElementById('globalErrorOkBtn');
+            
+            if (modal && msgElement && okBtn) {
+                msgElement.innerText = message;
+                modal.classList.remove('hidden');
+                
+                const hideModal = () => {
+                    modal.classList.add('hidden');
+                    okBtn.removeEventListener('click', hideModal);
+                };
+                okBtn.addEventListener('click', hideModal);
+            } else {
+                alert(message);
+            }
+        }
+
         function navigateToSubscription() {
             toggleModal('loginModal');
             window.location.href = '#subscription';
@@ -93,7 +112,7 @@
                 const response = await fetch(`api/bookings/check_availability.php?scheduled_date=${dateInput}&duration=${durationMinutes}`);
                 const result = await response.json();
 
-                if (result && result.status === 'success' && Array.isArray(result.data)) {
+                if (response.ok && result && result.status === 'success' && Array.isArray(result.data)) {
                     timeContainer.innerHTML = '';
                     if (result.data.length === 0) {
                         timeContainer.innerHTML = `<p class="p-4 text-xs text-red-500 font-semibold text-center">Fully Booked for this date</p>`;
@@ -107,9 +126,12 @@
                             timeContainer.appendChild(btn);
                         });
                     }
+                } else {
+                    showErrorModal(result.message || 'Failed to fetch available time slots.');
                 }
             } catch (err) {
                 console.error("Failed to fetch available time slots:", err);
+                showErrorModal('An error occurred while checking slot availability.');
             }
         }
 
@@ -217,11 +239,11 @@
                     fetchAvailableTimeSlots();
                     updateSummary();
                 } else {
-                    alert(result.message || 'Failed to submit booking.');
+                    showErrorModal(result.message || 'Failed to submit booking.');
                 }
             } catch (err) {
                 console.error("Booking error:", err);
-                alert('An error occurred during booking. Please try again.');
+                showErrorModal('An error occurred during booking. Please try again.');
             } finally {
                 if (submitBtn) {
                     submitBtn.disabled = false;
@@ -249,20 +271,15 @@
                 })
             })
             .then(res => {
-                if (res.ok) {
-                    return res.json();
-                }
-                return res.json().then(errData => {
-                    throw new Error(errData.message || 'An error occurred during authentication.');
-                }).catch(() => {
-                    if (res.status === 401) {
-                        throw new Error('Invalid credentials. Please verify your email/username and password.');
+                return res.json().then(data => {
+                    if (!res.ok) {
+                        throw new Error(data.message || 'Authentication failed.');
                     }
-                    throw new Error('An error occurred during authentication.');
+                    return data;
                 });
             })
             .then(responseObj => {
-                if (responseObj.status === 'success') {
+                if (responseObj && responseObj.status === 'success') {
                     const data = responseObj.data || responseObj;
                     toggleModal('loginModal');
                     if (data.role === 'Admin') {
@@ -276,11 +293,11 @@
                         window.location.href = 'api/dashboard.php';
                     }
                 } else {
-                    alert(responseObj.message || 'Authentication failed.');
+                    showErrorModal(responseObj.message || 'Authentication failed.');
                 }
             })
             .catch(err => {
-                alert(err.message);
+                showErrorModal(err.message);
                 console.error('Login error:', err);
             });
         }
@@ -336,11 +353,11 @@
                     document.getElementById('subPaymentModal').querySelector('form').reset();
                     document.getElementById('availSubModal').querySelector('form').reset();
                 } else {
-                    alert(responseObj.message || 'Registration failed. Please check your inputs and try again.');
+                    showErrorModal(responseObj.message || 'Registration failed. Please check your inputs and try again.');
                 }
             } catch (err) {
                 console.error('Registration error:', err);
-                alert('An error occurred during registration. Please check your database connection and try again.');
+                showErrorModal('An error occurred during registration. Please check your database connection and try again.');
             } finally {
                 if (submitBtn) {
                     submitBtn.disabled = false;
@@ -516,7 +533,7 @@
             })
             .then(res => {
                 if (res.status === 401 || res.status === 403) {
-                    alert('You must be logged in as a subscriber to leave feedback.');
+                    showErrorModal('You must be logged in as a subscriber to leave feedback.');
                     toggleModal('feedbackModal');
                     toggleModal('loginModal');
                     return null;
@@ -544,7 +561,9 @@
                 toggleModal('feedbackModal');
             })
             .catch(err => {
-                alert(err.message || 'An error occurred while submitting feedback.');
+                if (err && err.message) {
+                    showErrorModal(err.message);
+                }
             });
         }
 

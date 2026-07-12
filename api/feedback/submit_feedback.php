@@ -65,8 +65,8 @@ try {
 
     if (empty($booking_id_raw)) {
         if ($_SESSION['role'] === 'Subscriber') {
-            // Find the latest booking for this customer to automatically associate the feedback
-            $findBookingQuery = "SELECT booking_id, customer_id FROM Booking WHERE customer_id = :customer_id ORDER BY scheduled_date DESC, time_slot DESC LIMIT 1";
+            // Find the latest completed booking for this customer to automatically associate the feedback
+            $findBookingQuery = "SELECT booking_id, customer_id FROM Booking WHERE customer_id = :customer_id AND booking_status = 'Completed' ORDER BY scheduled_date DESC, time_slot DESC LIMIT 1";
             $findBookingStmt = $conn->prepare($findBookingQuery);
             $findBookingStmt->bindValue(':customer_id', $_SESSION['customer_id'], PDO::PARAM_INT);
             $findBookingStmt->execute();
@@ -101,8 +101,8 @@ try {
         }
         $booking_id = (int)$booking_id_raw;
 
-        // Verify that the booking exists and get customer_id
-        $bookingCheckQuery = "SELECT customer_id FROM Booking WHERE booking_id = :booking_id LIMIT 1";
+        // Verify that the booking exists, is completed, and get customer_id
+        $bookingCheckQuery = "SELECT customer_id, booking_status FROM Booking WHERE booking_id = :booking_id LIMIT 1";
         $bookingCheckStmt = $conn->prepare($bookingCheckQuery);
         $bookingCheckStmt->bindValue(':booking_id', $booking_id, PDO::PARAM_INT);
         $bookingCheckStmt->execute();
@@ -113,6 +113,15 @@ try {
             echo json_encode([
                 "status" => "error",
                 "message" => "Referenced Booking ID does not exist in the database."
+            ]);
+            exit();
+        }
+
+        if ($booking['booking_status'] !== 'Completed') {
+            http_response_code(400);
+            echo json_encode([
+                "status" => "error",
+                "message" => "You can only submit feedback for completed bookings."
             ]);
             exit();
         }

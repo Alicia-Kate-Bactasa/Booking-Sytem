@@ -40,7 +40,7 @@ if (empty($booking_id) || empty($booking_status)) {
     exit();
 }
 
-$validStatuses = ['Pending', 'Pending Verification', 'Paid', 'Completed', 'Cancelled', 'No-Show'];
+$validStatuses = ['Pending', 'Pending Verification', 'Confirmed', 'Completed', 'Cancelled', 'No-Show'];
 if (!in_array($booking_status, $validStatuses, true)) {
     http_response_code(400);
     echo json_encode([
@@ -75,8 +75,8 @@ try {
         exit();
     }
 
-    // State Machine Integrity Validation (Regular customer must have Paid invoice to move to Pending/Paid/Completed/Scheduled)
-    if ($bookingData['customer_type'] === 'Regular' && in_array($booking_status, ['Pending', 'Paid', 'Completed'], true)) {
+    // State Machine Integrity Validation (Regular customer must have Paid invoice to move to Pending/Confirmed/Completed/Scheduled)
+    if ($bookingData['customer_type'] === 'Regular' && in_array($booking_status, ['Pending', 'Confirmed', 'Completed'], true)) {
         if ($bookingData['invoice_id'] !== null) {
             // Verify if the invoice status is Paid
             $invQuery = "SELECT invoice_status FROM Invoice WHERE invoice_id = :invoice_id LIMIT 1";

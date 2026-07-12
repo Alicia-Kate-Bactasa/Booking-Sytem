@@ -330,25 +330,30 @@ const defaultServices = [
             })
             .then(res => {
                 if (res.status === 401 || res.status === 403) {
-                    alert('Session expired or unauthorized. Please log in.');
+                    showErrorModal('Session expired or unauthorized. Please log in.');
                     window.location.href = '../index.html';
                     return null;
                 }
-                if (!res.ok) throw new Error('API approval request failed.');
-                return res.json();
+                return res.json().then(data => {
+                    if (!res.ok) {
+                        throw new Error(data.message || 'API approval request failed.');
+                    }
+                    return data;
+                });
             })
             .then(data => {
-                if (data && data.status === 'success') {
+                if (!data) return;
+                if (data.status === 'success') {
                     alert(`Subscription request for ${req.name} has been approved.`);
                     loadPendingSubscriptions();
                     loadSubscribers();
-                } else if (data) {
-                    alert(data.message || 'Failed to approve subscription.');
+                } else {
+                    showErrorModal(data.message || 'Failed to approve subscription.');
                 }
             })
             .catch(err => {
                 console.error('Subscription approval error:', err);
-                alert('An error occurred during database approval. Please try again.');
+                showErrorModal(err.message || 'An error occurred during database approval. Please try again.');
             });
         }
 
@@ -376,25 +381,30 @@ const defaultServices = [
             })
             .then(res => {
                 if (res.status === 401 || res.status === 403) {
-                    alert('Session expired or unauthorized. Please log in.');
+                    showErrorModal('Session expired or unauthorized. Please log in.');
                     window.location.href = '../index.html';
                     return null;
                 }
-                if (!res.ok) throw new Error('API rejection request failed.');
-                return res.json();
+                return res.json().then(data => {
+                    if (!res.ok) {
+                        throw new Error(data.message || 'API rejection request failed.');
+                    }
+                    return data;
+                });
             })
             .then(data => {
-                if (data && data.status === 'success') {
+                if (!data) return;
+                if (data.status === 'success') {
                     alert(`Subscription request for ${req.name} has been rejected.`);
                     loadPendingSubscriptions();
                     loadSubscribers();
-                } else if (data) {
-                    alert(data.message || 'Failed to reject subscription.');
+                } else {
+                    showErrorModal(data.message || 'Failed to reject subscription.');
                 }
             })
             .catch(err => {
                 console.error('Subscription rejection error:', err);
-                alert('An error occurred during database rejection. Please try again.');
+                showErrorModal(err.message || 'An error occurred during database rejection. Please try again.');
             });
         }
 
@@ -419,6 +429,25 @@ const defaultServices = [
 
         function toggleModal(modalId) {
             document.getElementById(modalId).classList.toggle('hidden');
+        }
+
+        function showErrorModal(message) {
+            const modal = document.getElementById('globalErrorModal');
+            const msgElement = document.getElementById('globalErrorMessage');
+            const okBtn = document.getElementById('globalErrorOkBtn');
+            
+            if (modal && msgElement && okBtn) {
+                msgElement.innerText = message;
+                modal.classList.remove('hidden');
+                
+                const hideModal = () => {
+                    modal.classList.add('hidden');
+                    okBtn.removeEventListener('click', hideModal);
+                };
+                okBtn.addEventListener('click', hideModal);
+            } else {
+                alert(message);
+            }
         }
 
           /* ===================== MODULE 1: TRIPLE-SLIDE APPOINTMENTS =====================
@@ -517,25 +546,30 @@ const defaultServices = [
             })
             .then(res => {
                 if (res.status === 401 || res.status === 403) {
-                    alert('Session expired or unauthorized. Please log in.');
+                    showErrorModal('Session expired or unauthorized. Please log in.');
                     window.location.href = '../index.html';
-                    return;
+                    return null;
                 }
-                if (!res.ok) throw new Error('API update request failed.');
-                return res.json();
+                return res.json().then(data => {
+                    if (!res.ok) {
+                        throw new Error(data.message || 'API update request failed.');
+                    }
+                    return data;
+                });
             })
             .then(data => {
-                if (data && data.status === 'success') {
+                if (!data) return;
+                if (data.status === 'success') {
                     booking.type = newStatus;
                     renderBookingSlideData();
                     executeAutomatedComplianceAuditLoop();
                 } else {
-                    alert('Error updating booking: ' + (data.message || 'Server error.'));
+                    showErrorModal(data.message || 'Server error.');
                 }
             })
             .catch(err => {
                 console.error("Failed to update booking status on backend:", err);
-                alert("An error occurred while updating the booking status. Please verify your connection.");
+                showErrorModal(err.message || "An error occurred while updating the booking status. Please verify your connection.");
             });
         }
         window.updateBookingStatus = updateBookingStatus;
@@ -783,26 +817,31 @@ const defaultServices = [
             })
             .then(res => {
                 if (res.status === 401 || res.status === 403) {
-                    alert('Session expired or unauthorized. Please log in.');
+                    showErrorModal('Session expired or unauthorized. Please log in.');
                     window.location.href = '../index.html';
-                    return;
+                    return null;
                 }
-                if (!res.ok) throw new Error('API update request failed.');
-                return res.json();
+                return res.json().then(data => {
+                    if (!res.ok) {
+                        throw new Error(data.message || 'API update request failed.');
+                    }
+                    return data;
+                });
             })
             .then(data => {
-                if (data && data.status === 'success') {
+                if (!data) return;
+                if (data.status === 'success') {
                     alert(`Payment status for ${invoiceId} updated to ${resolutionStatus}.`);
                     loadInvoices();
                     loadSubscribers();
                     loadAppointments();
                 } else {
-                    alert('Error updating payment: ' + (data.message || 'Server error.'));
+                    showErrorModal(data.message || 'Server error.');
                 }
             })
             .catch(err => {
                 console.error("Failed to update payment status:", err);
-                alert("An error occurred. Please verify your connection.");
+                showErrorModal(err.message || "An error occurred. Please verify your connection.");
             });
         }
 
@@ -949,24 +988,29 @@ const defaultServices = [
             })
             .then(res => {
                 if (res.status === 401 || res.status === 403) {
-                    alert('Session expired or unauthorized. Please log in.');
+                    showErrorModal('Session expired or unauthorized. Please log in.');
                     window.location.href = '../index.html';
-                    return;
+                    return null;
                 }
-                if (!res.ok) throw new Error('API update request failed.');
-                return res.json();
+                return res.json().then(data => {
+                    if (!res.ok) {
+                        throw new Error(data.message || 'API update request failed.');
+                    }
+                    return data;
+                });
             })
             .then(data => {
-                if (data && data.status === 'success') {
+                if (!data) return;
+                if (data.status === 'success') {
                     alert('Service package updated successfully!');
                     loadServices();
                 } else {
-                    alert(data.message || 'Failed to update service.');
+                    showErrorModal(data.message || 'Failed to update service.');
                 }
             })
             .catch(err => {
                 console.error("Update service error:", err);
-                alert("An error occurred. Please verify your connection.");
+                showErrorModal(err.message || "An error occurred. Please verify your connection.");
             });
         }
         window.saveServiceModifications = saveServiceModifications;
@@ -995,24 +1039,29 @@ const defaultServices = [
                 })
                 .then(res => {
                     if (res.status === 401 || res.status === 403) {
-                        alert('Session expired or unauthorized. Please log in.');
+                        showErrorModal('Session expired or unauthorized. Please log in.');
                         window.location.href = '../index.html';
-                        return;
+                        return null;
                     }
-                    if (!res.ok) throw new Error('API delete request failed.');
-                    return res.json();
+                    return res.json().then(data => {
+                        if (!res.ok) {
+                            throw new Error(data.message || 'API delete request failed.');
+                        }
+                        return data;
+                    });
                 })
                 .then(data => {
-                    if (data && data.status === 'success') {
+                    if (!data) return;
+                    if (data.status === 'success') {
                         alert('Service package removed from catalog.');
                         loadServices();
                     } else {
-                        alert(data.message || 'Failed to delete service.');
+                        showErrorModal(data.message || 'Failed to delete service.');
                     }
                 })
                 .catch(err => {
                     console.error("Delete service error:", err);
-                    alert("An error occurred. Please verify your connection.");
+                    showErrorModal(err.message || "An error occurred. Please verify your connection.");
                 });
             }
         }
@@ -1047,26 +1096,31 @@ const defaultServices = [
             })
             .then(res => {
                 if (res.status === 401 || res.status === 403) {
-                    alert('Session expired or unauthorized. Please log in.');
+                    showErrorModal('Session expired or unauthorized. Please log in.');
                     window.location.href = '../index.html';
-                    return;
+                    return null;
                 }
-                if (!res.ok) throw new Error('API submission failed.');
-                return res.json();
+                return res.json().then(data => {
+                    if (!res.ok) {
+                        throw new Error(data.message || 'API submission failed.');
+                    }
+                    return data;
+                });
             })
             .then(data => {
-                if (data && data.status === 'success') {
+                if (!data) return;
+                if (data.status === 'success') {
                     alert(`Service package "${name}" successfully added to catalog!`);
                     document.getElementById('addServiceForm').reset();
                     toggleModal('addServiceModal');
                     loadServices();
                 } else {
-                    alert(data.message || 'Failed to add service.');
+                    showErrorModal(data.message || 'Failed to add service.');
                 }
             })
             .catch(err => {
                 console.error("Create service error:", err);
-                alert("An error occurred. Please verify your connection.");
+                showErrorModal(err.message || "An error occurred. Please verify your connection.");
             });
         }
         window.handleNewServiceSubmission = handleNewServiceSubmission;
@@ -1221,24 +1275,29 @@ const defaultServices = [
             })
             .then(res => {
                 if (res.status === 401 || res.status === 403) {
-                    alert('Session expired or unauthorized. Please log in.');
+                    showErrorModal('Session expired or unauthorized. Please log in.');
                     window.location.href = '../index.html';
                     return null;
                 }
-                if (!res.ok) throw new Error('API downgrade request failed.');
-                return res.json();
+                return res.json().then(data => {
+                    if (!res.ok) {
+                        throw new Error(data.message || 'API downgrade request failed.');
+                    }
+                    return data;
+                });
             })
             .then(data => {
-                if (data && data.status === 'success') {
+                if (!data) return;
+                if (data.status === 'success') {
                     alert(`Subscriber ${acc.name} has been manually downgraded.`);
                     loadSubscribers();
-                } else if (data) {
-                    alert('Error: ' + (data.message || 'Server error.'));
+                } else {
+                    showErrorModal(data.message || 'Server error.');
                 }
             })
             .catch(err => {
                 console.error("Failed to downgrade subscriber:", err);
-                alert("An error occurred. Please verify your connection.");
+                showErrorModal(err.message || "An error occurred. Please verify your connection.");
             });
         }
         window.downgradeSubscriber = downgradeSubscriber;

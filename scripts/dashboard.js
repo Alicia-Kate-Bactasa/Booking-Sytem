@@ -86,6 +86,25 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
             document.getElementById(modalId).classList.toggle('hidden');
         }
 
+        function showErrorModal(message) {
+            const modal = document.getElementById('globalErrorModal');
+            const msgElement = document.getElementById('globalErrorMessage');
+            const okBtn = document.getElementById('globalErrorOkBtn');
+            
+            if (modal && msgElement && okBtn) {
+                msgElement.innerText = message;
+                modal.classList.remove('hidden');
+                
+                const hideModal = () => {
+                    modal.classList.add('hidden');
+                    okBtn.removeEventListener('click', hideModal);
+                };
+                okBtn.addEventListener('click', hideModal);
+            } else {
+                alert(message);
+            }
+        }
+
           /* ===================== DASHBOARD APPOINTMENT MODULE =====================
               Feature: Active/history session tabs, row rendering, rescheduling, and appointment removal.
               Purpose: Lets members inspect current reservations and manage existing bookings.
@@ -459,15 +478,20 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                 })
                 .then(res => {
                     if (res.status === 401 || res.status === 403) {
-                        alert('Session expired or unauthorized. Please log in.');
+                        showErrorModal('Session expired or unauthorized. Please log in.');
                         window.location.href = '../index.html';
                         return null;
                     }
-                    if (!res.ok) throw new Error('API booking failed');
-                    return res.json();
+                    return res.json().then(data => {
+                        if (!res.ok) {
+                            throw new Error(data.message || 'API booking failed');
+                        }
+                        return data;
+                    });
                 })
                 .then(data => {
-                    if (data && data.status === 'success') {
+                    if (!data) return;
+                    if (data.status === 'success') {
                         alert(`Reservation Authorized!\n\nBooking ID: MTG-${data.data.booking_id}`);
                         document.getElementById('dashWizardForm').reset();
 
@@ -485,7 +509,7 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                 })
                 .catch(err => {
                     console.error('Database booking error:', err);
-                    alert('An error occurred while booking. Please try again.');
+                    showErrorModal(err.message || 'An error occurred while booking. Please try again.');
                 });
             } else {
                 alert('Session expired or unauthorized. Please log in.');
@@ -560,7 +584,7 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                 alert("State Machine Updated: " + result.message);
                 location.reload();
             } catch (err) {
-                alert("Error during cancellation: " + err.message);
+                showErrorModal(err.message || "An error occurred during cancellation.");
                 console.error(err);
             }
         }
@@ -736,8 +760,12 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                         window.location.href = '../index.html';
                         return null;
                     }
-                    if (!res.ok) throw new Error('Failed to load profile');
-                    return res.json();
+                    return res.json().then(data => {
+                        if (!res.ok) {
+                            throw new Error(data.message || 'Failed to load profile');
+                        }
+                        return data;
+                    });
                 })
                 .then(data => {
                     if (data && data.status === 'success') {
@@ -849,7 +877,7 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
             })
             .then(res => {
                 if (res.status === 401 || res.status === 403) {
-                    alert('Session unauthorized or expired. Please log in again.');
+                    showErrorModal('Session unauthorized or expired. Please log in again.');
                     window.location.href = '../index.html';
                     return null;
                 }
@@ -872,7 +900,7 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                 toggleModal('feedbackModal');
             })
             .catch(err => {
-                alert(err.message || 'An error occurred while submitting feedback.');
+                showErrorModal(err.message || 'An error occurred while submitting feedback.');
             });
         }
 
