@@ -16,10 +16,6 @@
             { id: "sub-3", name: "Chris Evans", email: "chris@gmail.com", password: "password123", next_billing_date: "2026-07-15", status: "Verified" }
         ];
 
-        if (!localStorage.getItem(APPROVED_SUBSCRIPTION_ACCOUNTS_KEY)) {
-            localStorage.setItem(APPROVED_SUBSCRIPTION_ACCOUNTS_KEY, JSON.stringify(defaultSubscribers));
-        }
-
         // Master Catalog Collection Schema map matching specifications exactly
         let masterCatalogServices = [];
 

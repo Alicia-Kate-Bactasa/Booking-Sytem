@@ -83,20 +83,10 @@ const defaultServices = [
                     renderBookingSlideData();
                 })
                 .catch(err => {
-                    console.warn("Failed to load bookings from backend, falling back to localStorage:", err);
-                    let data = localStorage.getItem(APPOINTMENTS_KEY);
-                    if (!data) {
-                        appointmentsRegistry = defaultAppointments;
-                        localStorage.setItem(APPOINTMENTS_KEY, JSON.stringify(appointmentsRegistry));
-                    } else {
-                        appointmentsRegistry = JSON.parse(data);
-                    }
+                    console.error("Failed to load bookings from backend:", err);
+                    appointmentsRegistry = [];
                     renderBookingSlideData();
                 });
-        }
-
-        function saveAppointments() {
-            localStorage.setItem(APPOINTMENTS_KEY, JSON.stringify(appointmentsRegistry));
         }
 
         function loadInvoices() {
@@ -120,15 +110,11 @@ const defaultServices = [
                     renderArchiveLedgerTable();
                 })
                 .catch(err => {
-                    console.warn("Failed to load invoices from database, using fallback:", err);
-                    invoicesCollection = defaultInvoices;
+                    console.error("Failed to load invoices from database:", err);
+                    invoicesCollection = [];
                     renderInvoicePendingTable();
                     renderArchiveLedgerTable();
                 });
-        }
-
-        function saveInvoices() {
-            localStorage.setItem(INVOICES_KEY, JSON.stringify(invoicesCollection));
         }
 
         function loadSubscribers() {
@@ -145,14 +131,10 @@ const defaultServices = [
                     executeAutomatedComplianceAuditLoop();
                 })
                 .catch(err => {
-                    console.warn("Failed to load subscribers from database, using fallback:", err);
-                    subscriberAccounts = defaultSubscribers;
+                    console.error("Failed to load subscribers from database:", err);
+                    subscriberAccounts = [];
                     executeAutomatedComplianceAuditLoop();
                 });
-        }
-
-        function saveSubscribers() {
-            localStorage.setItem(APPROVED_SUBSCRIPTION_ACCOUNTS_KEY, JSON.stringify(subscriberAccounts));
         }
 
         function loadPendingSubscriptions() {
@@ -182,8 +164,8 @@ const defaultServices = [
                     }
                 })
                 .catch(err => {
-                    console.warn("Failed to load pending subscriptions from database, falling back to localStorage:", err);
-                    pendingRequests = JSON.parse(localStorage.getItem(PENDING_SUBSCRIPTION_REQUESTS_KEY) || '[]');
+                    console.error("Failed to load pending subscriptions from database:", err);
+                    pendingRequests = [];
                     renderPendingSubscriptions();
                 });
         }
@@ -291,7 +273,6 @@ const defaultServices = [
             if (!tbody) return;
             tbody.innerHTML = '';
 
-            const pendingRequests = JSON.parse(localStorage.getItem(PENDING_SUBSCRIPTION_REQUESTS_KEY) || '[]');
             if (countEl) {
                 countEl.innerText = `${pendingRequests.length} Pending`;
                 if (pendingRequests.length > 0) {
@@ -546,7 +527,6 @@ const defaultServices = [
             .then(data => {
                 if (data && data.status === 'success') {
                     booking.type = newStatus;
-                    saveAppointments();
                     renderBookingSlideData();
                     executeAutomatedComplianceAuditLoop();
                 } else {
@@ -554,11 +534,8 @@ const defaultServices = [
                 }
             })
             .catch(err => {
-                console.warn("Failed to update booking status on backend, falling back to localStorage update:", err);
-                booking.type = newStatus;
-                saveAppointments();
-                renderBookingSlideData();
-                executeAutomatedComplianceAuditLoop();
+                console.error("Failed to update booking status on backend:", err);
+                alert("An error occurred while updating the booking status. Please verify your connection.");
             });
         }
         window.updateBookingStatus = updateBookingStatus;
@@ -1343,36 +1320,8 @@ const defaultServices = [
                     });
                 })
                 .catch(err => {
-                    console.warn("Failed to load feedbacks from database, falling back to localStorage:", err);
-                    let feedbacks = defaultFeedbacks;
-                    try {
-                        let data = localStorage.getItem(FEEDBACKS_KEY);
-                        if (data) feedbacks = JSON.parse(data);
-                    } catch (e) {
-                        console.error("Error parsing feedbacks:", e);
-                    }
-
-                    container.innerHTML = '';
-                    feedbacks.forEach(entry => {
-                        let bookingIdText = String(entry.booking_id);
-                        if (!bookingIdText.startsWith('MTG-')) {
-                            bookingIdText = 'MTG-' + bookingIdText;
-                        }
-                        container.innerHTML += `
-                            <div class="p-8 space-y-3">
-                                <div class="flex justify-between items-start">
-                                    <div>
-                                        <h4 class="font-bold text-base text-black">${entry.client}</h4>
-                                        <p class="text-xs font-mono text-neutral-400 mt-0.5">Booking ID: #${bookingIdText.replace('#', '')} • Service: ${entry.service}</p>
-                                    </div>
-                                    <div class="bg-neutral-900 text-white px-3 py-1 rounded-full text-xs font-bold tracking-wider uppercase">
-                                        Rating Score: ${entry.rating} / 5
-                                    </div>
-                                </div>
-                                <p class="text-sm text-neutral-600 font-medium leading-relaxed">"${entry.comments}"</p>
-                            </div>
-                        `;
-                    });
+                    console.error("Failed to load feedbacks from database:", err);
+                    container.innerHTML = '<div class="p-8 text-neutral-400 text-sm font-medium">Failed to load customer feedback.</div>';
                 });
         }
 

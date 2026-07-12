@@ -52,22 +52,9 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                     renderAppointmentsTable();
                 })
                 .catch(err => {
-                    console.warn("Failed to fetch subscriber bookings from database, using localStorage fallback:", err);
-                    let localData = localStorage.getItem('montage_appointments') || '[]';
-                    let allAppointments = JSON.parse(localData);
-                    
-                    const cleanProfileName = activeProfileName.trim().toLowerCase();
-                    const filtered = allAppointments.filter(app => {
-                        const client = (app.client || '').trim().toLowerCase();
-                        return client === cleanProfileName || 
-                               (cleanProfileName === 'vip member' && client.includes('vip')) ||
-                               cleanProfileName.includes(client) || 
-                               client.includes(cleanProfileName);
-                    });
-
-                    currentAppointments = filtered.filter(app => app.type === 'pending');
-                    historyAppointments = filtered.filter(app => app.type === 'completed' || app.type === 'cancelled');
-                    
+                    console.error("Failed to fetch subscriber bookings from database:", err);
+                    currentAppointments = [];
+                    historyAppointments = [];
                     renderAppointmentsTable();
                 });
         }
@@ -449,23 +436,7 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                 return;
             }
 
-            const referenceId = "MTG-" + Math.floor(100000 + Math.random() * 900000);
             const activeProfileName = localStorage.getItem('subscriber_name') || 'VIP Member';
-            const timeSlotText = `${activeDashTimeState} - ${activeDashTimeState.startsWith('09') ? '10:00 AM' : activeDashTimeState.startsWith('10') ? '11:00 AM' : activeDashTimeState.startsWith('11') ? '12:00 PM' : '03:00 PM'}`;
-
-            // Save to montage_appointments
-            const appointments = JSON.parse(localStorage.getItem('montage_appointments') || '[]');
-            const newBooking = {
-                id: referenceId,
-                type: 'pending',
-                service: activeDashServiceState,
-                date: dateVal,
-                time: timeSlotText,
-                client: activeProfileName,
-                userType: 'subscriber'
-            };
-            appointments.unshift(newBooking);
-            localStorage.setItem('montage_appointments', JSON.stringify(appointments));
 
             // Save to database if customer is logged in
             const customerId = localStorage.getItem('customer_id');
@@ -497,28 +468,28 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                 })
                 .then(data => {
                     if (data && data.status === 'success') {
+                        alert(`Reservation Authorized!\n\nBooking ID: MTG-${data.data.booking_id}`);
+                        document.getElementById('dashWizardForm').reset();
+
+                        if(masterCatalogPayload.length > 0) {
+                            activeDashServiceState = masterCatalogPayload[0].name;
+                            activeDashServiceDuration = masterCatalogPayload[0].duration;
+                            document.getElementById('customDashServiceDisplay').innerText = `${activeDashServiceState}`;
+                        }
+                        activeDashTimeState = "";
+                        document.getElementById('customDashTimeDisplay').innerText = "Select Time...";
+
                         loadSubscriberAppointments(activeProfileName);
+                        switchView('overview');
                     }
                 })
                 .catch(err => {
                     console.error('Database booking error:', err);
+                    alert('An error occurred while booking. Please try again.');
                 });
+            } else {
+                alert('Session expired or unauthorized. Please log in.');
             }
-
-            alert(`Reservation Authorized!\n\nBooking ID: ${referenceId}`);
-            document.getElementById('dashWizardForm').reset();
-
-            if(masterCatalogPayload.length > 0) {
-                activeDashServiceState = masterCatalogPayload[0].name;
-                activeDashServiceDuration = masterCatalogPayload[0].duration;
-                document.getElementById('customDashServiceDisplay').innerText = `${activeDashServiceState}`;
-            }
-            activeDashTimeState = "";
-            document.getElementById('customDashTimeDisplay').innerText = "Select Time...";
-
-            loadSubscriberAppointments(activeProfileName);
-            renderAppointmentsTable();
-            switchView('overview');
         }
 
         async function handleRenewalSubmission(event) {
@@ -893,12 +864,6 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                 if (!data) return;
                 alert(data.data?.message || 'Thank you! Your feedback has been submitted successfully.');
                 
-                // Store in localStorage for backward compatibility or local display
-                const service = document.getElementById('feedbackService').value;
-                const feedbacks = JSON.parse(localStorage.getItem('montage_feedbacks') || '[]');
-                feedbacks.unshift({ client, booking_id: booking_id_raw, service, rating, comments });
-                localStorage.setItem('montage_feedbacks', JSON.stringify(feedbacks));
-
                 // Reset and close
                 document.getElementById('feedbackForm').reset();
                 const activeProfileName = localStorage.getItem('subscriber_name') || 'VIP Member';
