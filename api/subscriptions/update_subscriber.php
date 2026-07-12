@@ -40,11 +40,11 @@ if (empty($email) || empty($status)) {
     exit();
 }
 
-if ($status !== 'Approved' && $status !== 'Rejected') {
+if ($status !== 'Approved' && $status !== 'Rejected' && $status !== 'Inactive') {
     http_response_code(400);
     echo json_encode([
         "status" => "error",
-        "message" => "Invalid status value. Must be 'Approved' or 'Rejected'."
+        "message" => "Invalid status value. Must be 'Approved', 'Rejected', or 'Inactive'."
     ]);
     exit();
 }
@@ -134,6 +134,23 @@ try {
         $stmtCustType->execute();
 
         log_system_event($conn, 'Subscription Approved', "Subscription for Customer ID {$customer_id} approved as Active by Admin. Next billing date: {$nextBillingDate}.");
+
+    } elseif ($status === 'Inactive') {
+        // Deactivate subscription
+        $updateSub = "UPDATE Subscription 
+                      SET plan_status = 'Expired' 
+                      WHERE customer_id = :customer_id";
+        $stmtSub = $conn->prepare($updateSub);
+        $stmtSub->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+        $stmtSub->execute();
+
+        // Revert Customer type to Regular
+        $updateCust = "UPDATE Customer SET customer_type = 'Regular' WHERE customer_id = :customer_id";
+        $stmtCust = $conn->prepare($updateCust);
+        $stmtCust->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+        $stmtCust->execute();
+
+        log_system_event($conn, 'Subscription Downgraded', "Subscription for Customer ID {$customer_id} manually set to Expired by Admin.");
 
     } else {
         // Reject subscription request

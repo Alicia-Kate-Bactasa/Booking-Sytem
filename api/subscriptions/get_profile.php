@@ -21,10 +21,13 @@ try {
     require_auth(['Subscriber', 'Admin']);
 
     $subscriber_id = null;
+    $whereClause = "";
     if ($_SESSION['role'] === 'Subscriber') {
-        $subscriber_id = $_SESSION['user_id'];
+        $subscriber_id = (int)$_SESSION['user_id'];
+        $whereClause = "u.user_id = :subscriber_id";
     } elseif ($_SESSION['role'] === 'Admin' && isset($_GET['subscriber_id'])) {
         $subscriber_id = (int)$_GET['subscriber_id'];
+        $whereClause = "s.subscription_id = :subscriber_id";
     }
 
     if (!$subscriber_id) {
@@ -40,7 +43,7 @@ try {
               FROM Subscription s
               JOIN Customer c ON s.customer_id = c.customer_id
               JOIN User u ON c.user_id = u.user_id
-              WHERE s.subscription_id = :subscriber_id 
+              WHERE {$whereClause} 
               LIMIT 1";
               
     $stmt = $conn->prepare($query);

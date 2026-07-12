@@ -1116,7 +1116,7 @@ const defaultServices = [
         window.switchComplianceFilter = switchComplianceFilter;
 
         function executeAutomatedComplianceAuditLoop() {
-            const CONTEMPORARY_SYSTEM_DATE = new Date("2026-07-05");
+            const CONTEMPORARY_SYSTEM_DATE = new Date();
             const complianceTable = document.getElementById('complianceTableBody');
             if(!complianceTable) return;
             complianceTable.innerHTML = '';
@@ -1221,14 +1221,48 @@ const defaultServices = [
                 return;
             }
 
-            loadSubscribers();
-            let account = subscriberAccounts.find(s => s.id === subscriberId);
-            if (account) {
-                account.status = "Inactive"; // Immediately changes dashboard access to Inactive Member
-                saveSubscribers();
-                alert(`Subscriber ${account.name} has been manually downgraded to Inactive.`);
-                executeAutomatedComplianceAuditLoop();
+            // Extract internal subscription integer ID from string (e.g. "sub-5" -> 5)
+            const rawId = parseInt(subscriberId.replace(/\D/g, ''), 10);
+            
+            // Retrieve subscriber record to find email
+            const acc = subscriberAccounts.find(s => s.subscriber_id === rawId);
+            if (!acc) {
+                alert('Subscriber record not found.');
+                return;
             }
+
+            fetch('subscriptions/update_subscriber.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': csrfToken
+                },
+                body: JSON.stringify({
+                    email: acc.email,
+                    status: 'Inactive'
+                })
+            })
+            .then(res => {
+                if (res.status === 401 || res.status === 403) {
+                    alert('Session expired or unauthorized. Please log in.');
+                    window.location.href = '../index.html';
+                    return null;
+                }
+                if (!res.ok) throw new Error('API downgrade request failed.');
+                return res.json();
+            })
+            .then(data => {
+                if (data && data.status === 'success') {
+                    alert(`Subscriber ${acc.name} has been manually downgraded.`);
+                    loadSubscribers();
+                } else if (data) {
+                    alert('Error: ' + (data.message || 'Server error.'));
+                }
+            })
+            .catch(err => {
+                console.error("Failed to downgrade subscriber:", err);
+                alert("An error occurred. Please verify your connection.");
+            });
         }
         window.downgradeSubscriber = downgradeSubscriber;
 
