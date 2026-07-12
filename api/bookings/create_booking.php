@@ -175,9 +175,9 @@ try {
 
     if ($customer && $customer['customer_type'] === 'Subscriber') {
         // Zero-Value Invoices: To maintain a complete activity ledger, every booking generates an Invoice row
-        // For subscribers: total_amount is 0.00; invoice_status is marked 'Included'
+        // For subscribers: total_amount is 0.00; invoice_status is marked 'Paid'
         $invoiceQuery = "INSERT INTO Invoice (customer_id, total_amount, invoice_type, invoice_status) 
-                         VALUES (:customer_id, 0.00, 'Single Detailing', 'Included')";
+                         VALUES (:customer_id, 0.00, 'Single Detailing', 'Paid')";
         $invoiceStmt = $conn->prepare($invoiceQuery);
         $invoiceStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
         $invoiceStmt->execute();
@@ -245,7 +245,7 @@ try {
     http_response_code(500);
     echo json_encode([
         "status" => "error",
-        "message" => "Database Error: " . $e->getMessage()
+        "message" => "An error occurred while attempting to write booking to the database."
     ]);
 }
 ?>
