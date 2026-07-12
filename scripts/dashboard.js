@@ -355,7 +355,7 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
             toggleModal('rescheduleModal');
         }
 
-        function processRescheduleValidation(event) {
+        async function processRescheduleValidation(event) {
             event.preventDefault();
             const targetDate = document.getElementById('reschDate').value;
             const targetTime = document.getElementById('reschTime').value;
@@ -365,26 +365,48 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                 return;
             }
 
-            const dateObj = new Date(targetDate);
-            if (dateObj.getUTCDay() === 0) {
-                alert("Scheduling Constraint Violation: Montage Auto Studio operates strictly Mon-Sat. Sunday slots remain permanently unavailable.");
-                return;
+            const rawBookingId = parseInt(selectedRescheduleId.replace(/\D/g, ''), 10);
+
+            const submitBtn = event.target.querySelector('button[type="submit"]') || event.target.querySelector('button');
+            const originalText = submitBtn ? submitBtn.innerText : '';
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerText = 'Rescheduling...';
             }
 
-            const appointments = JSON.parse(localStorage.getItem('montage_appointments') || '[]');
-            let match = appointments.find(app => app.id === selectedRescheduleId);
-            if (match) {
-                match.date = targetDate;
-                match.time = targetTime.includes('-') ? targetTime : `${targetTime} - ${targetTime.startsWith('09') ? '10:00 AM' : targetTime.startsWith('10') ? '11:00 AM' : targetTime.startsWith('11') ? '12:00 PM' : '03:00 PM'}`;
-                localStorage.setItem('montage_appointments', JSON.stringify(appointments));
+            try {
+                const response = await fetch('bookings/reschedule_booking.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': csrfToken
+                    },
+                    body: JSON.stringify({
+                        booking_id: rawBookingId,
+                        scheduled_date: targetDate,
+                        time_slot: targetTime
+                    })
+                });
+                const result = await response.json();
+
+                if (response.ok && result.status === 'success') {
+                    alert(result.message || `Appointment rescheduled successfully.`);
+                    toggleModal('rescheduleModal');
+                    
+                    const activeProfileName = localStorage.getItem('subscriber_name') || 'VIP Member';
+                    loadSubscriberAppointments(activeProfileName);
+                } else {
+                    showErrorModal(result.message || 'Rescheduling failed.');
+                }
+            } catch (err) {
+                console.error('Reschedule error:', err);
+                showErrorModal('An error occurred during reschedule submission.');
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = originalText;
+                }
             }
-
-            alert(`Validation Complete: Slot available. Appointment ID ${selectedRescheduleId} modified successfully.`);
-            toggleModal('rescheduleModal');
-
-            const activeProfileName = localStorage.getItem('subscriber_name') || 'VIP Member';
-            loadSubscriberAppointments(activeProfileName);
-            renderAppointmentsTable();
         }
 
         function switchView(viewId) {
@@ -564,15 +586,34 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
             }
         }
 
-        function deleteAppointment(appId) {
+        async function deleteAppointment(appId) {
             if (confirm("Confirm session drop request?")) {
-                let appointments = JSON.parse(localStorage.getItem('montage_appointments') || '[]');
-                appointments = appointments.filter(app => app.id !== appId);
-                localStorage.setItem('montage_appointments', JSON.stringify(appointments));
+                const rawBookingId = parseInt(appId.replace(/\D/g, ''), 10);
+                
+                try {
+                    const response = await fetch('bookings/cancel_booking.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-Token': csrfToken
+                        },
+                        body: JSON.stringify({
+                            booking_id: rawBookingId
+                        })
+                    });
+                    const result = await response.json();
 
-                const activeProfileName = localStorage.getItem('subscriber_name') || 'VIP Member';
-                loadSubscriberAppointments(activeProfileName);
-                renderAppointmentsTable();
+                    if (response.ok && result.status === 'success') {
+                        alert(result.message || "Appointment cancelled successfully.");
+                        const activeProfileName = localStorage.getItem('subscriber_name') || 'VIP Member';
+                        loadSubscriberAppointments(activeProfileName);
+                    } else {
+                        showErrorModal(result.message || "Failed to cancel appointment.");
+                    }
+                } catch (err) {
+                    console.error("Cancellation error:", err);
+                    showErrorModal("An error occurred while cancelling your session.");
+                }
             }
         }
 

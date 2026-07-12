@@ -44,25 +44,26 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Subscriber') {
                     <div class="text-xs text-neutral-400 tracking-widest uppercase font-mono mt-1.5">Member Hub</div>
                 </div>
 
-                <nav class="space-y-4 text-sm font-semibold uppercase tracking-wider text-neutral-400">
-                    <button onclick="switchView('overview')" id="nav-overview" class="w-full flex items-center space-x-3 bg-neutral-900 text-white p-4 rounded-full transition-all text-left font-bold">
-                        <span></span> <span>My Account</span>
+                <nav class="space-y-4 text-xs font-bold uppercase tracking-wider text-neutral-400">
+                    <button onclick="switchView('overview')" id="nav-overview" class="w-full flex items-center space-x-3 bg-neutral-900 text-white p-4 rounded-full transition-all text-left font-bold focus:outline-none">
+                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                        <span>My Account</span>
                     </button>
-                    <button onclick="switchView('booking')" id="nav-booking" class="w-full flex items-center space-x-3 hover:bg-neutral-900 hover:text-white p-4 rounded-full transition-all text-left text-neutral-400">
-                        <span></span> <span>Book New Session</span>
+                    <button onclick="switchView('booking')" id="nav-booking" class="w-full flex items-center space-x-3 hover:bg-neutral-900 hover:text-white p-4 rounded-full transition-all text-left text-neutral-400 focus:outline-none">
+                        <svg class="w-4 h-4 text-neutral-400 group-hover:text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        <span>Book New Session</span>
                     </button>
-                    <button onclick="switchView('subscription')" id="nav-subscription" class="w-full flex items-center space-x-3 hover:bg-neutral-900 hover:text-white p-4 rounded-full transition-all text-left text-neutral-400">
-                        <span></span> <span>Subscription Status</span>
-                    </button>
-                    <button onclick="toggleModal('feedbackModal')" class="w-full flex items-center space-x-3 hover:bg-neutral-900 hover:text-white p-4 rounded-full transition-all text-left text-neutral-400 focus:outline-none">
-                        <span></span> <span>Submit Feedback</span>
+                    <button onclick="switchView('subscription')" id="nav-subscription" class="w-full flex items-center space-x-3 hover:bg-neutral-900 hover:text-white p-4 rounded-full transition-all text-left text-neutral-400 focus:outline-none">
+                        <svg class="w-4 h-4 text-neutral-400 group-hover:text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                        <span>Subscription Status</span>
                     </button>
                 </nav>
             </div>
 
             <div class="pt-6 border-t border-neutral-800">
-                <button onclick="terminateSessionLogout()" class="w-full text-center text-sm font-bold bg-neutral-900 hover:bg-red-950 hover:text-red-200 border border-neutral-800 text-neutral-400 py-4 rounded-full tracking-widest uppercase transition-all">
-                    Logout
+                <button onclick="terminateSessionLogout()" class="w-full flex items-center justify-center space-x-3 text-sm font-bold bg-neutral-900 hover:bg-red-950 hover:text-red-200 border border-neutral-800 text-neutral-400 py-4 rounded-full tracking-widest uppercase transition-all focus:outline-none">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                    <span>Logout</span>
                 </button>
             </div>
         </aside>
@@ -242,20 +243,17 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Subscriber') {
 
                     <div class="bg-white border border-neutral-200 p-8 rounded-[2rem] shadow-sm flex flex-col justify-between space-y-8">
                         <div class="space-y-4">
-                            <h4 class="text-xs uppercase tracking-wider text-neutral-400 font-bold border-b border-neutral-100 pb-3">Payments</h4>
+                            <h4 class="text-xs uppercase tracking-wider text-neutral-400 font-bold border-b border-neutral-100 pb-3">Payments & Billing</h4>
                             <div class="text-sm font-medium text-neutral-500 leading-relaxed">
-                                Access your compiled monthly recurring statement histories, manage active billing cycles, or request custom plan adjustments.
+                                Upload GCash remittance screenshots to verify your current billing cycle, renew access limits, or initiate plan downgrades.
                             </div>
                         </div>
 
                         <div class="space-y-3">
-                            <button onclick="toggleModal('renewalHubModal')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold tracking-widest uppercase py-4 rounded-full transition-all text-center shadow-sm">
+                            <button onclick="toggleModal('renewalHubModal')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold tracking-widest uppercase py-4 rounded-full transition-all text-center shadow-sm focus:outline-none">
                                 Upload Payment Proof
                             </button>
-                            <button onclick="alert('Under construction!')" class="w-full bg-neutral-50 hover:bg-neutral-100 text-dark border border-neutral-200 text-xs font-bold tracking-widest uppercase py-4 rounded-full transition-all text-center">
-                                View Monthly Invoice
-                            </button>
-                            <button id="cancelPlanToggleBtn" onclick="toggleModal('cancelConfirmModal')" class="w-full bg-white hover:bg-red-50 text-red-600 border border-neutral-200 hover:border-red-200 text-xs font-bold tracking-widest uppercase py-4 rounded-full transition-all text-center">
+                            <button id="cancelPlanToggleBtn" onclick="toggleModal('cancelConfirmModal')" class="w-full bg-white hover:bg-red-50 text-red-600 border border-neutral-200 hover:border-red-200 text-xs font-bold tracking-widest uppercase py-4 rounded-full transition-all text-center focus:outline-none">
                                 Cancel Subscription Plan
                             </button>
                         </div>
