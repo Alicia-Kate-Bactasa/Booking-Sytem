@@ -255,8 +255,8 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Subscriber') {
                         </div>
 
                         <div class="space-y-3">
-                            <button id="uploadPaymentProofBtn" onclick="toggleModal('renewalHubModal')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold tracking-widest uppercase py-4 rounded-full transition-all text-center shadow-sm focus:outline-none">
-                                Upload Payment Proof
+                            <button id="uploadPaymentProofBtn" onclick="toggleModal('renewalHubModal')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-4 rounded-full transition-all text-center shadow-sm focus:outline-none">
+                                Pay Next Monthly Renewal Bill
                             </button>
                             <button id="cancelPlanToggleBtn" onclick="toggleModal('cancelConfirmModal')" class="w-full bg-white hover:bg-red-50 text-red-600 border border-neutral-200 hover:border-red-200 text-xs font-bold tracking-widest uppercase py-4 rounded-full transition-all text-center focus:outline-none">
                                 Cancel Subscription Plan
@@ -448,6 +448,6 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Subscriber') {
         </div>
     </div>
 
-    <script src="../scripts/dashboard.js?v=1.0.4"></script>
+    <script src="../scripts/dashboard.js?v=1.0.5"></script>
 </body>
 </html>

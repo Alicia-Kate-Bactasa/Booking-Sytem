@@ -91,9 +91,23 @@ try {
     $conn->beginTransaction();
 
     if ($status === 'Approved') {
-        // Update Subscription plan_status = 'Active' and billing dates
+        // Fetch current subscription dates
+        $dateFetchQuery = "SELECT next_billing_date, plan_status FROM Subscription WHERE customer_id = :customer_id LIMIT 1";
+        $dateFetchStmt = $conn->prepare($dateFetchQuery);
+        $dateFetchStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+        $dateFetchStmt->execute();
+        $subDates = $dateFetchStmt->fetch();
+
         $today = date('Y-m-d');
-        $nextBillingDate = date('Y-m-d', strtotime('+30 days'));
+        if ($subDates && $subDates['plan_status'] === 'Active' && !empty($subDates['next_billing_date']) && $subDates['next_billing_date'] >= $today) {
+            // Early renewal: extend from the current next billing date
+            $nextBillingDate = date('Y-m-d', strtotime($subDates['next_billing_date'] . ' + 30 days'));
+            $lastBillingDate = $subDates['next_billing_date'];
+        } else {
+            // Standard/first-time/expired renewal: extend from today
+            $nextBillingDate = date('Y-m-d', strtotime('+30 days'));
+            $lastBillingDate = $today;
+        }
 
         $updateSub = "UPDATE Subscription 
                       SET plan_status = 'Active', 
@@ -101,7 +115,7 @@ try {
                           next_billing_date = :next_billing 
                       WHERE customer_id = :customer_id";
         $stmtSub = $conn->prepare($updateSub);
-        $stmtSub->bindValue(':last_billing', $today, PDO::PARAM_STR);
+        $stmtSub->bindValue(':last_billing', $lastBillingDate, PDO::PARAM_STR);
         $stmtSub->bindValue(':next_billing', $nextBillingDate, PDO::PARAM_STR);
         $stmtSub->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
         $stmtSub->execute();

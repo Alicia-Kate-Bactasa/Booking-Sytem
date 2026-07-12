@@ -39,7 +39,7 @@ try {
         exit();
     }
 
-    $query = "SELECT s.subscription_id AS subscriber_id, s.customer_id, u.email, s.plan_tier, s.plan_status, s.next_billing_date, c.full_name 
+    $query = "SELECT s.subscription_id AS subscriber_id, s.customer_id, u.email, s.plan_tier, s.plan_status, s.last_billing_date, s.next_billing_date, c.full_name 
               FROM Subscription s
               JOIN Customer c ON s.customer_id = c.customer_id
               JOIN User u ON c.user_id = u.user_id
@@ -73,20 +73,17 @@ try {
     $pendingStmt->execute();
     $hasPending = (bool)$pendingStmt->fetch();
 
-    // Check recent paid renewal payment (within last 28 days)
-    $recentQuery = "SELECT p.payment_id FROM Payment p
-                    JOIN Invoice i ON p.invoice_id = i.invoice_id
-                    WHERE i.customer_id = :customer_id
-                      AND i.invoice_type = 'Monthly Roster'
-                      AND p.payment_status = 'Paid'
-                      AND p.payment_date >= DATE_SUB(NOW(), INTERVAL 28 DAY) LIMIT 1";
-    $recentStmt = $conn->prepare($recentQuery);
-    $recentStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
-    $recentStmt->execute();
-    $hasRecentPaid = (bool)$recentStmt->fetch();
+    // Check if user has already prepaid (last_billing_date is in the future)
+    $prepaid = false;
+    $today = date('Y-m-d');
+    if ($profile['plan_status'] === 'Active' && !empty($profile['last_billing_date'])) {
+        if ($profile['last_billing_date'] > $today) {
+            $prepaid = true;
+        }
+    }
 
-    $renewal_accounted_for = $hasPending || $hasRecentPaid;
-    $renewal_status = $hasPending ? 'Pending Approval' : ($hasRecentPaid ? 'Paid' : null);
+    $renewal_accounted_for = $hasPending || $prepaid;
+    $renewal_status = $hasPending ? 'Pending Approval' : ($prepaid ? 'Paid' : null);
 
     // === SECTION: SUCCESS RESPONSE ===
     echo json_encode([

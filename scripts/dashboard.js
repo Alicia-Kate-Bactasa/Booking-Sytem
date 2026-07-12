@@ -867,10 +867,11 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                         // Deactivate button if already paid or pending approval for double-payment protection
                         const payBtn = document.getElementById('uploadPaymentProofBtn');
                         if (payBtn) {
+                            payBtn.innerText = "Pay Next Monthly Renewal Bill";
                             if (prof.renewal_accounted_for) {
                                 payBtn.disabled = false; // Keep enabled so click works
                                 payBtn.removeAttribute('onclick');
-                                payBtn.className = "w-full bg-neutral-200 text-neutral-400 text-xs font-bold tracking-widest uppercase py-4 rounded-full transition-all text-center cursor-pointer border border-neutral-300 focus:outline-none";
+                                payBtn.className = "w-full bg-neutral-200 text-neutral-400 text-xs font-bold py-4 rounded-full transition-all text-center cursor-pointer border border-neutral-300 focus:outline-none";
                                 
                                 if (prof.renewal_status === 'Pending Approval') {
                                     const msg = `Payment Verification in Progress:\n\nYour payment proof for the upcoming billing cycle (${userProfileSession.next_billing_date}) has already been submitted and is currently awaiting admin verification.\n\nPlease wait for approval.`;
@@ -886,7 +887,7 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                                     };
                                 }
                             } else {
-                                payBtn.className = "w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold tracking-widest uppercase py-4 rounded-full transition-all text-center shadow-sm focus:outline-none";
+                                payBtn.className = "w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-4 rounded-full transition-all text-center shadow-sm focus:outline-none";
                                 payBtn.removeAttribute('title');
                                 payBtn.onclick = () => toggleModal('renewalHubModal');
                             }
