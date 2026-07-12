@@ -152,11 +152,13 @@ try {
     $paymentStmt->bindValue(':proof_of_payment', $databaseSavedPath, PDO::PARAM_STR);
     $paymentStmt->execute();
 
-    // Set plan_status to 'Payment Pending' (awaiting approval)
-    $subQuery = "UPDATE Subscription SET plan_status = 'Payment Pending' WHERE customer_id = :customer_id";
-    $subStmt = $conn->prepare($subQuery);
-    $subStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
-    $subStmt->execute();
+    // Set plan_status to 'Payment Pending' only if they are not already Active
+    if ($sub && $sub['plan_status'] !== 'Active') {
+        $subQuery = "UPDATE Subscription SET plan_status = 'Payment Pending' WHERE customer_id = :customer_id";
+        $subStmt = $conn->prepare($subQuery);
+        $subStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+        $subStmt->execute();
+    }
 
     $conn->commit();
 

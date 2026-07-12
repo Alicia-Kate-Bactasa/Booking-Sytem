@@ -848,7 +848,7 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
         });
 
         function syncProfileWithDatabase() {
-            fetch('subscriptions/get_profile.php')
+            fetch('subscriptions/get_profile.php?t=' + new Date().getTime(), { cache: 'no-store' })
                 .then(res => {
                     if (res.status === 401 || res.status === 403) {
                         window.location.href = '../index.html';
