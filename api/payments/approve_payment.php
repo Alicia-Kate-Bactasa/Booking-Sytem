@@ -175,17 +175,29 @@ try {
 
     $conn->commit();
 
-    // Send confirmation email upon approval if email exists
-    if ($status === 'Paid' && $email && filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $subject = "Payment Approved - Invoice ID: INV-" . $invoice_id;
-        $message = "Hello " . $fullName . ",\n\n";
-        $message .= "Your payment of ₱" . number_format($payment['amount'], 2) . " for Invoice ID INV-" . $invoice_id . " has been successfully approved!\n\n";
-        if ($invoice['invoice_type'] === 'Monthly Roster') {
-            $message .= "Your VIP Unlimited Plan subscription is now Active. Thank you for your support!\n\n";
+    // Send confirmation or rejection email if email exists
+    if ($email && filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        if ($status === 'Paid') {
+            $subject = "Payment Approved - Invoice ID: INV-" . $invoice_id;
+            $message = "Hello " . $fullName . ",\n\n";
+            $message .= "Your payment of ₱" . number_format($payment['amount'], 2) . " for Invoice ID INV-" . $invoice_id . " has been successfully approved!\n\n";
+            if ($invoice['invoice_type'] === 'Monthly Roster') {
+                $message .= "Your VIP Unlimited Plan subscription is now Active. Thank you for your support!\n\n";
+            } else {
+                $message .= "Your booking is now confirmed. We look forward to servicing your vehicle.\n\n";
+            }
+            $message .= "Best regards,\nMontage Auto Studio Team";
         } else {
-            $message .= "Your booking is now confirmed. We look forward to servicing your vehicle.\n\n";
+            $subject = "Registration Payment Rejected - Invoice ID: INV-" . $invoice_id;
+            $message = "Hello " . $fullName . ",\n\n";
+            $message .= "Unfortunately, your payment of ₱" . number_format($payment['amount'], 2) . " for Invoice ID INV-" . $invoice_id . " was rejected by our administrative team.\n\n";
+            if ($invoice['invoice_type'] === 'Monthly Roster') {
+                $message .= "Your subscription registration has been rejected. Please review your GCash payment receipt details and try registering again, or contact our support team.\n\n";
+            } else {
+                $message .= "Your booking confirmation was rejected due to an invalid payment proof. Please resubmit your booking with a valid payment screenshot.\n\n";
+            }
+            $message .= "Best regards,\nMontage Auto Studio Team";
         }
-        $message .= "Best regards,\nMontage Auto Studio Team";
         $headers = "From: no-reply@montageautostudio.com\r\n" .
                    "Reply-To: support@montageautostudio.com\r\n" .
                    "X-Mailer: PHP/" . phpversion();

@@ -1132,7 +1132,7 @@ const defaultServices = [
 
         function switchComplianceFilter(filterId) {
             activeComplianceFilter = filterId;
-            ['all', 'verified', 'overdue'].forEach(f => {
+            ['all', 'verified', 'overdue', 'archived'].forEach(f => {
                 const btn = document.getElementById(`complianceFilterBtn-${f}`);
                 if (btn) {
                     if (f === filterId) {
@@ -1167,7 +1167,7 @@ const defaultServices = [
                 }
             });
 
-            let accountsToRender = subscriberAccounts;
+            let accountsToRender = subscriberAccounts.filter(acc => acc.status !== 'Rejected / Overdue');
             if (activeComplianceFilter === 'verified') {
                 accountsToRender = subscriberAccounts.filter(acc => {
                     const billingDeadlineDate = new Date(acc.next_billing_date);
@@ -1186,10 +1186,14 @@ const defaultServices = [
                     const failsCompliance = CONTEMPORARY_SYSTEM_DATE > graceThresholdDeadline;
                     return acc.status === "Overdue" || (acc.status === "Verified" && failsCompliance);
                 });
+            } else if (activeComplianceFilter === 'archived') {
+                accountsToRender = subscriberAccounts.filter(acc => {
+                    return acc.status === "Rejected / Overdue";
+                });
             }
 
             if (accountsToRender.length === 0) {
-                complianceTable.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-neutral-400 font-medium font-mono">No subscription records found for this filter.</td></tr>`;
+                complianceTable.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-neutral-400 font-medium font-mono">No subscription records found for this filter.</td></tr>`;
                 document.getElementById('compliance-flagged-count').innerText = `${forcedDowngradeCounter} Accounts Flagged`;
                 return;
             }
@@ -1206,7 +1210,7 @@ const defaultServices = [
                 if (account.status === "Verified" && failsComplianceWindow) {
                     displayStatus = "Overdue";
                 } else if (account.status === "Rejected / Overdue") {
-                    displayStatus = "Inactive";
+                    displayStatus = "Rejected";
                 }
 
                 let statusBadgeStyle = '';
@@ -1215,8 +1219,8 @@ const defaultServices = [
                 } else if (displayStatus === 'Overdue') {
                     statusBadgeStyle = 'bg-red-50 text-red-700 border border-red-100 font-extrabold';
                 } else {
-                    // Inactive
-                    statusBadgeStyle = 'bg-neutral-100 text-neutral-800 border border-neutral-200 font-bold';
+                    // Rejected
+                    statusBadgeStyle = 'bg-red-50 text-red-600 border border-red-100 font-bold';
                 }
 
                 const canDowngrade = displayStatus === 'Overdue';
@@ -1232,13 +1236,8 @@ const defaultServices = [
                             </div>
                         </td>
                         <td class="p-5 font-mono text-neutral-500">${account.next_billing_date}</td>
-                        <td class="p-5">
-                            <span class="px-2.5 py-1 text-[10px] uppercase font-bold tracking-wider rounded-full ${statusBadgeStyle}">${displayStatus}</span>
-                        </td>
                         <td class="p-5 text-right">
-                            ${canDowngrade ? `
-                            <button onclick="downgradeSubscriber('${account.id}')" class="bg-black text-white px-3 py-1.5 rounded-full text-[10px] font-bold tracking-wider uppercase hover:bg-neutral-800 transition-all focus:outline-none">Downgrade to Inactive</button>
-                            ` : `<span class="text-neutral-400 text-[10px] font-semibold">—</span>`}
+                            <span class="px-2.5 py-1 text-[10px] uppercase font-bold tracking-wider rounded-full ${statusBadgeStyle}">${displayStatus}</span>
                         </td>
                     </tr>
                 `;

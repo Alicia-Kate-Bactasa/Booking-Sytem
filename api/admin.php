@@ -250,6 +250,7 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Admin') {
                                 <button onclick="switchComplianceFilter('all')" id="complianceFilterBtn-all" class="px-3 py-1.5 rounded-full bg-white text-black shadow-sm transition-all focus:outline-none">All</button>
                                 <button onclick="switchComplianceFilter('verified')" id="complianceFilterBtn-verified" class="px-3 py-1.5 rounded-full text-neutral-500 hover:text-black transition-all focus:outline-none">Verified</button>
                                 <button onclick="switchComplianceFilter('overdue')" id="complianceFilterBtn-overdue" class="px-3 py-1.5 rounded-full text-neutral-500 hover:text-black transition-all focus:outline-none">Overdue</button>
+                                <button onclick="switchComplianceFilter('archived')" id="complianceFilterBtn-archived" class="px-3 py-1.5 rounded-full text-neutral-500 hover:text-black transition-all focus:outline-none">Rejected/Archived</button>
                             </div>
                             <span id="compliance-flagged-count" class="text-xs bg-red-50 text-red-700 border border-red-100 font-bold px-3 py-1 rounded-full">0 Accounts Flagged</span>
                         </div>
@@ -261,8 +262,7 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Admin') {
                                     <th class="p-5">Member</th>
                                     <th class="p-5 text-center">Proof of Payment</th>
                                     <th class="p-5">Next Due Date</th>
-                                    <th class="p-5">Status</th>
-                                    <th class="p-5 text-right">Action</th>
+                                    <th class="p-5 text-right">Status</th>
                                 </tr>
                             </thead>
                             <tbody id="complianceTableBody" class="divide-y divide-neutral-100 font-medium text-neutral-700 text-xs">

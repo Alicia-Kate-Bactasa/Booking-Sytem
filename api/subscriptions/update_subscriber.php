@@ -56,7 +56,7 @@ try {
     verify_csrf_request();
 
     // Retrieve the subscription and customer information
-    $subQuery = "SELECT s.subscription_id, s.customer_id, s.plan_status 
+    $subQuery = "SELECT s.subscription_id, s.customer_id, s.plan_status, u.email, c.full_name 
                  FROM Subscription s
                  JOIN Customer c ON s.customer_id = c.customer_id
                  JOIN User u ON c.user_id = u.user_id
@@ -173,10 +173,34 @@ try {
         $stmtPay->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
         $stmtPay->execute();
 
-        log_system_event($conn, 'Subscription Rejected', "Subscription request for Customer ID {$customer_id} rejected by Admin. plan_status reverted to Payment Pending.");
+        log_system_event($conn, 'Subscription Rejected', "Subscription request for Customer ID {$customer_id} rejected by Admin. plan_status archived as Expired.");
     }
 
     $conn->commit();
+
+    // Send confirmation or rejection email if email exists
+    $clientEmail = $subscriber['email'];
+    $fullName = $subscriber['full_name'];
+    if ($clientEmail && filter_var($clientEmail, FILTER_VALIDATE_EMAIL)) {
+        if ($status === 'Approved') {
+            $subject = "Subscription Approved - VIP Unlimited Plan";
+            $message = "Hello " . $fullName . ",\n\n";
+            $message .= "Your subscription registration has been approved! Your VIP Unlimited Plan is now Active.\n\n";
+            $message .= "You can now log in to your dashboard to schedule your detailing sessions.\n\n";
+            $message .= "Best regards,\nMontage Auto Studio Team";
+        } elseif ($status === 'Rejected') {
+            $subject = "Subscription Registration Rejected";
+            $message = "Hello " . $fullName . ",\n\n";
+            $message .= "We regret to inform you that your subscription registration payment proof has been rejected by our team.\n\n";
+            $message .= "Your registration attempt has been archived. Please review your GCash payment receipt details and resubmit registration with a valid proof of payment.\n\n";
+            $message .= "Best regards,\nMontage Auto Studio Team";
+        }
+        $headers = "From: no-reply@montageautostudio.com\r\n" .
+                   "Reply-To: support@montageautostudio.com\r\n" .
+                   "X-Mailer: PHP/" . phpversion();
+
+        @mail($clientEmail, $subject, $message, $headers);
+    }
 
     // === SECTION: SUCCESS RESPONSE ===
     http_response_code(200);

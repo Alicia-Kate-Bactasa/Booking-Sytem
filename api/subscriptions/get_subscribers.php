@@ -41,6 +41,7 @@ try {
                           AND invoice_type = 'Monthly Roster'
                     )
               ) p ON c.customer_id = p.customer_id
+              WHERE s.plan_status != 'Payment Pending'
               ORDER BY s.subscription_id DESC";
               
     $stmt = $conn->prepare($query);
