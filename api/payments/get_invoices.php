@@ -23,7 +23,7 @@ try {
                      i.total_amount AS total, 
                      i.invoice_type AS type, 
                      i.invoice_status AS status, 
-                     i.created_at AS date,
+                     i.issued_at AS date,
                      c.full_name AS client,
                      p.payment_id, 
                      p.payment_method, 
@@ -32,7 +32,7 @@ try {
               FROM Invoice i
               JOIN Customer c ON i.customer_id = c.customer_id
               LEFT JOIN Payment p ON i.invoice_id = p.invoice_id
-              ORDER BY i.created_at DESC";
+              ORDER BY i.issued_at DESC";
               
     $stmt = $conn->prepare($query);
     $stmt->execute();
