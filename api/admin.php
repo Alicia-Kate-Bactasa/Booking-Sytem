@@ -367,31 +367,7 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Admin') {
                         <h3 class="text-sm font-bold tracking-wider uppercase text-neutral-400">All Reviews</h3>
                     </div>
                     <div class="divide-y divide-neutral-200" id="feedback-entries-container">
-                        <div class="p-8 space-y-3">
-                            <div class="flex justify-between items-start">
-                                <div>
-                                    <h4 class="font-bold text-base text-black">Alicia Kate Bactasa</h4>
-                                    <p class="text-xs font-mono text-neutral-400 mt-0.5">Booking ID: #MTG-841103 • Service: Complete Interior Detailing</p>
-                                </div>
-                                <div class="bg-neutral-900 text-white px-3 py-1 rounded-full text-xs font-bold tracking-wider uppercase">
-                                    Rating Score: 4 / 4
-                                </div>
-                            </div>
-                            <p class="text-sm text-neutral-600 font-medium leading-relaxed">"The level of precision on the interior cleaning was elite. Every single speck of dirt was cleared away from the center console tracks. Will use my monthly VIP sessions exclusively here."</p>
-                        </div>
-
-                        <div class="p-8 space-y-3">
-                            <div class="flex justify-between items-start">
-                                <div>
-                                    <h4 class="font-bold text-base text-black">June Culanag</h4>
-                                    <p class="text-xs font-mono text-neutral-400 mt-0.5">Booking ID: #MTG-102941 • Service: Basic Car Wash</p>
-                                09:00 AM</div>
-                                <div class="bg-neutral-900 text-white px-3 py-1 rounded-full text-xs font-bold tracking-wider uppercase">
-                                    Rating Score: 3 / 4
-                                </div>
-                            </div>
-                            <p class="text-sm text-neutral-600 font-medium leading-relaxed">"Fast standard exterior foam wash. Good processing speeds, though wait lines can occasionally spill over the entryway."</p>
-                        </div>
+                        <div class="p-8 text-neutral-400 text-sm font-medium">Loading feedbacks...</div>
                     </div>
                 </div>
             </section>
