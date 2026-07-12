@@ -60,6 +60,34 @@ try {
         exit();
     }
 
+    $customer_id = (int)$profile['customer_id'];
+    
+    // Check pending renewal payment
+    $pendingQuery = "SELECT p.payment_id FROM Payment p
+                     JOIN Invoice i ON p.invoice_id = i.invoice_id
+                     WHERE i.customer_id = :customer_id
+                       AND i.invoice_type = 'Monthly Roster'
+                       AND p.payment_status = 'Pending Approval' LIMIT 1";
+    $pendingStmt = $conn->prepare($pendingQuery);
+    $pendingStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+    $pendingStmt->execute();
+    $hasPending = (bool)$pendingStmt->fetch();
+
+    // Check recent paid renewal payment (within last 28 days)
+    $recentQuery = "SELECT p.payment_id FROM Payment p
+                    JOIN Invoice i ON p.invoice_id = i.invoice_id
+                    WHERE i.customer_id = :customer_id
+                      AND i.invoice_type = 'Monthly Roster'
+                      AND p.payment_status = 'Paid'
+                      AND p.payment_date >= DATE_SUB(NOW(), INTERVAL 28 DAY) LIMIT 1";
+    $recentStmt = $conn->prepare($recentQuery);
+    $recentStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+    $recentStmt->execute();
+    $hasRecentPaid = (bool)$recentStmt->fetch();
+
+    $renewal_accounted_for = $hasPending || $hasRecentPaid;
+    $renewal_status = $hasPending ? 'Pending Approval' : ($hasRecentPaid ? 'Paid' : null);
+
     // === SECTION: SUCCESS RESPONSE ===
     echo json_encode([
         "status" => "success",
@@ -70,7 +98,9 @@ try {
             "full_name" => $profile['full_name'],
             "plan_tier" => $profile['plan_tier'],
             "plan_status" => $profile['plan_status'],
-            "next_billing_date" => $profile['next_billing_date']
+            "next_billing_date" => $profile['next_billing_date'],
+            "renewal_accounted_for" => $renewal_accounted_for,
+            "renewal_status" => $renewal_status
         ]
     ]);
 

@@ -849,6 +849,27 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                             customerTypeEl.innerText = userProfileSession.customer_type;
                         }
 
+                        // Deactivate button if already paid or pending approval for double-payment protection
+                        const payBtn = document.getElementById('uploadPaymentProofBtn');
+                        if (payBtn) {
+                            if (prof.renewal_accounted_for) {
+                                payBtn.disabled = true;
+                                payBtn.removeAttribute('onclick');
+                                payBtn.className = "w-full bg-neutral-200 text-neutral-400 text-xs font-bold tracking-widest uppercase py-4 rounded-full transition-all text-center cursor-not-allowed border border-neutral-300 focus:outline-none";
+                                
+                                if (prof.renewal_status === 'Pending Approval') {
+                                    payBtn.setAttribute('title', `Payment proof for ${userProfileSession.next_billing_date} is currently pending admin verification. Please wait for approval.`);
+                                } else {
+                                    payBtn.setAttribute('title', `Monthly renewal for ${userProfileSession.next_billing_date} already paid! Wait for this cycle to complete before paying again.`);
+                                }
+                            } else {
+                                payBtn.disabled = false;
+                                payBtn.setAttribute('onclick', "toggleModal('renewalHubModal')");
+                                payBtn.className = "w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold tracking-widest uppercase py-4 rounded-full transition-all text-center shadow-sm focus:outline-none";
+                                payBtn.removeAttribute('title');
+                            }
+                        }
+
                         // Re-render services so covered prices match current coverages
                         renderSynchronizedComponents();
                     }
