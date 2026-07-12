@@ -1425,7 +1425,7 @@ const defaultServices = [
             const sidebar = document.getElementById('sidebar-container');
             const toggleIcon = document.getElementById('sidebar-toggle-icon');
             const textElements = document.querySelectorAll('.sidebar-text-element');
-            const navButtons = document.querySelectorAll('nav button, aside button');
+            const navButtons = document.querySelectorAll('nav button');
 
             if (sidebarCollapsed) {
                 sidebar.classList.remove('w-80');
