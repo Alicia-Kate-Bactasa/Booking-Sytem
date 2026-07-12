@@ -86,13 +86,28 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
             document.getElementById(modalId).classList.toggle('hidden');
         }
 
-        function showErrorModal(message) {
+        function showErrorModal(message, isInfo = false) {
             const modal = document.getElementById('globalErrorModal');
             const msgElement = document.getElementById('globalErrorMessage');
             const okBtn = document.getElementById('globalErrorOkBtn');
             
             if (modal && msgElement && okBtn) {
                 msgElement.innerText = message;
+                const iconContainer = modal.querySelector('.font-mono.text-xl');
+                const titleHeader = modal.querySelector('h3');
+                
+                if (iconContainer) {
+                    if (isInfo) {
+                        iconContainer.className = "w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center mx-auto text-amber-600 font-mono text-xl font-bold";
+                        iconContainer.innerText = "i";
+                        if (titleHeader) titleHeader.innerText = "Notification";
+                    } else {
+                        iconContainer.className = "w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mx-auto text-red-600 font-mono text-xl font-bold";
+                        iconContainer.innerText = "!";
+                        if (titleHeader) titleHeader.innerText = "Notification";
+                    }
+                }
+                
                 modal.classList.remove('hidden');
                 
                 const hideModal = () => {
@@ -853,20 +868,27 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                         const payBtn = document.getElementById('uploadPaymentProofBtn');
                         if (payBtn) {
                             if (prof.renewal_accounted_for) {
-                                payBtn.disabled = true;
+                                payBtn.disabled = false; // Keep enabled so click works
                                 payBtn.removeAttribute('onclick');
-                                payBtn.className = "w-full bg-neutral-200 text-neutral-400 text-xs font-bold tracking-widest uppercase py-4 rounded-full transition-all text-center cursor-not-allowed border border-neutral-300 focus:outline-none";
+                                payBtn.className = "w-full bg-neutral-200 text-neutral-400 text-xs font-bold tracking-widest uppercase py-4 rounded-full transition-all text-center cursor-pointer border border-neutral-300 focus:outline-none";
                                 
                                 if (prof.renewal_status === 'Pending Approval') {
-                                    payBtn.setAttribute('title', `Payment proof for ${userProfileSession.next_billing_date} is currently pending admin verification. Please wait for approval.`);
+                                    const msg = `Payment Verification in Progress:\n\nYour payment proof for the upcoming billing cycle (${userProfileSession.next_billing_date}) has already been submitted and is currently awaiting admin verification.\n\nPlease wait for approval.`;
+                                    payBtn.setAttribute('title', msg);
+                                    payBtn.onclick = () => {
+                                        showErrorModal(msg, true);
+                                    };
                                 } else {
-                                    payBtn.setAttribute('title', `Monthly renewal for ${userProfileSession.next_billing_date} already paid! Wait for this cycle to complete before paying again.`);
+                                    const msg = `Monthly Renewal Completed:\n\nYour subscription renewal for the billing cycle ending on ${userProfileSession.next_billing_date} has already been paid and verified.\n\nDouble-payment protection is active. You will be able to submit payment for the next cycle once the current billing period completes.`;
+                                    payBtn.setAttribute('title', msg);
+                                    payBtn.onclick = () => {
+                                        showErrorModal(msg, true);
+                                    };
                                 }
                             } else {
-                                payBtn.disabled = false;
-                                payBtn.setAttribute('onclick', "toggleModal('renewalHubModal')");
                                 payBtn.className = "w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold tracking-widest uppercase py-4 rounded-full transition-all text-center shadow-sm focus:outline-none";
                                 payBtn.removeAttribute('title');
+                                payBtn.onclick = () => toggleModal('renewalHubModal');
                             }
                         }
 

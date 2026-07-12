@@ -448,6 +448,6 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Subscriber') {
         </div>
     </div>
 
-    <script src="../scripts/dashboard.js?v=1.0.3"></script>
+    <script src="../scripts/dashboard.js?v=1.0.4"></script>
 </body>
 </html>
