@@ -236,6 +236,7 @@ const defaultServices = [
             loadAppointments();
             loadInvoices();
             loadPendingSubscriptions();
+            loadSubscriberLedgers();
             loadServices();
             renderBookingSlideData();
             renderInvoicePendingTable();
@@ -835,6 +836,9 @@ const defaultServices = [
                     loadInvoices();
                     loadSubscribers();
                     loadAppointments();
+                    if (typeof loadSubscriberLedgers === 'function') {
+                        loadSubscriberLedgers();
+                    }
                 } else {
                     showErrorModal(data.message || 'Server error.');
                 }
@@ -1383,7 +1387,109 @@ const defaultServices = [
                 });
         }
 
+        let subscriberRosters = [];
+        let subscriberFreeBookings = [];
+
+        function loadSubscriberLedgers() {
+            return fetch('subscriptions/get_subscriber_ledgers.php')
+                .then(res => {
+                    if (res.status === 401 || res.status === 403) {
+                        return null;
+                    }
+                    if (!res.ok) throw new Error('Failed to fetch subscriber ledgers');
+                    return res.json();
+                })
+                .then(responseObj => {
+                    if (responseObj && responseObj.status === 'success' && responseObj.data) {
+                        subscriberRosters = responseObj.data.roster_payments || [];
+                        subscriberFreeBookings = responseObj.data.free_bookings || [];
+                        renderSubscriberRosters();
+                        renderSubscriberFreeBookings();
+                    }
+                })
+                .catch(err => {
+                    console.error("Failed to load subscriber ledgers:", err);
+                });
+        }
+
+        function renderSubscriberRosters() {
+            const tbody = document.getElementById('subscriberRosterTableBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            if (subscriberRosters.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-neutral-400 font-medium font-mono">No subscription payment records found.</td></tr>`;
+                return;
+            }
+
+            subscriberRosters.forEach(r => {
+                const proofImgUrl = r.img || "https://images.unsplash.com/photo-1554415707-6e8cfc93fe23?auto=format&fit=crop&q=80&w=400";
+                
+                let statusBadgeStyle = 'bg-neutral-100 text-neutral-800 border border-neutral-200';
+                if (r.status === 'paid') {
+                    statusBadgeStyle = 'bg-emerald-50 text-emerald-700 border border-emerald-100 font-bold';
+                } else if (r.status === 'pending' && r.payment_status === 'Pending Approval') {
+                    statusBadgeStyle = 'bg-amber-50 text-amber-700 border border-amber-100 font-bold';
+                } else if (r.payment_status === 'Rejected') {
+                    statusBadgeStyle = 'bg-red-50 text-red-600 border border-red-100 font-bold';
+                }
+
+                const displayStatus = (r.status === 'pending' && r.payment_status === 'Pending Approval') ? 'Pending Approval' : (r.payment_status === 'Rejected' ? 'Rejected' : r.status.toUpperCase());
+
+                const isActionable = r.status === 'pending' && r.payment_status === 'Pending Approval';
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-neutral-50/60 transition-colors">
+                        <td class="p-5 font-bold font-mono text-black">${r.id}</td>
+                        <td class="p-5 text-black font-semibold">${r.client}</td>
+                        <td class="p-5 font-medium text-neutral-500">${r.label}</td>
+                        <td class="p-5 text-center">
+                            <div onclick="launchProofLightbox('${proofImgUrl}')" class="w-12 h-16 bg-neutral-100 border border-neutral-200 rounded-lg overflow-hidden mx-auto cursor-pointer group hover:border-black transition-all relative">
+                                <img src="${proofImgUrl}" alt="Proof" class="w-full h-full object-cover">
+                                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-[8px] font-bold text-white uppercase tracking-wider">View</div>
+                            </div>
+                        </td>
+                        <td class="p-5 text-neutral-400 font-mono">${r.date}</td>
+                        <td class="p-5 font-bold text-neutral-900">₱${r.total.toFixed(2)}</td>
+                        <td class="p-5">
+                            <span class="px-2.5 py-1 text-[10px] uppercase tracking-wider rounded-full ${statusBadgeStyle}">${displayStatus}</span>
+                        </td>
+                        <td class="p-5 text-right space-x-2">
+                            ${isActionable ? `
+                            <button onclick="evaluateRemittanceRoute('${r.id}', 'Paid')" class="bg-black text-white px-3 py-1.5 rounded-full text-[10px] font-bold tracking-wider uppercase hover:bg-neutral-800 transition-all focus:outline-none">Approve</button>
+                            <button onclick="evaluateRemittanceRoute('${r.id}', 'Rejected')" class="bg-white border border-neutral-200 hover:border-red-200 hover:bg-red-50 text-red-600 px-3 py-1.5 rounded-full text-[10px] font-bold tracking-wider uppercase transition-all focus:outline-none">Reject</button>
+                            ` : `<span class="text-neutral-400 text-[10px] font-semibold">—</span>`}
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function renderSubscriberFreeBookings() {
+            const tbody = document.getElementById('subscriberFreeBookingsTableBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            if (subscriberFreeBookings.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-neutral-400 font-medium font-mono">No zero-value detailing bookings found.</td></tr>`;
+                return;
+            }
+
+            subscriberFreeBookings.forEach(f => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-neutral-50/60 transition-colors">
+                        <td class="p-5 font-bold font-mono text-black">${f.id}</td>
+                        <td class="p-5 text-black font-semibold">${f.client}</td>
+                        <td class="p-5 font-medium text-neutral-500">${f.service}</td>
+                        <td class="p-5 font-mono text-neutral-400">${f.date}</td>
+                        <td class="p-5 text-right font-bold text-emerald-600">₱0.00 (Covered)</td>
+                    </tr>
+                `;
+            });
+        }
+
         window.renderFeedbacks = renderFeedbacks;
+        window.loadSubscriberLedgers = loadSubscriberLedgers;
 
         window.switchTab = switchTab;
         window.switchBookingSlide = switchBookingSlide;

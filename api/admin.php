@@ -270,6 +270,65 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Admin') {
                         </table>
                     </div>
                 </div>
+
+                <!-- Subscriber Monthly Payments & Renewals -->
+                <div class="bg-white border border-neutral-200 rounded-[2rem] overflow-hidden shadow-sm">
+                    <div class="p-6 border-b border-neutral-100 bg-neutral-50/50 flex justify-between items-center">
+                        <div>
+                            <h3 class="text-sm font-bold tracking-wider uppercase text-neutral-400">Subscriber Monthly Payments & Renewals</h3>
+                            <p class="text-[11px] text-neutral-400 font-normal mt-1">Track and manage monthly VIP subscription payments and renewals.</p>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm border-collapse">
+                            <thead>
+                                <tr class="border-b border-neutral-200 bg-neutral-50 font-bold text-neutral-400 uppercase tracking-wider text-[11px]">
+                                    <th class="p-5">Invoice ID</th>
+                                    <th class="p-5">Subscriber</th>
+                                    <th class="p-5">Payment Type</th>
+                                    <th class="p-5 text-center">GCash Proof</th>
+                                    <th class="p-5">Date</th>
+                                    <th class="p-5">Amount</th>
+                                    <th class="p-5">Status</th>
+                                    <th class="p-5 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="subscriberRosterTableBody" class="divide-y divide-neutral-100 font-medium text-neutral-700 text-xs">
+                                <tr>
+                                    <td colspan="8" class="p-8 text-center text-neutral-400 font-medium font-mono">No subscription payment records found.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Subscriber Zero-Value Detailing Bookings -->
+                <div class="bg-white border border-neutral-200 rounded-[2rem] overflow-hidden shadow-sm">
+                    <div class="p-6 border-b border-neutral-100 bg-neutral-50/50 flex justify-between items-center">
+                        <div>
+                            <h3 class="text-sm font-bold tracking-wider uppercase text-neutral-400">Subscriber Zero-Value Bookings</h3>
+                            <p class="text-[11px] text-neutral-400 font-normal mt-1">Archive of service detailing sessions covered under VIP plans.</p>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm border-collapse">
+                            <thead>
+                                <tr class="border-b border-neutral-200 bg-neutral-50 font-bold text-neutral-400 uppercase tracking-wider text-[11px]">
+                                    <th class="p-5">Invoice ID</th>
+                                    <th class="p-5">Subscriber</th>
+                                    <th class="p-5">Detailing Service</th>
+                                    <th class="p-5">Date Booked</th>
+                                    <th class="p-5 text-right">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody id="subscriberFreeBookingsTableBody" class="divide-y divide-neutral-100 font-medium text-neutral-700 text-xs">
+                                <tr>
+                                    <td colspan="5" class="p-8 text-center text-neutral-400 font-medium font-mono">No zero-value detailing bookings found.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </section>
 
             <section id="tab-feedbacks" class="space-y-8 hidden">

@@ -519,37 +519,48 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
         async function handleRenewalSubmission(event) {
             event.preventDefault();
             const fileCtrl = document.getElementById('renewalProofFile');
-            if(fileCtrl && fileCtrl.files.length > 0) {
-                const file = fileCtrl.files[0];
-                const readFileAsDataUrl = f => new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = () => resolve(reader.result);
-                    reader.onerror = reject;
-                    reader.readAsDataURL(f);
+            if(!fileCtrl || fileCtrl.files.length === 0) {
+                alert('Please upload your GCash renewal proof of payment.');
+                return;
+            }
+
+            const file = fileCtrl.files[0];
+            const submitBtn = event.target.querySelector('button[type="submit"]') || event.target.querySelector('button');
+            const originalText = submitBtn ? submitBtn.innerText : '';
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerText = 'Submitting Proof...';
+            }
+
+            const formData = new FormData();
+            formData.append('proof_of_payment', file);
+
+            try {
+                const response = await fetch('subscriptions/submit_renewal.php', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-Token': csrfToken
+                    },
+                    body: formData
                 });
+                const result = await response.json();
 
-                const proofDataUrl = await readFileAsDataUrl(file);
-                const invoiceId = `INV-${Math.floor(1000 + Math.random() * 9000)}`;
-                const activeProfileName = localStorage.getItem('subscriber_name') || 'VIP Member';
-
-                // Add to montage_invoices in localStorage
-                const invoices = JSON.parse(localStorage.getItem('montage_invoices') || '[]');
-                const newInvoice = {
-                    id: invoiceId,
-                    type: 'subscriber',
-                    status: 'pending',
-                    client: activeProfileName,
-                    service: 'Monthly Subscription Renewal',
-                    total: 1500,
-                    img: proofDataUrl,
-                    date: new Date().toISOString().split('T')[0]
-                };
-                invoices.unshift(newInvoice);
-                localStorage.setItem('montage_invoices', JSON.stringify(invoices));
-
-                alert("GCash renewal proof submitted! Your payment is pending admin approval.");
-                toggleModal('renewalHubModal');
-                fileCtrl.value = '';
+                if (response.ok && result.status === 'success') {
+                    alert("GCash renewal proof submitted! Your payment is pending admin approval.");
+                    toggleModal('renewalHubModal');
+                    fileCtrl.value = '';
+                    syncProfileWithDatabase();
+                } else {
+                    showErrorModal(result.message || 'Failed to submit renewal payment.');
+                }
+            } catch (err) {
+                console.error('Renewal error:', err);
+                showErrorModal('An error occurred during renewal submission. Please try again.');
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = originalText;
+                }
             }
         }
 
