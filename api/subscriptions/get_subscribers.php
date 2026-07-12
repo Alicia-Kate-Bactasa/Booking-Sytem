@@ -51,7 +51,7 @@ try {
     $formattedSubscribers = array_map(function($sub) {
         // UI expects Status: "Verified" or "Rejected / Overdue" or "Pending"
         $status = 'Verified';
-        if ($sub['status'] === 'Payment Pending' || $sub['status'] === 'Inactive') {
+        if ($sub['status'] === 'Expired' || $sub['status'] === 'Inactive') {
             $status = 'Rejected / Overdue';
         }
         
