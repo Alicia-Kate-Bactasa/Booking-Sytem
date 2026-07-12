@@ -92,6 +92,19 @@ try {
 
     $customer_id = (int)$invoice['customer_id'];
 
+    // Fetch customer email and name (if they have an associated User account)
+    $emailQuery = "SELECT u.email, c.full_name 
+                   FROM Customer c
+                   LEFT JOIN User u ON c.user_id = u.user_id
+                   WHERE c.customer_id = :customer_id LIMIT 1";
+    $emailStmt = $conn->prepare($emailQuery);
+    $emailStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+    $emailStmt->execute();
+    $customerInfo = $emailStmt->fetch();
+
+    $email = isset($customerInfo['email']) ? $customerInfo['email'] : null;
+    $fullName = isset($customerInfo['full_name']) ? $customerInfo['full_name'] : 'Customer';
+
     if ($status === 'Paid') {
         // Update Payment status to Paid
         $updatePay = "UPDATE Payment SET payment_status = 'Paid' WHERE payment_id = :pay_id";
@@ -105,7 +118,7 @@ try {
         $stmtInv->bindValue(':invoice_id', $invoice_id, PDO::PARAM_INT);
         $stmtInv->execute();
 
-        // Also update associated Booking status to Paid for walk-ins
+        // Also update associated Booking status to Paid for walk-ins (complying with updated ENUM value)
         $updateBook = "UPDATE Booking SET booking_status = 'Paid' WHERE invoice_id = :invoice_id AND booking_status = 'Pending Verification'";
         $stmtBook = $conn->prepare($updateBook);
         $stmtBook->bindValue(':invoice_id', $invoice_id, PDO::PARAM_INT);
@@ -161,6 +174,24 @@ try {
     }
 
     $conn->commit();
+
+    // Send confirmation email upon approval if email exists
+    if ($status === 'Paid' && $email && filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $subject = "Payment Approved - Invoice ID: INV-" . $invoice_id;
+        $message = "Hello " . $fullName . ",\n\n";
+        $message .= "Your payment of ₱" . number_format($payment['amount'], 2) . " for Invoice ID INV-" . $invoice_id . " has been successfully approved!\n\n";
+        if ($invoice['invoice_type'] === 'Monthly Roster') {
+            $message .= "Your VIP Unlimited Plan subscription is now Active. Thank you for your support!\n\n";
+        } else {
+            $message .= "Your booking is now confirmed. We look forward to servicing your vehicle.\n\n";
+        }
+        $message .= "Best regards,\nMontage Auto Studio Team";
+        $headers = "From: no-reply@montageautostudio.com\r\n" .
+                   "Reply-To: support@montageautostudio.com\r\n" .
+                   "X-Mailer: PHP/" . phpversion();
+
+        @mail($email, $subject, $message, $headers);
+    }
 
     echo json_encode([
         "status" => "success",

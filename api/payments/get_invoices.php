@@ -61,7 +61,7 @@ try {
             "id" => "INV-" . $inv['invoice_id'],
             "invoice_id" => (int)$inv['invoice_id'],
             "type" => $inv['type'] === 'Monthly Roster' ? 'subscriber' : 'regular',
-            "status" => $inv['status'],
+            "status" => strtolower($inv['status']),
             "client" => $inv['client'],
             "service" => $serviceName,
             "total" => (float)$inv['total'],
