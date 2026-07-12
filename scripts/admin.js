@@ -1395,9 +1395,9 @@ const defaultServices = [
                 const btn = document.getElementById(`subsSlideBtn-${s}`);
                 if (btn) {
                     if (s + '-workspace' === slideId) {
-                        btn.className = "text-xs font-bold uppercase tracking-wider px-4 py-2 rounded-full bg-white text-black shadow-sm transition-all focus:outline-none";
+                        btn.className = "text-xs font-bold px-4 py-2 rounded-full bg-white text-black shadow-sm transition-all focus:outline-none";
                     } else {
-                        btn.className = "text-xs font-semibold uppercase tracking-wider px-4 py-2 rounded-full text-neutral-500 hover:text-black transition-all focus:outline-none";
+                        btn.className = "text-xs font-semibold px-4 py-2 rounded-full text-neutral-500 hover:text-black transition-all focus:outline-none";
                     }
                 }
             });

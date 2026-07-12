@@ -201,10 +201,10 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Admin') {
                         <p class="text-neutral-500 text-sm mt-2">Manage incoming registrations, active members, compliance checks, and renewals.</p>
                     </div>
                     <div class="bg-neutral-200/80 p-1 rounded-full flex gap-1">
-                        <button onclick="switchSubscriptionSlide('pending-workspace')" id="subsSlideBtn-pending" class="text-xs font-bold uppercase tracking-wider px-4 py-2 rounded-full bg-white text-black shadow-sm transition-all focus:outline-none">Approvals</button>
-                        <button onclick="switchSubscriptionSlide('members-workspace')" id="subsSlideBtn-members" class="text-xs font-semibold uppercase tracking-wider px-4 py-2 rounded-full text-neutral-500 hover:text-black transition-all focus:outline-none">Directory</button>
-                        <button onclick="switchSubscriptionSlide('renewals-workspace')" id="subsSlideBtn-renewals" class="text-xs font-semibold uppercase tracking-wider px-4 py-2 rounded-full text-neutral-500 hover:text-black transition-all focus:outline-none">Renewals Log</button>
-                        <button onclick="switchSubscriptionSlide('zero-workspace')" id="subsSlideBtn-zero" class="text-xs font-semibold uppercase tracking-wider px-4 py-2 rounded-full text-neutral-500 hover:text-black transition-all focus:outline-none">Zero-Price Bookings</button>
+                        <button onclick="switchSubscriptionSlide('pending-workspace')" id="subsSlideBtn-pending" class="text-xs font-bold px-4 py-2 rounded-full bg-white text-black shadow-sm transition-all focus:outline-none">Approvals</button>
+                        <button onclick="switchSubscriptionSlide('members-workspace')" id="subsSlideBtn-members" class="text-xs font-semibold px-4 py-2 rounded-full text-neutral-500 hover:text-black transition-all focus:outline-none">Directory</button>
+                        <button onclick="switchSubscriptionSlide('renewals-workspace')" id="subsSlideBtn-renewals" class="text-xs font-semibold px-4 py-2 rounded-full text-neutral-500 hover:text-black transition-all focus:outline-none">Renewals Log</button>
+                        <button onclick="switchSubscriptionSlide('zero-workspace')" id="subsSlideBtn-zero" class="text-xs font-semibold px-4 py-2 rounded-full text-neutral-500 hover:text-black transition-all focus:outline-none">Zero-Price Bookings</button>
                     </div>
                 </div>
 
@@ -469,6 +469,6 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Admin') {
         </div>
     </div>
 
-    <script src="../scripts/admin.js?v=1.0.1"></script>
+    <script src="../scripts/admin.js?v=1.0.2"></script>
 </body>
 </html>
