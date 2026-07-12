@@ -1387,8 +1387,30 @@ const defaultServices = [
             });
         }
 
+        let activeSubscriptionSlide = "pending-workspace";
+
+        function switchSubscriptionSlide(slideId) {
+            activeSubscriptionSlide = slideId;
+            ['pending', 'members', 'renewals', 'zero'].forEach(s => {
+                const btn = document.getElementById(`subsSlideBtn-${s}`);
+                if (btn) {
+                    if (s + '-workspace' === slideId) {
+                        btn.className = "text-xs font-bold uppercase tracking-wider px-4 py-2 rounded-full bg-white text-black shadow-sm transition-all focus:outline-none";
+                    } else {
+                        btn.className = "text-xs font-semibold uppercase tracking-wider px-4 py-2 rounded-full text-neutral-500 hover:text-black transition-all focus:outline-none";
+                    }
+                }
+            });
+
+            document.getElementById('subs-slide-pending-workspace').className = slideId === 'pending-workspace' ? "space-y-8" : "hidden";
+            document.getElementById('subs-slide-members-workspace').className = slideId === 'members-workspace' ? "space-y-8" : "hidden";
+            document.getElementById('subs-slide-renewals-workspace').className = slideId === 'renewals-workspace' ? "space-y-8" : "hidden";
+            document.getElementById('subs-slide-zero-workspace').className = slideId === 'zero-workspace' ? "space-y-8" : "hidden";
+        }
+
         window.renderFeedbacks = renderFeedbacks;
         window.loadSubscriberLedgers = loadSubscriberLedgers;
+        window.switchSubscriptionSlide = switchSubscriptionSlide;
 
         window.switchTab = switchTab;
         window.switchBookingSlide = switchBookingSlide;

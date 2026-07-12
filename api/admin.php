@@ -195,131 +195,151 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Admin') {
             </section>
 
             <section id="tab-monitoring" class="space-y-8 hidden">
-                <div class="border-b border-neutral-200 pb-6">
-                    <h2 class="text-3xl font-bold tracking-tight text-black">Subscriptions</h2>
-                    <p class="text-neutral-500 text-sm mt-2">Check which members are paid up and which ones need attention.</p>
-                </div>
-
-                <!-- Pending Approvals Section -->
-                <div class="bg-white border border-neutral-200 rounded-[2rem] overflow-hidden shadow-sm">
-                    <div class="p-6 border-b border-neutral-100 bg-neutral-50/50 flex justify-between items-center">
-                        <div>
-                            <h3 class="text-sm font-bold tracking-wider uppercase text-neutral-400">Pending Subscription Requests</h3>
-                            <p class="text-[11px] text-neutral-400 font-normal mt-1">Review GCash payments and approve new subscriber accounts.</p>
-                        </div>
-                        <span id="pending-subs-count" class="text-xs bg-amber-50 text-amber-700 border border-amber-100 font-bold px-3 py-1 rounded-full">0 Pending</span>
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-neutral-200 pb-6 gap-4">
+                    <div>
+                        <h2 class="text-3xl font-bold tracking-tight text-black">Subscription Control</h2>
+                        <p class="text-neutral-500 text-sm mt-2">Manage incoming registrations, active members, compliance checks, and renewals.</p>
                     </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm border-collapse">
-                            <thead>
-                                <tr class="border-b border-neutral-200 bg-neutral-50 font-bold text-neutral-400 uppercase tracking-wider text-[11px]">
-                                    <th class="p-5">Request ID</th>
-                                    <th class="p-5">Candidate</th>
-                                    <th class="p-5">Email</th>
-                                    <th class="p-5 text-center">GCash Proof</th>
-                                    <th class="p-5">Date Submitted</th>
-                                    <th class="p-5 text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="pendingSubsTableBody" class="divide-y divide-neutral-100 font-medium text-neutral-700 text-xs">
-                                <tr>
-                                    <td colspan="6" class="p-8 text-center text-neutral-400 font-medium font-mono">No pending subscriptions for review.</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <div class="bg-neutral-200/80 p-1 rounded-full flex gap-1">
+                        <button onclick="switchSubscriptionSlide('pending-workspace')" id="subsSlideBtn-pending" class="text-xs font-bold uppercase tracking-wider px-4 py-2 rounded-full bg-white text-black shadow-sm transition-all focus:outline-none">Approvals</button>
+                        <button onclick="switchSubscriptionSlide('members-workspace')" id="subsSlideBtn-members" class="text-xs font-semibold uppercase tracking-wider px-4 py-2 rounded-full text-neutral-500 hover:text-black transition-all focus:outline-none">Directory</button>
+                        <button onclick="switchSubscriptionSlide('renewals-workspace')" id="subsSlideBtn-renewals" class="text-xs font-semibold uppercase tracking-wider px-4 py-2 rounded-full text-neutral-500 hover:text-black transition-all focus:outline-none">Renewals Log</button>
+                        <button onclick="switchSubscriptionSlide('zero-workspace')" id="subsSlideBtn-zero" class="text-xs font-semibold uppercase tracking-wider px-4 py-2 rounded-full text-neutral-500 hover:text-black transition-all focus:outline-none">Zero-Price Bookings</button>
                     </div>
                 </div>
 
-                <!-- Compliance / Review List -->
-                <div class="bg-white border border-neutral-200 rounded-[2rem] overflow-hidden shadow-sm">
-                    <div class="p-6 border-b border-neutral-100 bg-neutral-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                        <div>
-                            <h3 class="text-sm font-bold tracking-wider uppercase text-neutral-400">Active Subscriptions / Compliance</h3>
-                            <p class="text-[11px] text-neutral-400 font-normal mt-1">Status of current active members and billing compliance audits.</p>
-                        </div>
-                        <div class="flex items-center gap-3 self-end sm:self-auto">
-                            <!-- Compliance Status Filter -->
-                            <div class="bg-neutral-100 p-1 rounded-full flex gap-1 text-[10px] font-bold uppercase tracking-wider">
-                                <button onclick="switchComplianceFilter('all')" id="complianceFilterBtn-all" class="px-3 py-1.5 rounded-full bg-white text-black shadow-sm transition-all focus:outline-none">All</button>
-                                <button onclick="switchComplianceFilter('verified')" id="complianceFilterBtn-verified" class="px-3 py-1.5 rounded-full text-neutral-500 hover:text-black transition-all focus:outline-none">Verified</button>
-                                <button onclick="switchComplianceFilter('overdue')" id="complianceFilterBtn-overdue" class="px-3 py-1.5 rounded-full text-neutral-500 hover:text-black transition-all focus:outline-none">Overdue</button>
-                                <button onclick="switchComplianceFilter('archived')" id="complianceFilterBtn-archived" class="px-3 py-1.5 rounded-full text-neutral-500 hover:text-black transition-all focus:outline-none">Rejected/Archived</button>
+                <!-- Slide 1: Approvals Workspace -->
+                <div id="subs-slide-pending-workspace" class="space-y-8">
+                    <!-- Pending Subscription Requests (New Signups) -->
+                    <div class="bg-white border border-neutral-200 rounded-[2rem] overflow-hidden shadow-sm">
+                        <div class="p-6 border-b border-neutral-100 bg-neutral-50/50 flex justify-between items-center">
+                            <div>
+                                <h3 class="text-sm font-bold tracking-wider uppercase text-neutral-400">Pending Registrations</h3>
+                                <p class="text-[11px] text-neutral-400 font-normal mt-1">Review GCash payments and approve new subscriber accounts.</p>
                             </div>
-                            <span id="compliance-flagged-count" class="text-xs bg-red-50 text-red-700 border border-red-100 font-bold px-3 py-1 rounded-full">0 Accounts Flagged</span>
+                            <span id="pending-subs-count" class="text-xs bg-amber-50 text-amber-700 border border-amber-100 font-bold px-3 py-1 rounded-full">0 Pending</span>
                         </div>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm border-collapse">
-                            <thead>
-                                <tr class="border-b border-neutral-200 bg-neutral-50 font-bold text-neutral-400 uppercase tracking-wider text-[11px]">
-                                    <th class="p-5">Member</th>
-                                    <th class="p-5 text-center">Proof of Payment</th>
-                                    <th class="p-5">Next Due Date</th>
-                                    <th class="p-5 text-right">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody id="complianceTableBody" class="divide-y divide-neutral-100 font-medium text-neutral-700 text-xs">
-                            </tbody>
-                        </table>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm border-collapse">
+                                <thead>
+                                    <tr class="border-b border-neutral-200 bg-neutral-50 font-bold text-neutral-400 uppercase tracking-wider text-[11px]">
+                                        <th class="p-5">Request ID</th>
+                                        <th class="p-5">Candidate</th>
+                                        <th class="p-5">Email</th>
+                                        <th class="p-5 text-center">GCash Proof</th>
+                                        <th class="p-5">Date Submitted</th>
+                                        <th class="p-5 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="pendingSubsTableBody" class="divide-y divide-neutral-100 font-medium text-neutral-700 text-xs">
+                                    <tr>
+                                        <td colspan="6" class="p-8 text-center text-neutral-400 font-medium font-mono">No pending subscription requests found.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Subscriber Monthly Payments & Renewals -->
-                <div class="bg-white border border-neutral-200 rounded-[2rem] overflow-hidden shadow-sm">
-                    <div class="p-6 border-b border-neutral-100 bg-neutral-50/50 flex justify-between items-center">
-                        <div>
-                            <h3 class="text-sm font-bold tracking-wider uppercase text-neutral-400">Subscriber Monthly Payments & Renewals</h3>
-                            <p class="text-[11px] text-neutral-400 font-normal mt-1">Track and manage monthly VIP subscription payments and renewals.</p>
+                <!-- Slide 2: Active Members Directory -->
+                <div id="subs-slide-members-workspace" class="hidden space-y-8">
+                    <!-- Compliance / Review List -->
+                    <div class="bg-white border border-neutral-200 rounded-[2rem] overflow-hidden shadow-sm">
+                        <div class="p-6 border-b border-neutral-100 bg-neutral-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <div>
+                                <h3 class="text-sm font-bold tracking-wider uppercase text-neutral-400">Active Subscriptions / Compliance</h3>
+                                <p class="text-[11px] text-neutral-400 font-normal mt-1">Status of current active members and billing compliance audits.</p>
+                            </div>
+                            <div class="flex items-center gap-3 self-end sm:self-auto">
+                                <!-- Compliance Status Filter -->
+                                <div class="bg-neutral-100 p-1 rounded-full flex gap-1 text-[10px] font-bold uppercase tracking-wider">
+                                    <button onclick="switchComplianceFilter('all')" id="complianceFilterBtn-all" class="px-3 py-1.5 rounded-full bg-white text-black shadow-sm transition-all focus:outline-none">All</button>
+                                    <button onclick="switchComplianceFilter('verified')" id="complianceFilterBtn-verified" class="px-3 py-1.5 rounded-full text-neutral-500 hover:text-black transition-all focus:outline-none">Verified</button>
+                                    <button onclick="switchComplianceFilter('overdue')" id="complianceFilterBtn-overdue" class="px-3 py-1.5 rounded-full text-neutral-500 hover:text-black transition-all focus:outline-none">Overdue</button>
+                                    <button onclick="switchComplianceFilter('archived')" id="complianceFilterBtn-archived" class="px-3 py-1.5 rounded-full text-neutral-500 hover:text-black transition-all focus:outline-none">Rejected/Archived</button>
+                                </div>
+                                <span id="compliance-flagged-count" class="text-xs bg-red-50 text-red-700 border border-red-100 font-bold px-3 py-1 rounded-full">0 Accounts Flagged</span>
+                            </div>
                         </div>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm border-collapse">
-                            <thead>
-                                <tr class="border-b border-neutral-200 bg-neutral-50 font-bold text-neutral-400 uppercase tracking-wider text-[11px]">
-                                    <th class="p-5">Invoice ID</th>
-                                    <th class="p-5">Subscriber</th>
-                                    <th class="p-5">Payment Type</th>
-                                    <th class="p-5 text-center">GCash Proof</th>
-                                    <th class="p-5">Date</th>
-                                    <th class="p-5">Amount</th>
-                                    <th class="p-5">Status</th>
-                                    <th class="p-5 text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="subscriberRosterTableBody" class="divide-y divide-neutral-100 font-medium text-neutral-700 text-xs">
-                                <tr>
-                                    <td colspan="8" class="p-8 text-center text-neutral-400 font-medium font-mono">No subscription payment records found.</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm border-collapse">
+                                <thead>
+                                    <tr class="border-b border-neutral-200 bg-neutral-50 font-bold text-neutral-400 uppercase tracking-wider text-[11px]">
+                                        <th class="p-5">Member</th>
+                                        <th class="p-5 text-center">Proof of Payment</th>
+                                        <th class="p-5">Next Due Date</th>
+                                        <th class="p-5 text-right">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="complianceTableBody" class="divide-y divide-neutral-100 font-medium text-neutral-700 text-xs">
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Subscriber Zero-Value Detailing Bookings -->
-                <div class="bg-white border border-neutral-200 rounded-[2rem] overflow-hidden shadow-sm">
-                    <div class="p-6 border-b border-neutral-100 bg-neutral-50/50 flex justify-between items-center">
-                        <div>
-                            <h3 class="text-sm font-bold tracking-wider uppercase text-neutral-400">Subscriber Zero-Value Bookings</h3>
-                            <p class="text-[11px] text-neutral-400 font-normal mt-1">Archive of service detailing sessions covered under VIP plans.</p>
+                <!-- Slide 3: Renewal Log -->
+                <div id="subs-slide-renewals-workspace" class="hidden space-y-8">
+                    <!-- Subscriber Monthly Payments & Renewals -->
+                    <div class="bg-white border border-neutral-200 rounded-[2rem] overflow-hidden shadow-sm">
+                        <div class="p-6 border-b border-neutral-100 bg-neutral-50/50 flex justify-between items-center">
+                            <div>
+                                <h3 class="text-sm font-bold tracking-wider uppercase text-neutral-400">Subscriber Monthly Payments & Renewals</h3>
+                                <p class="text-[11px] text-neutral-400 font-normal mt-1">Track and manage monthly VIP subscription payments and renewals.</p>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm border-collapse">
+                                <thead>
+                                    <tr class="border-b border-neutral-200 bg-neutral-50 font-bold text-neutral-400 uppercase tracking-wider text-[11px]">
+                                        <th class="p-5">Invoice ID</th>
+                                        <th class="p-5">Subscriber</th>
+                                        <th class="p-5">Payment Type</th>
+                                        <th class="p-5 text-center">GCash Proof</th>
+                                        <th class="p-5">Date</th>
+                                        <th class="p-5">Amount</th>
+                                        <th class="p-5">Status</th>
+                                        <th class="p-5 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="subscriberRosterTableBody" class="divide-y divide-neutral-100 font-medium text-neutral-700 text-xs">
+                                    <tr>
+                                        <td colspan="8" class="p-8 text-center text-neutral-400 font-medium font-mono">No subscription payment records found.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm border-collapse">
-                            <thead>
-                                <tr class="border-b border-neutral-200 bg-neutral-50 font-bold text-neutral-400 uppercase tracking-wider text-[11px]">
-                                    <th class="p-5">Invoice ID</th>
-                                    <th class="p-5">Subscriber</th>
-                                    <th class="p-5">Detailing Service</th>
-                                    <th class="p-5">Date Booked</th>
-                                    <th class="p-5 text-right">Amount</th>
-                                </tr>
-                            </thead>
-                            <tbody id="subscriberFreeBookingsTableBody" class="divide-y divide-neutral-100 font-medium text-neutral-700 text-xs">
-                                <tr>
-                                    <td colspan="5" class="p-8 text-center text-neutral-400 font-medium font-mono">No zero-value detailing bookings found.</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                </div>
+
+                <!-- Slide 4: Zero-Price Bookings Ledger -->
+                <div id="subs-slide-zero-workspace" class="hidden space-y-8">
+                    <!-- Subscriber Zero-Value Detailing Bookings -->
+                    <div class="bg-white border border-neutral-200 rounded-[2rem] overflow-hidden shadow-sm">
+                        <div class="p-6 border-b border-neutral-100 bg-neutral-50/50 flex justify-between items-center">
+                            <div>
+                                <h3 class="text-sm font-bold tracking-wider uppercase text-neutral-400">Subscriber Zero-Value Bookings</h3>
+                                <p class="text-[11px] text-neutral-400 font-normal mt-1">Archive of service detailing sessions covered under VIP plans.</p>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm border-collapse">
+                                <thead>
+                                    <tr class="border-b border-neutral-200 bg-neutral-50 font-bold text-neutral-400 uppercase tracking-wider text-[11px]">
+                                        <th class="p-5">Invoice ID</th>
+                                        <th class="p-5">Subscriber</th>
+                                        <th class="p-5">Detailing Service</th>
+                                        <th class="p-5">Date Booked</th>
+                                        <th class="p-5 text-right">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="subscriberFreeBookingsTableBody" class="divide-y divide-neutral-100 font-medium text-neutral-700 text-xs">
+                                    <tr>
+                                        <td colspan="5" class="p-8 text-center text-neutral-400 font-medium font-mono">No zero-value detailing bookings found.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </section>
