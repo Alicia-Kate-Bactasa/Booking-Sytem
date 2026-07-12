@@ -1021,14 +1021,19 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
 
             if (prof.plan_status === 'Active') {
                 if (prof.renewal_accounted_for) {
-                    payBtn.disabled = true;
-                    payBtn.removeAttribute('onclick');
-                    payBtn.className = "w-full bg-neutral-200 text-neutral-400 text-xs font-bold py-4 rounded-full transition-all text-center cursor-not-allowed border border-neutral-300 focus:outline-none";
-
                     if (prof.renewal_status === 'Payment Awaiting Approval') {
+                        payBtn.disabled = false; // Enabled so click is captured
                         payBtn.innerText = "Payment awaiting admin approval.";
+                        payBtn.className = "w-full bg-neutral-200 text-neutral-400 text-xs font-bold py-4 rounded-full transition-all text-center cursor-pointer border border-neutral-300 focus:outline-none";
+                        payBtn.onclick = () => {
+                            showErrorModal("Payment awaiting admin approval.", true);
+                        };
                     } else if (prof.renewal_status === 'Paid') {
+                        // Deactivated until a day after next billing date
+                        payBtn.disabled = true;
                         payBtn.innerText = "Next month paid.";
+                        payBtn.removeAttribute('onclick');
+                        payBtn.className = "w-full bg-neutral-200 text-neutral-400 text-xs font-bold py-4 rounded-full transition-all text-center cursor-not-allowed border border-neutral-300 focus:outline-none";
                     }
                 } else {
                     payBtn.disabled = false;
@@ -1037,13 +1042,18 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                     payBtn.onclick = () => toggleModal('renewalHubModal');
                 }
             } else {
-                payBtn.disabled = true;
-                payBtn.removeAttribute('onclick');
-                payBtn.className = "w-full bg-neutral-200 text-neutral-400 text-xs font-bold py-4 rounded-full transition-all text-center cursor-not-allowed border border-neutral-300 focus:outline-none";
                 if (prof.plan_status === 'Payment Pending') {
+                    payBtn.disabled = false; // Enabled so click is captured
                     payBtn.innerText = "Payment awaiting admin approval.";
+                    payBtn.className = "w-full bg-neutral-200 text-neutral-400 text-xs font-bold py-4 rounded-full transition-all text-center cursor-pointer border border-neutral-300 focus:outline-none";
+                    payBtn.onclick = () => {
+                        showErrorModal("Payment awaiting admin approval.", true);
+                    };
                 } else {
+                    payBtn.disabled = true;
                     payBtn.innerText = "Subscription Expired";
+                    payBtn.removeAttribute('onclick');
+                    payBtn.className = "w-full bg-neutral-200 text-neutral-400 text-xs font-bold py-4 rounded-full transition-all text-center cursor-not-allowed border border-neutral-300 focus:outline-none";
                 }
             }
         }
