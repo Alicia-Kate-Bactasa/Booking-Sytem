@@ -400,14 +400,15 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Subscriber') {
                 </div>
 
                 <div>
-                    <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1.5">Rating (1 to 4 Stars)</label>
+                    <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1.5">Rating (1 to 5 Stars)</label>
                     <div class="flex items-center space-x-3 bg-neutral-50 border border-neutral-200 p-3.5 rounded-full justify-center">
                         <button type="button" onclick="setFeedbackRating(1)" class="rating-star text-amber-500 text-lg hover:scale-110 transition-transform">★</button>
                         <button type="button" onclick="setFeedbackRating(2)" class="rating-star text-amber-500 text-lg hover:scale-110 transition-transform">★</button>
                         <button type="button" onclick="setFeedbackRating(3)" class="rating-star text-amber-500 text-lg hover:scale-110 transition-transform">★</button>
                         <button type="button" onclick="setFeedbackRating(4)" class="rating-star text-amber-500 text-lg hover:scale-110 transition-transform">★</button>
+                        <button type="button" onclick="setFeedbackRating(5)" class="rating-star text-amber-500 text-lg hover:scale-110 transition-transform">★</button>
                     </div>
-                    <input type="hidden" id="feedbackRating" value="4" required>
+                    <input type="hidden" id="feedbackRating" value="5" required>
                 </div>
 
                 <div>

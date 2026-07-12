@@ -548,24 +548,53 @@
         function submitCustomerFeedback(event) {
             event.preventDefault();
             const client = document.getElementById('feedbackName').value.trim();
-            let booking_id = document.getElementById('feedbackBookingId').value.trim();
-            if (!booking_id) {
-                booking_id = "MTG-" + Math.floor(100000 + Math.random() * 900000);
-            }
-            const service = document.getElementById('feedbackService').value;
-            const rating = parseInt(document.getElementById('feedbackRating').value) || 4;
+            let booking_id_raw = document.getElementById('feedbackBookingId').value.trim();
+            const rating = parseInt(document.getElementById('feedbackRating').value) || 5;
             const comments = document.getElementById('feedbackComments').value.trim();
 
-            const feedbacks = JSON.parse(localStorage.getItem('montage_feedbacks') || '[]');
-            feedbacks.unshift({ client, booking_id, service, rating, comments });
-            localStorage.setItem('montage_feedbacks', JSON.stringify(feedbacks));
+            fetch('api/submit_feedback.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    booking_id: booking_id_raw ? booking_id_raw : null,
+                    rating: rating,
+                    comments: comments
+                })
+            })
+            .then(res => {
+                if (res.status === 401 || res.status === 403) {
+                    alert('You must be logged in as a subscriber to leave feedback.');
+                    toggleModal('feedbackModal');
+                    toggleModal('loginModal');
+                    return null;
+                }
+                return res.json().then(data => {
+                    if (!res.ok) {
+                        throw new Error(data.message || 'Failed to submit feedback');
+                    }
+                    return data;
+                });
+            })
+            .then(data => {
+                if (!data) return;
+                alert(data.data?.message || 'Thank you! Your feedback has been submitted successfully.');
+                
+                // Store in localStorage for backward compatibility or local display
+                const service = document.getElementById('feedbackService').value;
+                const feedbacks = JSON.parse(localStorage.getItem('montage_feedbacks') || '[]');
+                feedbacks.unshift({ client, booking_id: booking_id_raw, service, rating, comments });
+                localStorage.setItem('montage_feedbacks', JSON.stringify(feedbacks));
 
-            alert('Thank you! Your feedback has been submitted successfully.');
-            
-            // Reset and close
-            document.getElementById('feedbackForm').reset();
-            setFeedbackRating(4); // Reset to 4 stars default
-            toggleModal('feedbackModal');
+                // Reset and close
+                document.getElementById('feedbackForm').reset();
+                setFeedbackRating(5); // Reset to 5 stars default
+                toggleModal('feedbackModal');
+            })
+            .catch(err => {
+                alert(err.message || 'An error occurred while submitting feedback.');
+            });
         }
 
         window.setFeedbackRating = setFeedbackRating;

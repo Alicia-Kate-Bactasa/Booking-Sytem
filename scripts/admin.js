@@ -1134,39 +1134,81 @@ const defaultServices = [
         function renderFeedbacks() {
             const container = document.getElementById('feedback-entries-container');
             if (!container) return;
-            container.innerHTML = '';
 
-            let feedbacks;
-            try {
-                let data = localStorage.getItem(FEEDBACKS_KEY);
-                if (data) {
-                    feedbacks = JSON.parse(data);
-                }
-            } catch (e) {
-                console.error("Error parsing feedbacks:", e);
-            }
+            fetch('get_feedbacks.php')
+                .then(res => {
+                    if (res.status === 401 || res.status === 403) {
+                        return null;
+                    }
+                    if (!res.ok) throw new Error('API request failed');
+                    return res.json();
+                })
+                .then(responseObj => {
+                    let feedbacks = [];
+                    if (responseObj && responseObj.status === 'success') {
+                        feedbacks = responseObj.data;
+                    }
+                    
+                    container.innerHTML = '';
+                    
+                    if (feedbacks.length === 0) {
+                        container.innerHTML = '<div class="p-8 text-neutral-400 text-sm font-medium">No customer feedback has been submitted yet.</div>';
+                        return;
+                    }
 
-            if (!feedbacks) {
-                feedbacks = defaultFeedbacks;
-                localStorage.setItem(FEEDBACKS_KEY, JSON.stringify(feedbacks));
-            }
-
-            feedbacks.forEach(entry => {
-                container.innerHTML += `
-                    <div class="p-8 space-y-3">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <h4 class="font-bold text-base text-black">${entry.client}</h4>
-                                <p class="text-xs font-mono text-neutral-400 mt-0.5">Booking ID: #${entry.booking_id.replace('#', '')} • Service: ${entry.service}</p>
+                    feedbacks.forEach(entry => {
+                        let bookingIdText = String(entry.booking_id);
+                        if (!bookingIdText.startsWith('MTG-')) {
+                            bookingIdText = 'MTG-' + bookingIdText;
+                        }
+                        container.innerHTML += `
+                            <div class="p-8 space-y-3">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <h4 class="font-bold text-base text-black">${entry.client}</h4>
+                                        <p class="text-xs font-mono text-neutral-400 mt-0.5">Booking ID: #${bookingIdText.replace('#', '')} • Service: ${entry.service}</p>
+                                    </div>
+                                    <div class="bg-neutral-900 text-white px-3 py-1 rounded-full text-xs font-bold tracking-wider uppercase">
+                                        Rating Score: ${entry.rating} / 5
+                                    </div>
+                                </div>
+                                <p class="text-sm text-neutral-600 font-medium leading-relaxed">"${entry.comments}"</p>
                             </div>
-                            <div class="bg-neutral-900 text-white px-3 py-1 rounded-full text-xs font-bold tracking-wider uppercase">
-                                Rating Score: ${entry.rating} / 4
+                        `;
+                    });
+                })
+                .catch(err => {
+                    console.warn("Failed to load feedbacks from database, falling back to localStorage:", err);
+                    let feedbacks = defaultFeedbacks;
+                    try {
+                        let data = localStorage.getItem(FEEDBACKS_KEY);
+                        if (data) feedbacks = JSON.parse(data);
+                    } catch (e) {
+                        console.error("Error parsing feedbacks:", e);
+                    }
+
+                    container.innerHTML = '';
+                    feedbacks.forEach(entry => {
+                        let bookingIdText = String(entry.booking_id);
+                        if (!bookingIdText.startsWith('MTG-')) {
+                            bookingIdText = 'MTG-' + bookingIdText;
+                        }
+                        container.innerHTML += `
+                            <div class="p-8 space-y-3">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <h4 class="font-bold text-base text-black">${entry.client}</h4>
+                                        <p class="text-xs font-mono text-neutral-400 mt-0.5">Booking ID: #${bookingIdText.replace('#', '')} • Service: ${entry.service}</p>
+                                    </div>
+                                    <div class="bg-neutral-900 text-white px-3 py-1 rounded-full text-xs font-bold tracking-wider uppercase">
+                                        Rating Score: ${entry.rating} / 5
+                                    </div>
+                                </div>
+                                <p class="text-sm text-neutral-600 font-medium leading-relaxed">"${entry.comments}"</p>
                             </div>
-                        </div>
-                        <p class="text-sm text-neutral-600 font-medium leading-relaxed">"${entry.comments}"</p>
-                    </div>
-                `;
-            });
+                        `;
+                    });
+                });
         }
 
         window.renderFeedbacks = renderFeedbacks;

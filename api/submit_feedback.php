@@ -27,25 +27,16 @@ if ($inputData === null) {
     exit();
 }
 
-$booking_id = isset($inputData['booking_id']) ? $inputData['booking_id'] : null;
+$booking_id_raw = isset($inputData['booking_id']) ? $inputData['booking_id'] : null;
 $rating = isset($inputData['rating']) ? $inputData['rating'] : null;
 $comments = isset($inputData['comments']) ? trim($inputData['comments']) : null;
 
 // === SECTION: INPUT VALIDATION ===
-if (empty($booking_id) || $rating === null) {
+if ($rating === null) {
     http_response_code(400);
     echo json_encode([
         "status" => "error",
-        "message" => "Incomplete request. booking_id and rating are required fields."
-    ]);
-    exit();
-}
-
-if (!filter_var($booking_id, FILTER_VALIDATE_INT)) {
-    http_response_code(400);
-    echo json_encode([
-        "status" => "error",
-        "message" => "Invalid booking_id format. It must be an integer."
+        "message" => "Incomplete request. rating is a required field."
     ]);
     exit();
 }
@@ -59,29 +50,96 @@ if (!filter_var($rating, FILTER_VALIDATE_INT) || $rating < 1 || $rating > 5) {
     exit();
 }
 
+// Clean up MTG- prefix if present in booking_id
+if (is_string($booking_id_raw)) {
+    $booking_id_raw = str_replace('MTG-', '', $booking_id_raw);
+}
+
 // === SECTION: TRANSACTION & DATABASE OPERATION ===
 try {
     // Require authentication (either Subscriber or Admin)
     require_auth(['Subscriber', 'Admin']);
 
-    // Verify that the booking exists in the Booking table to validate booking_id
-    $bookingCheckQuery = "SELECT booking_id FROM Booking WHERE booking_id = :booking_id LIMIT 1";
-    $bookingCheckStmt = $conn->prepare($bookingCheckQuery);
-    $bookingCheckStmt->bindValue(':booking_id', $booking_id, PDO::PARAM_INT);
-    $bookingCheckStmt->execute();
-    $booking = $bookingCheckStmt->fetch();
-    
-    if (!$booking) {
-        http_response_code(404);
-        echo json_encode([
-            "status" => "error",
-            "message" => "Referenced Booking ID does not exist in the database."
-        ]);
-        exit();
+    $booking_id = null;
+    $customer_id = null;
+
+    if (empty($booking_id_raw)) {
+        if ($_SESSION['role'] === 'Subscriber') {
+            // Find the latest booking for this customer to automatically associate the feedback
+            $findBookingQuery = "SELECT booking_id, customer_id FROM Booking WHERE customer_id = :customer_id ORDER BY scheduled_date DESC, time_slot DESC LIMIT 1";
+            $findBookingStmt = $conn->prepare($findBookingQuery);
+            $findBookingStmt->bindValue(':customer_id', $_SESSION['customer_id'], PDO::PARAM_INT);
+            $findBookingStmt->execute();
+            $booking = $findBookingStmt->fetch();
+            if ($booking) {
+                $booking_id = (int)$booking['booking_id'];
+                $customer_id = (int)$booking['customer_id'];
+            } else {
+                http_response_code(400);
+                echo json_encode([
+                    "status" => "error",
+                    "message" => "You don't have any bookings to leave feedback for."
+                ]);
+                exit();
+            }
+        } else {
+            http_response_code(400);
+            echo json_encode([
+                "status" => "error",
+                "message" => "booking_id is required."
+            ]);
+            exit();
+        }
+    } else {
+        if (!filter_var($booking_id_raw, FILTER_VALIDATE_INT)) {
+            http_response_code(400);
+            echo json_encode([
+                "status" => "error",
+                "message" => "Invalid booking_id format. It must be an integer."
+            ]);
+            exit();
+        }
+        $booking_id = (int)$booking_id_raw;
+
+        // Verify that the booking exists and get customer_id
+        $bookingCheckQuery = "SELECT customer_id FROM Booking WHERE booking_id = :booking_id LIMIT 1";
+        $bookingCheckStmt = $conn->prepare($bookingCheckQuery);
+        $bookingCheckStmt->bindValue(':booking_id', $booking_id, PDO::PARAM_INT);
+        $bookingCheckStmt->execute();
+        $booking = $bookingCheckStmt->fetch();
+        
+        if (!$booking) {
+            http_response_code(404);
+            echo json_encode([
+                "status" => "error",
+                "message" => "Referenced Booking ID does not exist in the database."
+            ]);
+            exit();
+        }
+
+        $customer_id = (int)$booking['customer_id'];
+
+        // If Subscriber, ensure the booking belongs to them
+        if ($_SESSION['role'] === 'Subscriber' && (int)$_SESSION['customer_id'] !== $customer_id) {
+            http_response_code(403);
+            echo json_encode([
+                "status" => "error",
+                "message" => "Forbidden. You can only submit feedback for your own bookings."
+            ]);
+            exit();
+        }
     }
 
-    // Since the Feedback table is not present in the new database schema, we handle this gracefully
-    // by mocking a successful response (the frontend stores feedbacks in localStorage).
+    // Insert feedback into Feedback table
+    $insertQuery = "INSERT INTO Feedback (booking_id, customer_id, rating, comments) 
+                    VALUES (:booking_id, :customer_id, :rating, :comments)";
+    $insertStmt = $conn->prepare($insertQuery);
+    $insertStmt->bindValue(':booking_id', $booking_id, PDO::PARAM_INT);
+    $insertStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+    $insertStmt->bindValue(':rating', $rating, PDO::PARAM_INT);
+    $insertStmt->bindValue(':comments', $comments, PDO::PARAM_STR);
+    $insertStmt->execute();
+
     http_response_code(201);
     echo json_encode([
         "status" => "success",
