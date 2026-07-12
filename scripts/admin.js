@@ -422,10 +422,21 @@ const defaultServices = [
                 const viewSection = document.getElementById(`tab-${tab}`);
                 const navBtn = document.getElementById(`btn-${tab}`);
                 if(viewSection) viewSection.classList.add('hidden');
-                if(navBtn) navBtn.className = "w-full text-left flex items-center gap-3 px-4 py-3 rounded-full text-sm font-semibold tracking-wide transition-all text-neutral-500 hover:bg-neutral-100 hover:text-black";
+                if(navBtn) {
+                    navBtn.className = "w-full text-left flex items-center gap-3 px-4 py-3 rounded-full text-sm font-semibold tracking-wide transition-all text-neutral-500 hover:bg-neutral-100 hover:text-black focus:outline-none";
+                    if (typeof sidebarCollapsed !== 'undefined' && sidebarCollapsed) {
+                        navBtn.classList.add('justify-center');
+                    }
+                }
             });
             document.getElementById(`tab-${tabId}`).classList.remove('hidden');
-            document.getElementById(`btn-${tabId}`).className = "w-full text-left flex items-center gap-3 px-4 py-3 rounded-full text-sm font-semibold tracking-wide transition-all bg-black text-white";
+            const activeBtn = document.getElementById(`btn-${tabId}`);
+            if (activeBtn) {
+                activeBtn.className = "w-full text-left flex items-center gap-3 px-4 py-3 rounded-full text-sm font-semibold tracking-wide transition-all bg-black text-white focus:outline-none";
+                if (typeof sidebarCollapsed !== 'undefined' && sidebarCollapsed) {
+                    activeBtn.classList.add('justify-center');
+                }
+            }
         }
 
         function toggleModal(modalId) {
@@ -1408,9 +1419,37 @@ const defaultServices = [
             document.getElementById('subs-slide-zero-workspace').className = slideId === 'zero-workspace' ? "space-y-8" : "hidden";
         }
 
+        let sidebarCollapsed = false;
+        function toggleSidebar() {
+            sidebarCollapsed = !sidebarCollapsed;
+            const sidebar = document.getElementById('sidebar-container');
+            const toggleIcon = document.getElementById('sidebar-toggle-icon');
+            const textElements = document.querySelectorAll('.sidebar-text-element');
+            const navButtons = document.querySelectorAll('nav button, aside button');
+
+            if (sidebarCollapsed) {
+                sidebar.classList.remove('w-80');
+                sidebar.classList.add('w-20');
+                if (toggleIcon) toggleIcon.classList.add('rotate-180');
+                textElements.forEach(el => el.classList.add('hidden'));
+                navButtons.forEach(btn => {
+                    btn.classList.add('justify-center');
+                });
+            } else {
+                sidebar.classList.remove('w-20');
+                sidebar.classList.add('w-80');
+                if (toggleIcon) toggleIcon.classList.remove('rotate-180');
+                textElements.forEach(el => el.classList.remove('hidden'));
+                navButtons.forEach(btn => {
+                    btn.classList.remove('justify-center');
+                });
+            }
+        }
+
         window.renderFeedbacks = renderFeedbacks;
         window.loadSubscriberLedgers = loadSubscriberLedgers;
         window.switchSubscriptionSlide = switchSubscriptionSlide;
+        window.toggleSidebar = toggleSidebar;
 
         window.switchTab = switchTab;
         window.switchBookingSlide = switchBookingSlide;

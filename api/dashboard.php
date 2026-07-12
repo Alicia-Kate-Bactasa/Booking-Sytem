@@ -37,33 +37,38 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Subscriber') {
         -->
     <div class="min-h-screen flex flex-col md:flex-row">
 
-        <aside class="w-full md:w-72 bg-dark text-light flex flex-col justify-between p-8 border-r border-neutral-800">
+        <aside id="sidebar-container" class="w-full md:w-72 bg-dark text-light flex flex-col justify-between p-6 border-r border-neutral-800 transition-all duration-300 relative">
             <div class="space-y-10">
-                <div class="pb-6 border-b border-neutral-800">
-                    <div class="text-lg font-bold uppercase tracking-wider text-white">Montage Studio</div>
-                    <div class="text-xs text-neutral-400 tracking-widest uppercase font-mono mt-1.5">Member Hub</div>
+                <div class="pb-6 border-b border-neutral-800 flex justify-between items-center relative">
+                    <div class="sidebar-text-element">
+                        <div class="text-lg font-bold uppercase tracking-wider text-white">Montage Studio</div>
+                        <div class="text-xs text-neutral-400 tracking-widest uppercase font-mono mt-1.5">Member Hub</div>
+                    </div>
+                    <button onclick="toggleSidebar()" class="text-neutral-400 hover:text-white focus:outline-none p-1.5 rounded-full hover:bg-neutral-800 transition-all">
+                        <svg id="sidebar-toggle-icon" class="w-5 h-5 transition-transform duration-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path></svg>
+                    </button>
                 </div>
 
                 <nav class="space-y-4 text-xs font-bold uppercase tracking-wider text-neutral-400">
                     <button onclick="switchView('overview')" id="nav-overview" class="w-full flex items-center space-x-3 bg-neutral-900 text-white p-4 rounded-full transition-all text-left font-bold focus:outline-none">
-                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-                        <span>My Account</span>
+                        <svg class="w-4 h-4 text-white shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                        <span class="sidebar-text-element">My Account</span>
                     </button>
                     <button onclick="switchView('booking')" id="nav-booking" class="w-full flex items-center space-x-3 hover:bg-neutral-900 hover:text-white p-4 rounded-full transition-all text-left text-neutral-400 focus:outline-none">
-                        <svg class="w-4 h-4 text-neutral-400 group-hover:text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                        <span>Book New Session</span>
+                        <svg class="w-4 h-4 text-neutral-400 group-hover:text-white shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        <span class="sidebar-text-element">Book New Session</span>
                     </button>
                     <button onclick="switchView('subscription')" id="nav-subscription" class="w-full flex items-center space-x-3 hover:bg-neutral-900 hover:text-white p-4 rounded-full transition-all text-left text-neutral-400 focus:outline-none">
-                        <svg class="w-4 h-4 text-neutral-400 group-hover:text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-                        <span>Subscription Status</span>
+                        <svg class="w-4 h-4 text-neutral-400 group-hover:text-white shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                        <span class="sidebar-text-element">Subscription Status</span>
                     </button>
                 </nav>
             </div>
 
             <div class="pt-6 border-t border-neutral-800">
                 <button onclick="terminateSessionLogout()" class="w-full flex items-center justify-center space-x-3 text-sm font-bold bg-neutral-900 hover:bg-red-950 hover:text-red-200 border border-neutral-800 text-neutral-400 py-4 rounded-full tracking-widest uppercase transition-all focus:outline-none">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                    <span>Logout</span>
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                    <span class="sidebar-text-element">Logout</span>
                 </button>
             </div>
         </aside>
@@ -443,6 +448,6 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Subscriber') {
         </div>
     </div>
 
-    <script src="../scripts/dashboard.js?v=1.0.1"></script>
+    <script src="../scripts/dashboard.js?v=1.0.2"></script>
 </body>
 </html>

@@ -423,10 +423,24 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
             const navs = ['nav-overview', 'nav-booking', 'nav-subscription'];
 
             views.forEach(v => document.getElementById(v).classList.add('hidden'));
-            navs.forEach(n => document.getElementById(n).className = "w-full flex items-center space-x-3 hover:bg-neutral-900 hover:text-white p-4 rounded-full transition-all text-left text-neutral-400");
+            navs.forEach(n => {
+                const btn = document.getElementById(n);
+                if (btn) {
+                    btn.className = "w-full flex items-center space-x-3 hover:bg-neutral-900 hover:text-white p-4 rounded-full transition-all text-left text-neutral-400 focus:outline-none";
+                    if (typeof sidebarCollapsed !== 'undefined' && sidebarCollapsed) {
+                        btn.classList.add('justify-center');
+                    }
+                }
+            });
 
             document.getElementById(`view-${viewId}`).classList.remove('hidden');
-            document.getElementById(`nav-${viewId}`).className = "w-full flex items-center space-x-3 bg-neutral-900 text-white p-4 rounded-full transition-all text-left font-bold";
+            const activeNav = document.getElementById(`nav-${viewId}`);
+            if (activeNav) {
+                activeNav.className = "w-full flex items-center space-x-3 bg-neutral-900 text-white p-4 rounded-full transition-all text-left font-bold focus:outline-none";
+                if (typeof sidebarCollapsed !== 'undefined' && sidebarCollapsed) {
+                    activeNav.classList.add('justify-center');
+                }
+            }
 
             if (viewId === 'booking') updateSummary();
         }
@@ -956,8 +970,36 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
             });
         }
 
+        let sidebarCollapsed = false;
+        function toggleSidebar() {
+            sidebarCollapsed = !sidebarCollapsed;
+            const sidebar = document.getElementById('sidebar-container');
+            const toggleIcon = document.getElementById('sidebar-toggle-icon');
+            const textElements = document.querySelectorAll('.sidebar-text-element');
+            const navButtons = document.querySelectorAll('nav button, aside button');
+
+            if (sidebarCollapsed) {
+                sidebar.classList.remove('md:w-72');
+                sidebar.classList.add('md:w-20');
+                if (toggleIcon) toggleIcon.classList.add('rotate-180');
+                textElements.forEach(el => el.classList.add('hidden'));
+                navButtons.forEach(btn => {
+                    btn.classList.add('justify-center');
+                });
+            } else {
+                sidebar.classList.remove('md:w-20');
+                sidebar.classList.add('md:w-72');
+                if (toggleIcon) toggleIcon.classList.remove('rotate-180');
+                textElements.forEach(el => el.classList.remove('hidden'));
+                navButtons.forEach(btn => {
+                    btn.classList.remove('justify-center');
+                });
+            }
+        }
+
         window.setFeedbackRating = setFeedbackRating;
         window.openFeedbackForBooking = openFeedbackForBooking;
         window.submitCustomerFeedback = submitCustomerFeedback;
+        window.toggleSidebar = toggleSidebar;
 
 
