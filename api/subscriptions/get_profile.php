@@ -26,8 +26,13 @@ try {
     $subscriber_id = null;
     $whereClause = "";
     if ($_SESSION['role'] === 'Subscriber') {
-        $subscriber_id = (int)$_SESSION['user_id'];
-        $whereClause = "u.user_id = :subscriber_id";
+        if (isset($_SESSION['customer_id'])) {
+            $subscriber_id = (int)$_SESSION['customer_id'];
+            $whereClause = "s.customer_id = :subscriber_id";
+        } else {
+            $subscriber_id = (int)$_SESSION['user_id'];
+            $whereClause = "s.subscription_id = :subscriber_id";
+        }
     } elseif ($_SESSION['role'] === 'Admin' && isset($_GET['subscriber_id'])) {
         $subscriber_id = (int)$_GET['subscriber_id'];
         $whereClause = "s.subscription_id = :subscriber_id";
