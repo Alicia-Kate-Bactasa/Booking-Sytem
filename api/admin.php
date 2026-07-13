@@ -457,6 +457,7 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Admin') {
         </div>
     </div>
 
+    <script src="../scripts/modals.js"></script>
     <script src="../scripts/admin.js?v=1.0.3"></script>
 </body>
 </html>

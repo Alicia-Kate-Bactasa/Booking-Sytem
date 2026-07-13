@@ -448,6 +448,7 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Subscriber') {
         </div>
     </div>
 
+    <script src="../scripts/modals.js"></script>
     <script src="../scripts/dashboard.js?v=1.0.9"></script>
 </body>
 </html>

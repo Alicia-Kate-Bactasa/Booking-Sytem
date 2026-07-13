@@ -86,7 +86,7 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
             document.getElementById(modalId).classList.toggle('hidden');
         }
 
-        function showErrorModal(message, isInfo = false) {
+        async function showErrorModal(message, isInfo = false) {
             const modal = document.getElementById('globalErrorModal');
             const msgElement = document.getElementById('globalErrorMessage');
             const okBtn = document.getElementById('globalErrorOkBtn');
@@ -116,7 +116,7 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                 };
                 okBtn.addEventListener('click', hideModal);
             } else {
-                alert(message);
+                await alert(message);
             }
         }
 
@@ -376,7 +376,7 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
             const targetTime = document.getElementById('reschTime').value;
 
             if (!targetTime) {
-                alert("Please select another time slot from the list.");
+                await alert("Please select another time slot from the list.");
                 return;
             }
 
@@ -405,17 +405,17 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                 const result = await response.json();
 
                 if (response.ok && result.status === 'success') {
-                    alert(result.message || `Appointment rescheduled successfully.`);
+                    await alert(result.message || `Appointment rescheduled successfully.`);
                     toggleModal('rescheduleModal');
                     
                     const activeProfileName = localStorage.getItem('subscriber_name') || 'VIP Member';
                     loadSubscriberAppointments(activeProfileName);
                 } else {
-                    showErrorModal(result.message || 'Rescheduling failed.');
+                    await showErrorModal(result.message || 'Rescheduling failed.');
                 }
             } catch (err) {
                 console.error('Reschedule error:', err);
-                showErrorModal('An error occurred during reschedule submission.');
+                await showErrorModal('An error occurred during reschedule submission.');
             } finally {
                 if (submitBtn) {
                     submitBtn.disabled = false;
@@ -424,11 +424,11 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
             }
         }
 
-        function switchView(viewId) {
+        async function switchView(viewId) {
             if (viewId === 'booking') {
                 const isInactive = userProfileSession.customer_type === 'Inactive Member';
                 if (isInactive) {
-                    alert("Your account is currently inactive due to an overdue subscription. You cannot book covered sessions. You will be redirected to the regular booking page to book at retail rates.");
+                    await alert("Your account is currently inactive due to an overdue subscription. You cannot book covered sessions. You will be redirected to the regular booking page to book at retail rates.");
                     window.location.href = '../index.html#booking';
                     return;
                 }
@@ -490,11 +490,11 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
             }
         }
 
-        function handleDashboardFormSubmission(event) {
+        async function handleDashboardFormSubmission(event) {
             event.preventDefault();
             const isInactive = userProfileSession.customer_type === 'Inactive Member';
             if (isInactive) {
-                alert("Your account is currently inactive. Redirecting to the regular booking page.");
+                await alert("Your account is currently inactive. Redirecting to the regular booking page.");
                 window.location.href = '../index.html#booking';
                 return;
             }
@@ -502,7 +502,7 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
             const dateVal = document.getElementById('bookingDate').value;
 
             if (!activeDashTimeState) {
-                alert("Please select a booking time before confirming.");
+                await alert("Please select a booking time before confirming.");
                 return;
             }
 
@@ -514,36 +514,34 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
             const serviceId = serviceObj ? (serviceObj.service_id || 1) : 1;
 
             if (customerId) {
-                fetch('bookings/create_booking.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-Token': csrfToken
-                    },
-                    body: JSON.stringify({
-                        customer_id: parseInt(customerId, 10),
-                        service_id: parseInt(serviceId, 10),
-                        scheduled_date: dateVal,
-                        time_slot: activeDashTimeState
-                    })
-                })
-                .then(res => {
-                    if (res.status === 401 || res.status === 403) {
-                        showErrorModal('Session expired or unauthorized. Please log in.');
-                        window.location.href = '../index.html';
-                        return null;
-                    }
-                    return res.json().then(data => {
-                        if (!res.ok) {
-                            throw new Error(data.message || 'API booking failed');
-                        }
-                        return data;
+                try {
+                    const res = await fetch('bookings/create_booking.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-Token': csrfToken
+                        },
+                        body: JSON.stringify({
+                            customer_id: parseInt(customerId, 10),
+                            service_id: parseInt(serviceId, 10),
+                            scheduled_date: dateVal,
+                            time_slot: activeDashTimeState
+                        })
                     });
-                })
-                .then(data => {
-                    if (!data) return;
+
+                    if (res.status === 401 || res.status === 403) {
+                        await showErrorModal('Session expired or unauthorized. Please log in.');
+                        window.location.href = '../index.html';
+                        return;
+                    }
+
+                    const data = await res.json();
+                    if (!res.ok) {
+                        throw new Error(data.message || 'API booking failed');
+                    }
+
                     if (data.status === 'success') {
-                        alert(`Reservation Authorized!\n\nBooking ID: MTG-${data.data.booking_id}`);
+                        await alert(`Reservation Authorized!\n\nBooking ID: MTG-${data.data.booking_id}`);
                         document.getElementById('dashWizardForm').reset();
 
                         if(masterCatalogPayload.length > 0) {
@@ -557,13 +555,12 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                         loadSubscriberAppointments(activeProfileName);
                         switchView('overview');
                     }
-                })
-                .catch(err => {
+                } catch (err) {
                     console.error('Database booking error:', err);
-                    showErrorModal(err.message || 'An error occurred while booking. Please try again.');
-                });
+                    await showErrorModal(err.message || 'An error occurred while booking. Please try again.');
+                }
             } else {
-                alert('Session expired or unauthorized. Please log in.');
+                await alert('Session expired or unauthorized. Please log in.');
             }
         }
 
@@ -571,7 +568,7 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
             event.preventDefault();
             const fileCtrl = document.getElementById('renewalProofFile');
             if(!fileCtrl || fileCtrl.files.length === 0) {
-                alert('Please upload your GCash renewal proof of payment.');
+                await alert('Please upload your GCash renewal proof of payment.');
                 return;
             }
 
@@ -608,17 +605,17 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                 const result = await response.json();
 
                 if (response.ok && result.status === 'success') {
-                    alert("GCash renewal proof submitted! Your payment is pending admin approval.");
+                    await alert("GCash renewal proof submitted! Your payment is pending admin approval.");
                     toggleModal('renewalHubModal');
                     fileCtrl.value = '';
                     syncProfileWithDatabase();
                 } else {
-                    showErrorModal(result.message || 'Failed to submit renewal payment.');
+                    await showErrorModal(result.message || 'Failed to submit renewal payment.');
                     syncProfileWithDatabase(); // Revert button if failed
                 }
             } catch (err) {
                 console.error('Renewal error:', err);
-                showErrorModal('An error occurred during renewal submission. Please try again.');
+                await showErrorModal('An error occurred during renewal submission. Please try again.');
                 syncProfileWithDatabase(); // Revert button if failed
             } finally {
                 if (submitBtn) {
@@ -629,7 +626,7 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
         }
 
         async function deleteAppointment(appId) {
-            if (confirm("Confirm session drop request?")) {
+            if (await confirm("Confirm session drop request?")) {
                 const rawBookingId = parseInt(appId.replace(/\D/g, ''), 10);
                 
                 try {
@@ -646,15 +643,15 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                     const result = await response.json();
 
                     if (response.ok && result.status === 'success') {
-                        alert(result.message || "Appointment cancelled successfully.");
+                        await alert(result.message || "Appointment cancelled successfully.");
                         const activeProfileName = localStorage.getItem('subscriber_name') || 'VIP Member';
                         loadSubscriberAppointments(activeProfileName);
                     } else {
-                        showErrorModal(result.message || "Failed to cancel appointment.");
+                        await showErrorModal(result.message || "Failed to cancel appointment.");
                     }
                 } catch (err) {
                     console.error("Cancellation error:", err);
-                    showErrorModal("An error occurred while cancelling your session.");
+                    await showErrorModal("An error occurred while cancelling your session.");
                 }
             }
         }
@@ -675,7 +672,7 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                     throw new Error(result.message || 'Cancellation request failed.');
                 }
                 
-                alert("State Machine Updated: " + result.message);
+                await alert("State Machine Updated: " + result.message);
                 location.reload();
             } catch (err) {
                 showErrorModal(err.message || "An error occurred during cancellation.");
@@ -953,41 +950,39 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
             toggleModal('feedbackModal');
         }
 
-        function submitCustomerFeedback(event) {
+        async function submitCustomerFeedback(event) {
             event.preventDefault();
             const client = document.getElementById('feedbackName').value.trim();
             let booking_id_raw = document.getElementById('feedbackBookingId').value.trim();
             const rating = parseInt(document.getElementById('feedbackRating').value) || 5;
             const comments = document.getElementById('feedbackComments').value.trim();
 
-            fetch('feedback/submit_feedback.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-Token': csrfToken
-                },
-                body: JSON.stringify({
-                    booking_id: booking_id_raw ? booking_id_raw : null,
-                    rating: rating,
-                    comments: comments
-                })
-            })
-            .then(res => {
-                if (res.status === 401 || res.status === 403) {
-                    showErrorModal('Session unauthorized or expired. Please log in again.');
-                    window.location.href = '../index.html';
-                    return null;
-                }
-                return res.json().then(data => {
-                    if (!res.ok) {
-                        throw new Error(data.message || 'Failed to submit feedback');
-                    }
-                    return data;
+            try {
+                const res = await fetch('feedback/submit_feedback.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': csrfToken
+                    },
+                    body: JSON.stringify({
+                        booking_id: booking_id_raw ? booking_id_raw : null,
+                        rating: rating,
+                        comments: comments
+                    })
                 });
-            })
-            .then(data => {
-                if (!data) return;
-                alert(data.data?.message || 'Thank you! Your feedback has been submitted successfully.');
+
+                if (res.status === 401 || res.status === 403) {
+                    await showErrorModal('Session unauthorized or expired. Please log in again.');
+                    window.location.href = '../index.html';
+                    return;
+                }
+
+                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(data.message || 'Failed to submit feedback');
+                }
+
+                await alert(data.data?.message || 'Thank you! Your feedback has been submitted successfully.');
                 
                 // Reset and close
                 document.getElementById('feedbackForm').reset();
@@ -995,10 +990,9 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                 document.getElementById('feedbackName').value = activeProfileName;
                 setFeedbackRating(5); // Reset to 5 stars default
                 toggleModal('feedbackModal');
-            })
-            .catch(err => {
-                showErrorModal(err.message || 'An error occurred while submitting feedback.');
-            });
+            } catch (err) {
+                await showErrorModal(err.message || 'An error occurred while submitting feedback.');
+            }
         }
 
         let sidebarCollapsed = false;

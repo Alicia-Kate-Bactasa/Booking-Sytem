@@ -42,7 +42,7 @@
             document.getElementById(modalId).classList.toggle('hidden');
         }
 
-        function showErrorModal(message) {
+        async function showErrorModal(message) {
             const modal = document.getElementById('globalErrorModal');
             const msgElement = document.getElementById('globalErrorMessage');
             const okBtn = document.getElementById('globalErrorOkBtn');
@@ -57,7 +57,7 @@
                 };
                 okBtn.addEventListener('click', hideModal);
             } else {
-                alert(message);
+                await alert(message);
             }
         }
 
@@ -193,7 +193,7 @@
 
             const selectedDate = document.getElementById('bookingDate').value;
             if (!activeTimeState) {
-                alert('Please provide a valid open scheduling time slot window.');
+                await alert('Please provide a valid open scheduling time slot window.');
                 return;
             }
 
@@ -201,7 +201,7 @@
             const paymentProofFile = paymentProofInput ? paymentProofInput.files[0] : null;
 
             if (!paymentProofFile) {
-                alert('Please upload your GCash payment proof.');
+                await alert('Please upload your GCash payment proof.');
                 return;
             }
 
@@ -231,7 +231,7 @@
                 const result = await response.json();
 
                 if (response.ok && result.status === 'success') {
-                    alert(`Booking submitted successfully!\n\nReference ID: ${result.data.booking_id}\n\nPayment proof recorded for review.`);
+                    await alert(`Booking submitted successfully!\n\nReference ID: ${result.data.booking_id}\n\nPayment proof recorded for review.`);
                     document.getElementById('wizardForm').reset();
                     
                     activeTimeState = "";
@@ -314,7 +314,7 @@
             const paymentProofFile = paymentProofInput ? paymentProofInput.files[0] : null;
 
             if (!paymentProofFile) {
-                alert('Please upload your GCash proof of payment.');
+                await alert('Please upload your GCash proof of payment.');
                 return;
             }
 
@@ -513,41 +513,45 @@
             });
         }
 
-        function submitCustomerFeedback(event) {
+        async function submitCustomerFeedback(event) {
             event.preventDefault();
-            const client = document.getElementById('feedbackName').value.trim();
-            let booking_id_raw = document.getElementById('feedbackBookingId').value.trim();
-            const rating = parseInt(document.getElementById('feedbackRating').value) || 5;
+            const rating = parseInt(document.querySelector('input[name="rating"]:checked')?.value || '5', 10);
             const comments = document.getElementById('feedbackComments').value.trim();
+            const client = document.getElementById('feedbackClient').value.trim();
+            const booking_id_raw = document.getElementById('feedbackBookingId').value.trim();
 
-            fetch('api/feedback/submit_feedback.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    booking_id: booking_id_raw ? booking_id_raw : null,
-                    rating: rating,
-                    comments: comments
-                })
-            })
-            .then(res => {
+            if (!comments || !client || !booking_id_raw) {
+                await showErrorModal('All fields are required.');
+                return;
+            }
+
+            try {
+                const res = await fetch('api/feedback/create_feedback.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        client: client,
+                        booking_id: booking_id_raw,
+                        rating: rating,
+                        comments: comments
+                    })
+                });
+
                 if (res.status === 401 || res.status === 403) {
-                    showErrorModal('You must be logged in as a subscriber to leave feedback.');
+                    await showErrorModal('You must be logged in as a subscriber to leave feedback.');
                     toggleModal('feedbackModal');
                     toggleModal('loginModal');
-                    return null;
+                    return;
                 }
-                return res.json().then(data => {
-                    if (!res.ok) {
-                        throw new Error(data.message || 'Failed to submit feedback');
-                    }
-                    return data;
-                });
-            })
-            .then(data => {
-                if (!data) return;
-                alert(data.data?.message || 'Thank you! Your feedback has been submitted successfully.');
+
+                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(data.message || 'Failed to submit feedback');
+                }
+
+                await alert(data.data?.message || 'Thank you! Your feedback has been submitted successfully.');
                 
                 // Store in localStorage for backward compatibility or local display
                 const service = document.getElementById('feedbackService').value;
@@ -559,14 +563,12 @@
                 document.getElementById('feedbackForm').reset();
                 setFeedbackRating(5); // Reset to 5 stars default
                 toggleModal('feedbackModal');
-            })
-            .catch(err => {
+            } catch (err) {
                 if (err && err.message) {
-                    showErrorModal(err.message);
+                    await showErrorModal(err.message);
                 }
-            });
+            }
         }
 
         window.setFeedbackRating = setFeedbackRating;
         window.submitCustomerFeedback = submitCustomerFeedback;
-

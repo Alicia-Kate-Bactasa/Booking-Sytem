@@ -48,45 +48,43 @@ const defaultServices = [
         let subscriberAccounts = [];
         let pendingRequests = [];
 
-        function loadAppointments() {
-            return fetch('bookings/get_bookings.php')
-                .then(res => {
-                    if (res.status === 401 || res.status === 403) {
-                        alert('Session unauthorized or expired. Redirecting to landing.');
-                        window.location.href = '../index.html';
-                        return [];
+        async function loadAppointments() {
+            try {
+                const res = await fetch('bookings/get_bookings.php');
+                if (res.status === 401 || res.status === 403) {
+                    await alert('Session unauthorized or expired. Redirecting to landing.');
+                    window.location.href = '../index.html';
+                    return [];
+                }
+                if (!res.ok) throw new Error('API request failed');
+                const responseObj = await res.json();
+
+                const data = (responseObj && responseObj.status === 'success') ? responseObj.data : (Array.isArray(responseObj) ? responseObj : []);
+                appointmentsRegistry = data.map(app => {
+                    let type = 'cancelled';
+                    if (app.booking_status === 'Pending Verification' || app.booking_status === 'Confirmed' || app.booking_status === 'Pending' || app.booking_status === 'Paid') {
+                        type = 'pending';
+                    } else if (app.booking_status === 'Completed') {
+                        type = 'completed';
                     }
-                    if (!res.ok) throw new Error('API request failed');
-                    return res.json();
-                })
-                .then(responseObj => {
-                    const data = (responseObj && responseObj.status === 'success') ? responseObj.data : (Array.isArray(responseObj) ? responseObj : []);
-                    appointmentsRegistry = data.map(app => {
-                        let type = 'cancelled';
-                        if (app.booking_status === 'Pending Verification' || app.booking_status === 'Confirmed' || app.booking_status === 'Pending' || app.booking_status === 'Paid') {
-                            type = 'pending';
-                        } else if (app.booking_status === 'Completed') {
-                            type = 'completed';
-                        }
-                        
-                        return {
-                            id: "MTG-" + app.booking_id,
-                            booking_id: parseInt(app.booking_id, 10),
-                            type: type,
-                            service: app.service_name,
-                            date: app.scheduled_date,
-                            time: app.time_slot,
-                            client: app.full_name,
-                            userType: app.customer_type === 'Subscriber' ? 'subscriber' : 'regular'
-                        };
-                    });
-                    renderBookingSlideData();
-                })
-                .catch(err => {
-                    console.error("Failed to load bookings from backend:", err);
-                    appointmentsRegistry = [];
-                    renderBookingSlideData();
+                    
+                    return {
+                        id: "MTG-" + app.booking_id,
+                        booking_id: parseInt(app.booking_id, 10),
+                        type: type,
+                        service: app.service_name,
+                        date: app.scheduled_date,
+                        time: app.time_slot,
+                        client: app.full_name,
+                        userType: app.customer_type === 'Subscriber' ? 'subscriber' : 'regular'
+                    };
                 });
+                renderBookingSlideData();
+            } catch (err) {
+                console.error("Failed to load bookings from backend:", err);
+                appointmentsRegistry = [];
+                renderBookingSlideData();
+            }
         }
 
         function loadInvoices() {
@@ -312,102 +310,96 @@ const defaultServices = [
             });
         }
 
-        function approveSubscription(requestId) {
+        async function approveSubscription(requestId) {
             const req = pendingRequests.find(r => r.id === requestId);
             if (!req) {
-                alert('Subscription request not found.');
+                await alert('Subscription request not found.');
                 return;
             }
 
-            fetch('subscriptions/update_subscriber.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-Token': csrfToken
-                },
-                body: JSON.stringify({
-                    email: req.email,
-                    status: 'Approved'
-                })
-            })
-            .then(res => {
-                if (res.status === 401 || res.status === 403) {
-                    showErrorModal('Session expired or unauthorized. Please log in.');
-                    window.location.href = '../index.html';
-                    return null;
-                }
-                return res.json().then(data => {
-                    if (!res.ok) {
-                        throw new Error(data.message || 'API approval request failed.');
-                    }
-                    return data;
+            try {
+                const res = await fetch('subscriptions/update_subscriber.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': csrfToken
+                    },
+                    body: JSON.stringify({
+                        email: req.email,
+                        status: 'Approved'
+                    })
                 });
-            })
-            .then(data => {
-                if (!data) return;
+
+                if (res.status === 401 || res.status === 403) {
+                    await showErrorModal('Session expired or unauthorized. Please log in.');
+                    window.location.href = '../index.html';
+                    return;
+                }
+
+                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(data.message || 'API approval request failed.');
+                }
+
                 if (data.status === 'success') {
-                    alert(`Subscription request for ${req.name} has been approved.`);
+                    await alert(`Subscription request for ${req.name} has been approved.`);
                     loadPendingSubscriptions();
                     loadSubscribers();
                 } else {
-                    showErrorModal(data.message || 'Failed to approve subscription.');
+                    await showErrorModal(data.message || 'Failed to approve subscription.');
                 }
-            })
-            .catch(err => {
+            } catch (err) {
                 console.error('Subscription approval error:', err);
-                showErrorModal(err.message || 'An error occurred during database approval. Please try again.');
-            });
+                await showErrorModal(err.message || 'An error occurred during database approval. Please try again.');
+            }
         }
 
-        function rejectSubscription(requestId) {
-            if (!confirm("Are you sure you want to reject this subscription request?")) {
+        async function rejectSubscription(requestId) {
+            if (!await confirm("Are you sure you want to reject this subscription request?")) {
                 return;
             }
 
             const req = pendingRequests.find(r => r.id === requestId);
             if (!req) {
-                alert('Subscription request not found.');
+                await alert('Subscription request not found.');
                 return;
             }
 
-            fetch('subscriptions/update_subscriber.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-Token': csrfToken
-                },
-                body: JSON.stringify({
-                    email: req.email,
-                    status: 'Rejected'
-                })
-            })
-            .then(res => {
-                if (res.status === 401 || res.status === 403) {
-                    showErrorModal('Session expired or unauthorized. Please log in.');
-                    window.location.href = '../index.html';
-                    return null;
-                }
-                return res.json().then(data => {
-                    if (!res.ok) {
-                        throw new Error(data.message || 'API rejection request failed.');
-                    }
-                    return data;
+            try {
+                const res = await fetch('subscriptions/update_subscriber.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': csrfToken
+                    },
+                    body: JSON.stringify({
+                        email: req.email,
+                        status: 'Rejected'
+                    })
                 });
-            })
-            .then(data => {
-                if (!data) return;
+
+                if (res.status === 401 || res.status === 403) {
+                    await showErrorModal('Session expired or unauthorized. Please log in.');
+                    window.location.href = '../index.html';
+                    return;
+                }
+
+                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(data.message || 'API rejection request failed.');
+                }
+
                 if (data.status === 'success') {
-                    alert(`Subscription request for ${req.name} has been rejected.`);
+                    await alert(`Subscription request for ${req.name} has been rejected.`);
                     loadPendingSubscriptions();
                     loadSubscribers();
                 } else {
-                    showErrorModal(data.message || 'Failed to reject subscription.');
+                    await showErrorModal(data.message || 'Failed to reject subscription.');
                 }
-            })
-            .catch(err => {
+            } catch (err) {
                 console.error('Subscription rejection error:', err);
-                showErrorModal(err.message || 'An error occurred during database rejection. Please try again.');
-            });
+                await showErrorModal(err.message || 'An error occurred during database rejection. Please try again.');
+            }
         }
 
         window.approveSubscription = approveSubscription;
@@ -444,7 +436,7 @@ const defaultServices = [
             document.getElementById(modalId).classList.toggle('hidden');
         }
 
-        function showErrorModal(message) {
+        async function showErrorModal(message) {
             const modal = document.getElementById('globalErrorModal');
             const msgElement = document.getElementById('globalErrorMessage');
             const okBtn = document.getElementById('globalErrorOkBtn');
@@ -459,7 +451,7 @@ const defaultServices = [
                 };
                 okBtn.addEventListener('click', hideModal);
             } else {
-                alert(message);
+                await alert(message);
             }
         }
 
@@ -529,8 +521,8 @@ const defaultServices = [
         }
 
 
-        function updateBookingStatus(bookingId, newStatus) {
-            if (!confirm(`Are you sure you want to mark booking ${bookingId} as ${newStatus}?`)) {
+        async function updateBookingStatus(bookingId, newStatus) {
+            if (!await confirm(`Are you sure you want to mark booking ${bookingId} as ${newStatus}?`)) {
                 return;
             }
 
@@ -546,44 +538,41 @@ const defaultServices = [
 
             const rawId = booking.booking_id || parseInt(bookingId.replace(/\D/g, ''), 10);
 
-            fetch('bookings/update_booking.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-Token': csrfToken
-                },
-                body: JSON.stringify({
-                    booking_id: rawId,
-                    booking_status: backendStatus
-                })
-            })
-            .then(res => {
-                if (res.status === 401 || res.status === 403) {
-                    showErrorModal('Session expired or unauthorized. Please log in.');
-                    window.location.href = '../index.html';
-                    return null;
-                }
-                return res.json().then(data => {
-                    if (!res.ok) {
-                        throw new Error(data.message || 'API update request failed.');
-                    }
-                    return data;
+            try {
+                const res = await fetch('bookings/update_booking.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': csrfToken
+                    },
+                    body: JSON.stringify({
+                        booking_id: rawId,
+                        booking_status: backendStatus
+                    })
                 });
-            })
-            .then(data => {
-                if (!data) return;
+
+                if (res.status === 401 || res.status === 403) {
+                    await showErrorModal('Session expired or unauthorized. Please log in.');
+                    window.location.href = '../index.html';
+                    return;
+                }
+
+                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(data.message || 'API update request failed.');
+                }
+
                 if (data.status === 'success') {
                     booking.type = newStatus;
                     renderBookingSlideData();
                     executeAutomatedComplianceAuditLoop();
                 } else {
-                    showErrorModal(data.message || 'Server error.');
+                    await showErrorModal(data.message || 'Server error.');
                 }
-            })
-            .catch(err => {
+            } catch (err) {
                 console.error("Failed to update booking status on backend:", err);
-                showErrorModal(err.message || "An error occurred while updating the booking status. Please verify your connection.");
-            });
+                await showErrorModal(err.message || "An error occurred while updating the booking status. Please verify your connection.");
+            }
         }
         window.updateBookingStatus = updateBookingStatus;
 
@@ -714,36 +703,34 @@ const defaultServices = [
             toggleModal('lightboxModal');
         }
 
-        function evaluateRemittanceRoute(invoiceId, resolutionStatus) {
+        async function evaluateRemittanceRoute(invoiceId, resolutionStatus) {
             const rawId = parseInt(invoiceId.replace(/\D/g, ''), 10);
-            fetch('payments/approve_payment.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-Token': csrfToken
-                },
-                body: JSON.stringify({
-                    invoice_id: rawId,
-                    status: resolutionStatus
-                })
-            })
-            .then(res => {
-                if (res.status === 401 || res.status === 403) {
-                    showErrorModal('Session expired or unauthorized. Please log in.');
-                    window.location.href = '../index.html';
-                    return null;
-                }
-                return res.json().then(data => {
-                    if (!res.ok) {
-                        throw new Error(data.message || 'API update request failed.');
-                    }
-                    return data;
+            try {
+                const res = await fetch('payments/approve_payment.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': csrfToken
+                    },
+                    body: JSON.stringify({
+                        invoice_id: rawId,
+                        status: resolutionStatus
+                    })
                 });
-            })
-            .then(data => {
-                if (!data) return;
+
+                if (res.status === 401 || res.status === 403) {
+                    await showErrorModal('Session expired or unauthorized. Please log in.');
+                    window.location.href = '../index.html';
+                    return;
+                }
+
+                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(data.message || 'API update request failed.');
+                }
+
                 if (data.status === 'success') {
-                    alert(`Payment status for ${invoiceId} updated to ${resolutionStatus}.`);
+                    await alert(`Payment status for ${invoiceId} updated to ${resolutionStatus}.`);
                     loadInvoices();
                     loadSubscribers();
                     loadAppointments();
@@ -751,13 +738,12 @@ const defaultServices = [
                         loadSubscriberLedgers();
                     }
                 } else {
-                    showErrorModal(data.message || 'Server error.');
+                    await showErrorModal(data.message || 'Server error.');
                 }
-            })
-            .catch(err => {
+            } catch (err) {
                 console.error("Failed to update payment status:", err);
-                showErrorModal(err.message || "An error occurred. Please verify your connection.");
-            });
+                await showErrorModal(err.message || "An error occurred. Please verify your connection.");
+            }
         }
 
           /* ===================== MODULE 3: UNIFIED SERVICE CATALOG EDITOR =====================
@@ -848,9 +834,7 @@ const defaultServices = [
                     </div>
                 `;
             });
-        }
-
-        async function saveServiceModifications(index) {
+             async function saveServiceModifications(index) {
             const proposedDuration = parseInt(document.getElementById(`edit-duration-${index}`).value, 10);
             const originalDuration = parseInt(masterCatalogServices[index].duration, 10);
             const targetServiceName = masterCatalogServices[index].name;
@@ -861,7 +845,7 @@ const defaultServices = [
                     const response = await fetch(`services/check_service_bookings.php?service_name=${encodeURIComponent(targetServiceName)}`);
                     const result = await response.json();
                     if (result && result.status === 'success' && result.has_bookings) {
-                        const confirmChange = confirm(`Warning: There are ${result.booking_count} active future bookings scheduled for this service. Changing the duration from ${originalDuration} mins to ${proposedDuration} mins may corrupt scheduling. Are you sure you want to proceed?`);
+                        const confirmChange = await confirm(`Warning: There are ${result.booking_count} active future bookings scheduled for this service. Changing the duration from ${originalDuration} mins to ${proposedDuration} mins may corrupt scheduling. Are you sure you want to proceed?`);
                         if (!confirmChange) {
                             document.getElementById(`edit-duration-${index}`).value = originalDuration;
                             return;
@@ -871,7 +855,7 @@ const defaultServices = [
                     console.error("Backend validation failed, proceeding with local check:", err);
                     const isReferencedInActiveCalendar = appointmentsRegistry.some(app => app.service === targetServiceName && app.type === 'pending');
                     if (isReferencedInActiveCalendar) {
-                        alert("Duration changes are locked while this service is already booked.");
+                        await alert("Duration changes are locked while this service is already booked.");
                         document.getElementById(`edit-duration-${index}`).value = originalDuration;
                         return;
                     }
@@ -883,106 +867,100 @@ const defaultServices = [
             const price = parseFloat(document.getElementById(`edit-price-${index}`).value);
 
             if (!name || isNaN(proposedDuration) || isNaN(price)) {
-                alert('Please enter valid service details.');
+                await alert('Please enter valid service details.');
                 return;
             }
 
-            fetch('services/update_service.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-Token': csrfToken
-                },
-                body: JSON.stringify({
-                    service_id: serviceId,
-                    name: name,
-                    desc: desc,
-                    duration: proposedDuration,
-                    price: price
-                })
-            })
-            .then(res => {
-                if (res.status === 401 || res.status === 403) {
-                    showErrorModal('Session expired or unauthorized. Please log in.');
-                    window.location.href = '../index.html';
-                    return null;
-                }
-                return res.json().then(data => {
-                    if (!res.ok) {
-                        throw new Error(data.message || 'API update request failed.');
-                    }
-                    return data;
-                });
-            })
-            .then(data => {
-                if (!data) return;
-                if (data.status === 'success') {
-                    alert('Service package updated successfully!');
-                    loadServices();
-                } else {
-                    showErrorModal(data.message || 'Failed to update service.');
-                }
-            })
-            .catch(err => {
-                console.error("Update service error:", err);
-                showErrorModal(err.message || "An error occurred. Please verify your connection.");
-            });
-        }
-        window.saveServiceModifications = saveServiceModifications;
-
-        function deleteService(index) {
-            const service = masterCatalogServices[index];
-            const targetServiceName = service.name;
-            const serviceId = service.service_id;
-
-            const isReferencedInActiveCalendar = appointmentsRegistry.some(app => app.service === targetServiceName && app.type === 'pending');
-            if (isReferencedInActiveCalendar) {
-                alert("This service package is locked because there are currently active pending bookings scheduled for it.");
-                return;
-            }
-
-            if (confirm(`Are you sure you want to permanently delete "${targetServiceName}" from the catalog?`)) {
-                fetch('services/delete_service.php', {
+            try {
+                const res = await fetch('services/update_service.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRF-Token': csrfToken
                     },
                     body: JSON.stringify({
-                        service_id: serviceId
+                        service_id: serviceId,
+                        name: name,
+                        desc: desc,
+                        duration: proposedDuration,
+                        price: price
                     })
-                })
-                .then(res => {
-                    if (res.status === 401 || res.status === 403) {
-                        showErrorModal('Session expired or unauthorized. Please log in.');
-                        window.location.href = '../index.html';
-                        return null;
-                    }
-                    return res.json().then(data => {
-                        if (!res.ok) {
-                            throw new Error(data.message || 'API delete request failed.');
-                        }
-                        return data;
+                });
+
+                if (res.status === 401 || res.status === 403) {
+                    await showErrorModal('Session expired or unauthorized. Please log in.');
+                    window.location.href = '../index.html';
+                    return;
+                }
+
+                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(data.message || 'API update request failed.');
+                }
+
+                if (data.status === 'success') {
+                    await alert('Service package updated successfully!');
+                    loadServices();
+                } else {
+                    await showErrorModal(data.message || 'Failed to update service.');
+                }
+            } catch (err) {
+                console.error("Update service error:", err);
+                await showErrorModal(err.message || "An error occurred. Please verify your connection.");
+            }
+        }
+        window.saveServiceModifications = saveServiceModifications;
+
+        async function deleteService(index) {
+            const service = masterCatalogServices[index];
+            const targetServiceName = service.name;
+            const serviceId = service.service_id;
+
+            const isReferencedInActiveCalendar = appointmentsRegistry.some(app => app.service === targetServiceName && app.type === 'pending');
+            if (isReferencedInActiveCalendar) {
+                await alert("This service package is locked because there are currently active pending bookings scheduled for it.");
+                return;
+            }
+
+            if (await confirm(`Are you sure you want to permanently delete "${targetServiceName}" from the catalog?`)) {
+                try {
+                    const res = await fetch('services/delete_service.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-Token': csrfToken
+                        },
+                        body: JSON.stringify({
+                            service_id: serviceId
+                        })
                     });
-                })
-                .then(data => {
-                    if (!data) return;
+
+                    if (res.status === 401 || res.status === 403) {
+                        await showErrorModal('Session expired or unauthorized. Please log in.');
+                        window.location.href = '../index.html';
+                        return;
+                    }
+
+                    const data = await res.json();
+                    if (!res.ok) {
+                        throw new Error(data.message || 'API delete request failed.');
+                    }
+
                     if (data.status === 'success') {
-                        alert('Service package removed from catalog.');
+                        await alert('Service package removed from catalog.');
                         loadServices();
                     } else {
-                        showErrorModal(data.message || 'Failed to delete service.');
+                        await showErrorModal(data.message || 'Failed to delete service.');
                     }
-                })
-                .catch(err => {
+                } catch (err) {
                     console.error("Delete service error:", err);
-                    showErrorModal(err.message || "An error occurred. Please verify your connection.");
-                });
+                    await showErrorModal(err.message || "An error occurred. Please verify your connection.");
+                }
             }
         }
         window.deleteService = deleteService;
 
-        function handleNewServiceSubmission(event) {
+        async function handleNewServiceSubmission(event) {
             event.preventDefault();
             const name = document.getElementById('serviceNameInput').value.trim();
             const desc = document.getElementById('serviceDescInput').value.trim();
@@ -990,53 +968,50 @@ const defaultServices = [
             const price = parseFloat(document.getElementById('servicePriceInput').value);
 
             if (!name || !duration || isNaN(price)) {
-                alert('Please enter valid service details.');
+                await alert('Please enter valid service details.');
                 return;
             }
 
             const parsedDuration = parseInt(duration, 10);
 
-            fetch('services/create_service.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-Token': csrfToken
-                },
-                body: JSON.stringify({
-                    name: name,
-                    desc: desc,
-                    duration: parsedDuration,
-                    price: price
-                })
-            })
-            .then(res => {
-                if (res.status === 401 || res.status === 403) {
-                    showErrorModal('Session expired or unauthorized. Please log in.');
-                    window.location.href = '../index.html';
-                    return null;
-                }
-                return res.json().then(data => {
-                    if (!res.ok) {
-                        throw new Error(data.message || 'API submission failed.');
-                    }
-                    return data;
+            try {
+                const res = await fetch('services/create_service.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': csrfToken
+                    },
+                    body: JSON.stringify({
+                        name: name,
+                        desc: desc,
+                        duration: parsedDuration,
+                        price: price
+                    })
                 });
-            })
-            .then(data => {
-                if (!data) return;
+
+                if (res.status === 401 || res.status === 403) {
+                    await showErrorModal('Session expired or unauthorized. Please log in.');
+                    window.location.href = '../index.html';
+                    return;
+                }
+
+                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(data.message || 'API submission failed.');
+                }
+
                 if (data.status === 'success') {
-                    alert(`Service package "${name}" successfully added to catalog!`);
+                    await alert(`Service package "${name}" successfully added to catalog!`);
                     document.getElementById('addServiceForm').reset();
                     toggleModal('addServiceModal');
                     loadServices();
                 } else {
-                    showErrorModal(data.message || 'Failed to add service.');
+                    await showErrorModal(data.message || 'Failed to add service.');
                 }
-            })
-            .catch(err => {
-                console.error("Create service error:", err);
-                showErrorModal(err.message || "An error occurred. Please verify your connection.");
-            });
+            } catch (err) {
+                console.error("Add service error:", err);
+                await showErrorModal(err.message || "An error occurred. Please verify your connection.");
+            }
         }
         window.handleNewServiceSubmission = handleNewServiceSubmission;
 
@@ -1161,8 +1136,8 @@ const defaultServices = [
             document.getElementById('compliance-flagged-count').innerText = `${forcedDowngradeCounter} Accounts Flagged`;
         }
 
-        function downgradeSubscriber(subscriberId) {
-            if (!confirm("Are you sure you want to manually downgrade this subscriber? This will revoke their active VIP privileges.")) {
+        async function downgradeSubscriber(subscriberId) {
+            if (!await confirm("Are you sure you want to manually downgrade this subscriber? This will revoke their active VIP privileges.")) {
                 return;
             }
 
@@ -1172,47 +1147,44 @@ const defaultServices = [
             // Retrieve subscriber record to find email
             const acc = subscriberAccounts.find(s => s.subscriber_id === rawId);
             if (!acc) {
-                alert('Subscriber record not found.');
+                await alert('Subscriber record not found.');
                 return;
             }
 
-            fetch('subscriptions/update_subscriber.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-Token': csrfToken
-                },
-                body: JSON.stringify({
-                    email: acc.email,
-                    status: 'Inactive'
-                })
-            })
-            .then(res => {
-                if (res.status === 401 || res.status === 403) {
-                    showErrorModal('Session expired or unauthorized. Please log in.');
-                    window.location.href = '../index.html';
-                    return null;
-                }
-                return res.json().then(data => {
-                    if (!res.ok) {
-                        throw new Error(data.message || 'API downgrade request failed.');
-                    }
-                    return data;
+            try {
+                const res = await fetch('subscriptions/update_subscriber.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': csrfToken
+                    },
+                    body: JSON.stringify({
+                        email: acc.email,
+                        status: 'Inactive'
+                    })
                 });
-            })
-            .then(data => {
-                if (!data) return;
+
+                if (res.status === 401 || res.status === 403) {
+                    await showErrorModal('Session expired or unauthorized. Please log in.');
+                    window.location.href = '../index.html';
+                    return;
+                }
+
+                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(data.message || 'API downgrade request failed.');
+                }
+
                 if (data.status === 'success') {
-                    alert(`Subscriber ${acc.name} has been manually downgraded.`);
+                    await alert(`Subscriber ${acc.name} has been manually downgraded.`);
                     loadSubscribers();
                 } else {
-                    showErrorModal(data.message || 'Server error.');
+                    await showErrorModal(data.message || 'Server error.');
                 }
-            })
-            .catch(err => {
+            } catch (err) {
                 console.error("Failed to downgrade subscriber:", err);
-                showErrorModal(err.message || "An error occurred. Please verify your connection.");
-            });
+                await showErrorModal(err.message || "An error occurred. Please verify your connection.");
+            }
         }
         window.downgradeSubscriber = downgradeSubscriber;
 
