@@ -834,7 +834,9 @@ const defaultServices = [
                     </div>
                 `;
             });
-             async function saveServiceModifications(index) {
+        }
+
+        async function saveServiceModifications(index) {
             const proposedDuration = parseInt(document.getElementById(`edit-duration-${index}`).value, 10);
             const originalDuration = parseInt(masterCatalogServices[index].duration, 10);
             const targetServiceName = masterCatalogServices[index].name;
