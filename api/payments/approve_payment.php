@@ -223,7 +223,7 @@ try {
         "message" => "Payment successfully updated to " . $status . "!"
     ]);
 
-} catch (Exception $e) {
+} catch (Throwable $e) {
     if ($conn && $conn->inTransaction()) {
         $conn->rollBack();
     }
@@ -231,7 +231,7 @@ try {
     http_response_code(500);
     echo json_encode([
         "status" => "error",
-        "message" => "An error occurred while approving the payment transaction."
+        "message" => "An error occurred while approving the payment transaction: " . $e->getMessage()
     ]);
 }
 ?>
