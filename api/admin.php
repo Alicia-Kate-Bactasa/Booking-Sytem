@@ -15,6 +15,15 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Admin') {
     <title>Montage Auto Studio - Admin Dashboard</title>
     <meta name="csrf-token" content="<?php echo get_csrf_token(); ?>">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { dark: '#111111', light: '#FAFAFA' }
+                }
+            }
+        }
+    </script>
         <!-- ===================== ADMIN STYLES =====================
             Feature: Global admin shell styling, custom font loading, and scrollbar appearance.
             Purpose: Keeps the management interface visually consistent across all admin sections.
@@ -379,12 +388,13 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Admin') {
             Purpose: Displays uploaded remittance images in a focused audit view.
         -->
     <div id="lightboxModal" class="fixed inset-0 z-50 flex items-center justify-center bg-dark/80 backdrop-blur-sm hidden" onclick="toggleModal('lightboxModal')">
-        <div class="bg-white p-4 max-w-sm rounded-[2rem] shadow-2xl relative border border-neutral-200 mx-4" onclick="event.stopPropagation()">
-            <button onclick="toggleModal('lightboxModal')" class="absolute top-4 right-4 text-neutral-400 hover:text-black font-bold text-xs bg-neutral-100 p-2 rounded-full w-8 h-8 flex items-center justify-center">✕</button>
+        <div class="bg-white p-6 max-w-md w-full rounded-[2.5rem] shadow-2xl relative border border-neutral-200 mx-4" onclick="event.stopPropagation()">
+            <button onclick="toggleModal('lightboxModal')" class="absolute top-5 right-5 text-neutral-400 hover:text-black font-bold text-xs bg-neutral-100 p-2 rounded-full w-8 h-8 flex items-center justify-center focus:outline-none">✕</button>
             <div class="text-center p-2">
-                <h4 class="text-xs font-bold uppercase tracking-wider text-neutral-400 mb-4">Payment Proof</h4>
-                <div class="w-full aspect-[3/4] bg-neutral-900 rounded-2xl flex items-center justify-center overflow-hidden border border-neutral-200">
-                    <img id="lightboxTargetImg" src="" alt="GCash Screenshot" class="w-full h-full object-cover">
+                <span class="text-[9px] font-bold uppercase tracking-widest text-neutral-400 block mb-1">Montage Auto Studio</span>
+                <h4 class="text-sm font-bold uppercase tracking-wider text-black mb-4">Payment Proof</h4>
+                <div class="w-full max-h-[60vh] flex items-center justify-center overflow-auto rounded-2xl border border-neutral-100 bg-neutral-50 p-2">
+                    <img id="lightboxTargetImg" src="" alt="GCash Screenshot" class="max-w-full max-h-[58vh] object-contain rounded-xl shadow-sm">
                 </div>
                 <p class="text-[10px] text-neutral-400 font-medium mt-3 uppercase tracking-wide">Source: Uploaded image</p>
             </div>

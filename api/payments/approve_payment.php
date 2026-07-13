@@ -92,8 +92,8 @@ try {
 
     $customer_id = (int)$invoice['customer_id'];
 
-    // Fetch customer email and name (if they have an associated User account)
-    $emailQuery = "SELECT u.email, c.full_name 
+    // Fetch customer email and name (from User if subscriber, or directly from Customer if regular guest)
+    $emailQuery = "SELECT COALESCE(u.email, c.email) AS email, c.full_name 
                    FROM Customer c
                    LEFT JOIN User u ON c.user_id = u.user_id
                    WHERE c.customer_id = :customer_id LIMIT 1";
@@ -177,32 +177,45 @@ try {
 
     // Send confirmation or rejection email if email exists
     if ($email && filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        require_once __DIR__ . '/../utils/mailer.php';
+
         if ($status === 'Paid') {
             $subject = "Payment Approved - Invoice ID: INV-" . $invoice_id;
-            $message = "Hello " . $fullName . ",\n\n";
-            $message .= "Your payment of ₱" . number_format($payment['amount'], 2) . " for Invoice ID INV-" . $invoice_id . " has been successfully approved!\n\n";
-            if ($invoice['invoice_type'] === 'Monthly Roster') {
-                $message .= "Your VIP Unlimited Plan subscription is now Active. Thank you for your support!\n\n";
-            } else {
-                $message .= "Your booking is now confirmed. We look forward to servicing your vehicle.\n\n";
-            }
-            $message .= "Best regards,\nMontage Auto Studio Team";
+            $htmlContent = "
+                <div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 25px; border: 1px solid #eee; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.03);'>
+                    <div style='text-align: center; margin-bottom: 20px;'>
+                        <span style='font-size: 9px; font-weight: bold; letter-spacing: 2px; color: #999; text-transform: uppercase;'>Montage Auto Studio</span>
+                        <h2 style='color: #111; margin-top: 5px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px;'>Payment Confirmed</h2>
+                    </div>
+                    <p>Hello <strong>{$fullName}</strong>,</p>
+                    <p>Your payment of <strong>₱" . number_format($payment['amount'], 2) . "</strong> for Invoice <strong>INV-{$invoice_id}</strong> has been successfully approved!</p>
+                    " . ($invoice['invoice_type'] === 'Monthly Roster'
+                        ? "<p style='background-color: #f4fbf7; border-left: 3px solid #27ae60; padding: 12px; color: #27ae60;'>Your VIP Unlimited Plan subscription is now <strong>Active</strong>. Thank you for your support!</p>"
+                        : "<p style='background-color: #f4fbf7; border-left: 3px solid #27ae60; padding: 12px; color: #27ae60;'>Your booking is now confirmed. We look forward to servicing your vehicle.</p>") . "
+                    <hr style='border: none; border-top: 1px solid #eee; margin: 25px 0;'>
+                    <p style='font-size: 11px; color: #888; text-align: center;'>If you have any questions, reach us at support@montageautostudio.com</p>
+                </div>
+            ";
         } else {
             $subject = "Registration Payment Rejected - Invoice ID: INV-" . $invoice_id;
-            $message = "Hello " . $fullName . ",\n\n";
-            $message .= "Unfortunately, your payment of ₱" . number_format($payment['amount'], 2) . " for Invoice ID INV-" . $invoice_id . " was rejected by our administrative team.\n\n";
-            if ($invoice['invoice_type'] === 'Monthly Roster') {
-                $message .= "Your subscription registration has been rejected. Please review your GCash payment receipt details and try registering again, or contact our support team.\n\n";
-            } else {
-                $message .= "Your booking confirmation was rejected due to an invalid payment proof. Please resubmit your booking with a valid payment screenshot.\n\n";
-            }
-            $message .= "Best regards,\nMontage Auto Studio Team";
+            $htmlContent = "
+                <div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 25px; border: 1px solid #eee; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.03);'>
+                    <div style='text-align: center; margin-bottom: 20px;'>
+                        <span style='font-size: 9px; font-weight: bold; letter-spacing: 2px; color: #999; text-transform: uppercase;'>Montage Auto Studio</span>
+                        <h2 style='color: #c0392b; margin-top: 5px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px;'>Payment Proof Rejected</h2>
+                    </div>
+                    <p>Hello <strong>{$fullName}</strong>,</p>
+                    <p>Unfortunately, your payment of <strong>₱" . number_format($payment['amount'], 2) . "</strong> for Invoice <strong>INV-{$invoice_id}</strong> was rejected by our administrative team.</p>
+                    " . ($invoice['invoice_type'] === 'Monthly Roster'
+                        ? "<p style='background-color: #fdf2f2; border-left: 3px solid #c0392b; padding: 12px; color: #c0392b;'>Your subscription registration has been rejected. Please review your GCash payment receipt details and try registering again, or contact our support team.</p>"
+                        : "<p style='background-color: #fdf2f2; border-left: 3px solid #c0392b; padding: 12px; color: #c0392b;'>Your booking confirmation was rejected due to an invalid payment proof. Please resubmit your booking with a valid payment screenshot.</p>") . "
+                    <hr style='border: none; border-top: 1px solid #eee; margin: 25px 0;'>
+                    <p style='font-size: 11px; color: #888; text-align: center;'>If you have any questions, reach us at support@montageautostudio.com</p>
+                </div>
+            ";
         }
-        $headers = "From: no-reply@montageautostudio.com\r\n" .
-                   "Reply-To: support@montageautostudio.com\r\n" .
-                   "X-Mailer: PHP/" . phpversion();
 
-        @mail($email, $subject, $message, $headers);
+        Mailer::send($email, $subject, $htmlContent);
     }
 
     echo json_encode([

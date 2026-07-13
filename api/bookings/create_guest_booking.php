@@ -19,16 +19,26 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 // Note: $_POST is used because this is a multipart/form-data request with binary file upload.
 $client_name = isset($_POST['name']) ? trim($_POST['name']) : null;
 $client_phone = isset($_POST['phone']) ? trim($_POST['phone']) : null;
+$client_email = isset($_POST['email']) ? trim($_POST['email']) : null;
 $service_name = isset($_POST['service_name']) ? trim($_POST['service_name']) : null;
 $scheduled_date = isset($_POST['date']) ? trim($_POST['date']) : null;
 $time_slot = isset($_POST['time']) ? trim($_POST['time']) : null;
 
 // === SECTION: INPUT VALIDATION ===
-if (empty($client_name) || empty($client_phone) || empty($service_name) || empty($scheduled_date) || empty($time_slot)) {
+if (empty($client_name) || empty($client_phone) || empty($client_email) || empty($service_name) || empty($scheduled_date) || empty($time_slot)) {
     http_response_code(400);
     echo json_encode([
         "status" => "error",
-        "message" => "Incomplete request. Name, phone, service, date, and time slot are required fields."
+        "message" => "Incomplete request. Name, phone, email, service, date, and time slot are required fields."
+    ]);
+    exit();
+}
+
+if (!filter_var($client_email, FILTER_VALIDATE_EMAIL)) {
+    http_response_code(400);
+    echo json_encode([
+        "status" => "error",
+        "message" => "Invalid email address format."
     ]);
     exit();
 }
@@ -224,11 +234,12 @@ try {
     }
 
     // 3. Create guest Customer
-    $custQuery = "INSERT INTO Customer (user_id, full_name, phone_number, customer_type) 
-                  VALUES (NULL, :full_name, :phone_number, 'Regular')";
+    $custQuery = "INSERT INTO Customer (user_id, full_name, phone_number, email, customer_type) 
+                  VALUES (NULL, :full_name, :phone_number, :email, 'Regular')";
     $custStmt = $conn->prepare($custQuery);
     $custStmt->bindValue(':full_name', $client_name, PDO::PARAM_STR);
     $custStmt->bindValue(':phone_number', $client_phone, PDO::PARAM_STR);
+    $custStmt->bindValue(':email', $client_email, PDO::PARAM_STR);
     $custStmt->execute();
     $customer_id = (int)$conn->lastInsertId();
 

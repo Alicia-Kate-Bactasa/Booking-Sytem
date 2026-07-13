@@ -159,3 +159,11 @@ try {
     ]);
     exit();
 }
+
+// =========================================================================
+// EMAIL / MAILER SERVICE CONFIGURATION
+// =========================================================================
+define('RESEND_API_KEY', ''); // Set your Resend API key here to enable reliable delivery (replaces SendGrid)
+define('MAIL_FROM_EMAIL', 'onboarding@resend.dev');
+define('MAIL_FROM_NAME', 'Montage Auto Studio');
+define('MAIL_REPLY_TO', 'support@montageautostudio.com');

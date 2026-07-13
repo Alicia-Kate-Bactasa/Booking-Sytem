@@ -207,6 +207,12 @@
 
             const clientName = document.getElementById('custName').value.trim();
             const clientPhone = document.getElementById('custPhone').value.trim();
+            const clientEmail = document.getElementById('custEmail').value.trim();
+
+            if (!clientEmail || !clientEmail.includes('@')) {
+                await alert('Please enter a valid email address.');
+                return;
+            }
 
             const submitBtn = event.target.querySelector('button[type="submit"]');
             const originalText = submitBtn ? submitBtn.innerText : '';
@@ -218,6 +224,7 @@
             const formData = new FormData();
             formData.append('name', clientName);
             formData.append('phone', clientPhone);
+            formData.append('email', clientEmail);
             formData.append('service_name', activeServiceState);
             formData.append('date', selectedDate);
             formData.append('time', activeTimeState);
