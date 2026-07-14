@@ -345,6 +345,7 @@ const defaultServices = [
                     await alert(`Subscription request for ${req.name} has been approved.`);
                     loadPendingSubscriptions();
                     loadSubscribers();
+                    loadSubscriberLedgers();
                 } else {
                     await showErrorModal(data.message || 'Failed to approve subscription.');
                 }
@@ -393,6 +394,7 @@ const defaultServices = [
                     await alert(`Subscription request for ${req.name} has been rejected.`);
                     loadPendingSubscriptions();
                     loadSubscribers();
+                    loadSubscriberLedgers();
                 } else {
                     await showErrorModal(data.message || 'Failed to reject subscription.');
                 }
@@ -608,7 +610,7 @@ const defaultServices = [
             `;
 
             tbody.innerHTML = '';
-            const filteredInvoices = invoicesCollection.filter(inv => inv.status === 'pending' && matchesPaymentFilter(inv));
+            const filteredInvoices = invoicesCollection.filter(inv => inv.status?.toLowerCase() === 'pending' && matchesPaymentFilter(inv));
 
             if(filteredInvoices.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-neutral-400 font-medium font-mono">No payment proofs waiting for review.</td></tr>`;
@@ -664,7 +666,7 @@ const defaultServices = [
 
             // Filter for Approved (Paid) or Rejected invoices of the active category
             let processedRecords = invoicesCollection.filter(inv => 
-                (inv.status === 'Paid' || inv.status === 'Rejected') && 
+                (inv.status?.toLowerCase() === 'paid' || inv.status?.toLowerCase() === 'rejected') && 
                 matchesPaymentFilter(inv)
             );
 
@@ -680,7 +682,7 @@ const defaultServices = [
             }
 
             processedRecords.forEach(inv => {
-                const isApproved = inv.status === 'Paid';
+                const isApproved = inv.status?.toLowerCase() === 'paid';
                 const statusBadge = isApproved 
                     ? `<span class="px-2.5 py-1 text-[9px] uppercase tracking-wider font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">Approved</span>`
                     : `<span class="px-2.5 py-1 text-[9px] uppercase tracking-wider font-bold rounded-full bg-red-50 text-red-600 border border-red-100">Rejected</span>`;
@@ -1180,6 +1182,7 @@ const defaultServices = [
                 if (data.status === 'success') {
                     await alert(`Subscriber ${acc.name} has been manually downgraded.`);
                     loadSubscribers();
+                    loadSubscriberLedgers();
                 } else {
                     await showErrorModal(data.message || 'Server error.');
                 }
