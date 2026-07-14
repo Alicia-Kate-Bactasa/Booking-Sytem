@@ -90,7 +90,7 @@ try {
 // =========================================================================
 // EMAIL / MAILER SERVICE CONFIGURATION
 // =========================================================================
-define('RESEND_API_KEY', 'YOUR_RESEND_API_KEY_HERE'); 
-define('MAIL_FROM_EMAIL', 'no-reply@montageautostudio.com');
+define('BREVO_API_KEY', 'YOUR_BREVO_API_KEY_HERE'); 
+define('MAIL_FROM_EMAIL', 'your-verified-sender-email@gmail.com');
 define('MAIL_FROM_NAME', 'Montage Auto Studio');
 define('MAIL_REPLY_TO', 'support@montageautostudio.com');

@@ -76,10 +76,12 @@ try {
     // 2. Fetch Invoice details
     $invQuery = "SELECT COALESCE(s.customer_id, b.customer_id) AS customer_id, 
                         i.total_amount, 
-                        i.invoice_type 
+                        i.invoice_type,
+                        ser.service_name
                  FROM Invoice i
                  LEFT JOIN Subscription s ON i.subscription_id = s.subscription_id
                  LEFT JOIN Booking b ON i.invoice_id = b.invoice_id
+                 LEFT JOIN Service ser ON b.service_id = ser.service_id
                  WHERE i.invoice_id = :invoice_id LIMIT 1";
     $invStmt = $conn->prepare($invQuery);
     $invStmt->bindValue(':invoice_id', $invoice_id, PDO::PARAM_INT);
@@ -185,42 +187,44 @@ try {
     if ($email && filter_var($email, FILTER_VALIDATE_EMAIL)) {
         require_once __DIR__ . '/../utils/mailer.php';
 
+        $itemName = ($invoice['invoice_type'] === 'Monthly Roster') ? 'VIP Unlimited Plan' : ($invoice['service_name'] ?: 'Detailing Session');
+        $itemSubtext = ($invoice['invoice_type'] === 'Monthly Roster') ? 'Monthly VIP membership access.' : 'Professional vehicle detailing service.';
+
+        $invoiceData = [
+            'invoice_no' => 'INV-' . $invoice_id,
+            'date' => date('Y-m-d'),
+            'client_name' => $fullName,
+            'client_email' => $email,
+            'item_name' => $itemName,
+            'item_subtext' => $itemSubtext,
+            'item_price' => (float)$payment['amount'],
+            'subtotal' => (float)$payment['amount'],
+            'total_due' => (float)$payment['amount']
+        ];
+
         if ($status === 'Paid') {
             $subject = "Payment Approved - Invoice ID: INV-" . $invoice_id;
-            $htmlContent = "
-                <div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 25px; border: 1px solid #eee; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.03);'>
-                    <div style='text-align: center; margin-bottom: 20px;'>
-                        <span style='font-size: 9px; font-weight: bold; letter-spacing: 2px; color: #999; text-transform: uppercase;'>Montage Auto Studio</span>
-                        <h2 style='color: #111; margin-top: 5px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px;'>Payment Confirmed</h2>
-                    </div>
-                    <p>Hello <strong>{$fullName}</strong>,</p>
-                    <p>Your payment of <strong>₱" . number_format($payment['amount'], 2) . "</strong> for Invoice <strong>INV-{$invoice_id}</strong> has been successfully approved!</p>
-                    " . ($invoice['invoice_type'] === 'Monthly Roster'
-                        ? "<p style='background-color: #f4fbf7; border-left: 3px solid #27ae60; padding: 12px; color: #27ae60;'>Your VIP Unlimited Plan subscription is now <strong>Active</strong>. Thank you for your support!</p>"
-                        : "<p style='background-color: #f4fbf7; border-left: 3px solid #27ae60; padding: 12px; color: #27ae60;'>Your booking is now confirmed. We look forward to servicing your vehicle.</p>") . "
-                    <hr style='border: none; border-top: 1px solid #eee; margin: 25px 0;'>
-                    <p style='font-size: 11px; color: #888; text-align: center;'>If you have any questions, reach us at support@montageautostudio.com</p>
-                </div>
-            ";
+            $invoiceData['title'] = 'Official Invoice';
+            $invoiceData['status_bg'] = '#f4fbf7';
+            $invoiceData['status_border'] = '#27ae60';
+            $invoiceData['status_color'] = '#27ae60';
+            $invoiceData['status_label'] = 'PAID';
+            $invoiceData['status_detail'] = ($invoice['invoice_type'] === 'Monthly Roster')
+                ? 'Your payment has been successfully approved! Your VIP Unlimited Plan is now ACTIVE.'
+                : 'Your booking payment has been successfully approved and confirmed. We look forward to servicing your vehicle!';
         } else {
-            $subject = "Registration Payment Rejected - Invoice ID: INV-" . $invoice_id;
-            $htmlContent = "
-                <div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 25px; border: 1px solid #eee; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.03);'>
-                    <div style='text-align: center; margin-bottom: 20px;'>
-                        <span style='font-size: 9px; font-weight: bold; letter-spacing: 2px; color: #999; text-transform: uppercase;'>Montage Auto Studio</span>
-                        <h2 style='color: #c0392b; margin-top: 5px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px;'>Payment Proof Rejected</h2>
-                    </div>
-                    <p>Hello <strong>{$fullName}</strong>,</p>
-                    <p>Unfortunately, your payment of <strong>₱" . number_format($payment['amount'], 2) . "</strong> for Invoice <strong>INV-{$invoice_id}</strong> was rejected by our administrative team.</p>
-                    " . ($invoice['invoice_type'] === 'Monthly Roster'
-                        ? "<p style='background-color: #fdf2f2; border-left: 3px solid #c0392b; padding: 12px; color: #c0392b;'>Your subscription registration has been rejected. Please review your GCash payment receipt details and try registering again, or contact our support team.</p>"
-                        : "<p style='background-color: #fdf2f2; border-left: 3px solid #c0392b; padding: 12px; color: #c0392b;'>Your booking confirmation was rejected due to an invalid payment proof. Please resubmit your booking with a valid payment screenshot.</p>") . "
-                    <hr style='border: none; border-top: 1px solid #eee; margin: 25px 0;'>
-                    <p style='font-size: 11px; color: #888; text-align: center;'>If you have any questions, reach us at support@montageautostudio.com</p>
-                </div>
-            ";
+            $subject = "Payment Proof Rejected - Invoice ID: INV-" . $invoice_id;
+            $invoiceData['title'] = 'Rejection Notice';
+            $invoiceData['status_bg'] = '#fdf2f2';
+            $invoiceData['status_border'] = '#c0392b';
+            $invoiceData['status_color'] = '#c0392b';
+            $invoiceData['status_label'] = 'PAYMENT REJECTED';
+            $invoiceData['status_detail'] = ($invoice['invoice_type'] === 'Monthly Roster')
+                ? 'Unfortunately, your registration payment proof was rejected. Please review your GCash receipt details and resubmit registration.'
+                : 'Unfortunately, your booking payment proof was rejected. Please resubmit your booking with a valid payment screenshot.';
         }
 
+        $htmlContent = Mailer::formatInvoice($invoiceData);
         Mailer::send($email, $subject, $htmlContent);
     }
 

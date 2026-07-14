@@ -218,6 +218,33 @@ try {
     // Commit transaction
     $conn->commit();
 
+    // Send pending subscription registration invoice
+    if ($email && filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        require_once __DIR__ . '/../utils/mailer.php';
+        $subject = "Subscription Registration Pending - Montage Auto Studio";
+
+        $invoiceData = [
+            'title' => 'Pro-forma Invoice',
+            'invoice_no' => 'INV-' . $invoice_id,
+            'date' => date('Y-m-d'),
+            'client_name' => $name,
+            'client_email' => $email,
+            'item_name' => 'VIP Unlimited Plan',
+            'item_subtext' => 'Monthly subscription plan with priority scheduling.',
+            'item_price' => 1500.00,
+            'subtotal' => 1500.00,
+            'total_due' => 1500.00,
+            'status_bg' => '#fef9e7',
+            'status_border' => '#f39c12',
+            'status_color' => '#d35400',
+            'status_label' => 'PENDING VERIFICATION',
+            'status_detail' => 'We have received your VIP membership registration and payment screenshot. Please allow 24-48 hours for administrative approval.'
+        ];
+
+        $htmlContent = Mailer::formatInvoice($invoiceData);
+        Mailer::send($email, $subject, $htmlContent);
+    }
+
     // === SECTION: SUCCESS RESPONSE ===
     http_response_code(201);
     echo json_encode([

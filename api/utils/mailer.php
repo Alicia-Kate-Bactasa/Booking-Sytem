@@ -1,12 +1,138 @@
 <?php
 /**
- * Montage Auto Studio - Centralized Mailing Service
+ * Montage Auto Studio - Centralized Mailing Service (Brevo API)
  * 
- * Supports sending reliable HTML emails via Resend's Web API (HTTPS) 
+ * Supports sending reliable HTML emails via Brevo's SMTP Web API (HTTPS)
  * with a clean fallback to PHP's native mail() when no API key is configured.
  */
 
 class Mailer {
+    /**
+     * Generate a premium formal HTML invoice template
+     * 
+     * @param array $data Invoice details
+     * @return string HTML string
+     */
+    public static function formatInvoice($data) {
+        $title = htmlspecialchars($data['title']);
+        $invoiceNo = htmlspecialchars($data['invoice_no']);
+        $date = htmlspecialchars($data['date']);
+        $clientName = htmlspecialchars($data['client_name']);
+        $clientEmail = htmlspecialchars($data['client_email']);
+        
+        $statusBg = htmlspecialchars($data['status_bg']);
+        $statusBorder = htmlspecialchars($data['status_border']);
+        $statusColor = htmlspecialchars($data['status_color']);
+        $statusLabel = htmlspecialchars($data['status_label']);
+        $statusDetail = htmlspecialchars($data['status_detail']);
+        
+        $itemName = htmlspecialchars($data['item_name']);
+        $itemSubtext = htmlspecialchars($data['item_subtext']);
+        $itemPrice = number_format($data['item_price'], 2);
+        
+        $subtotal = number_format($data['subtotal'], 2);
+        $totalDue = number_format($data['total_due'], 2);
+        
+        $discountRow = '';
+        if (isset($data['discount']) && $data['discount'] > 0) {
+            $discountStr = number_format($data['discount'], 2);
+            $discountRow = "
+                <tr>
+                    <td style='color: #27ae60;'>Discount/VIP:</td>
+                    <td style='text-align: right; font-weight: bold; color: #27ae60;'>-₱{$discountStr}</td>
+                </tr>";
+        }
+
+        return "
+        <div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 25px; border: 1px solid #eee; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); color: #333;'>
+            <!-- Header -->
+            <table style='width: 100%; border-collapse: collapse; margin-bottom: 25px;'>
+                <tr>
+                    <td>
+                        <span style='font-size: 9px; font-weight: bold; letter-spacing: 2px; color: #999; text-transform: uppercase;'>Montage Auto Studio</span>
+                        <h2 style='margin: 5px 0 0 0; color: #111; font-weight: 900; letter-spacing: -0.5px; text-transform: uppercase;'>{$title}</h2>
+                    </td>
+                    <td style='text-align: right; vertical-align: top;'>
+                        <span style='font-size: 11px; color: #777; display: block;'>Invoice No: <strong>{$invoiceNo}</strong></span>
+                        <span style='font-size: 11px; color: #777; display: block;'>Date: <strong>{$date}</strong></span>
+                    </td>
+                </tr>
+            </table>
+            
+            <!-- Billing Details -->
+            <table style='width: 100%; border-collapse: collapse; margin-bottom: 25px; font-size: 13px; line-height: 1.5;'>
+                <tr>
+                    <td style='width: 50%; padding-right: 15px; vertical-align: top;'>
+                        <span style='font-size: 10px; font-weight: bold; text-transform: uppercase; color: #999; display: block; margin-bottom: 5px;'>Billed To:</span>
+                        <strong>{$clientName}</strong><br>
+                        Email: {$clientEmail}<br>
+                    </td>
+                    <td style='width: 50%; padding-left: 15px; vertical-align: top;'>
+                        <span style='font-size: 10px; font-weight: bold; text-transform: uppercase; color: #999; display: block; margin-bottom: 5px;'>From:</span>
+                        <strong>Montage Auto Studio</strong><br>
+                        123 Car Detailing Blvd,<br>
+                        Metro Manila, Philippines
+                    </td>
+                </tr>
+            </table>
+
+            <!-- Status Banner -->
+            <div style='background-color: {$statusBg}; border-left: 4px solid {$statusBorder}; padding: 12px; margin-bottom: 25px; border-radius: 4px; font-size: 13px; color: {$statusColor};'>
+                <strong>Status: {$statusLabel}</strong><br>
+                {$statusDetail}
+            </div>
+
+            <!-- Items Table -->
+            <table style='width: 100%; border-collapse: collapse; margin-bottom: 25px; font-size: 13px;'>
+                <thead>
+                    <tr style='border-bottom: 2px solid #eee; text-align: left;'>
+                        <th style='padding: 10px 5px; color: #666; font-weight: bold;'>Description</th>
+                        <th style='padding: 10px 5px; color: #666; font-weight: bold; text-align: center; width: 60px;'>Qty</th>
+                        <th style='padding: 10px 5px; color: #666; font-weight: bold; text-align: right; width: 100px;'>Price</th>
+                        <th style='padding: 10px 5px; color: #666; font-weight: bold; text-align: right; width: 100px;'>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style='border-bottom: 1px solid #f9f9f9;'>
+                        <td style='padding: 12px 5px;'>
+                            <strong>{$itemName}</strong><br>
+                            <span style='font-size: 11px; color: #777;'>{$itemSubtext}</span>
+                        </td>
+                        <td style='padding: 12px 5px; text-align: center;'>1</td>
+                        <td style='padding: 12px 5px; text-align: right;'>₱{$itemPrice}</td>
+                        <td style='padding: 12px 5px; text-align: right;'>₱{$itemPrice}</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Calculations -->
+            <table style='width: 100%; border-collapse: collapse; margin-bottom: 25px; font-size: 13px;'>
+                <tr>
+                    <td style='width: 50%;'></td>
+                    <td style='width: 50%;'>
+                        <table style='width: 100%; border-collapse: collapse; line-height: 2;'>
+                            <tr>
+                                <td style='color: #666;'>Subtotal:</td>
+                                <td style='text-align: right; font-weight: bold;'>₱{$subtotal}</td>
+                            </tr>
+                            {$discountRow}
+                            <tr style='border-top: 1px solid #ddd;'>
+                                <td style='font-weight: bold; color: #111; font-size: 14px; padding-top: 5px;'>Total Due:</td>
+                                <td style='text-align: right; font-weight: 900; color: #111; font-size: 16px; padding-top: 5px;'>₱{$totalDue}</td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+
+            <!-- Footer -->
+            <hr style='border: none; border-top: 1px solid #eee; margin: 25px 0;'>
+            <p style='font-size: 11px; color: #888; text-align: center; margin: 0;'>
+                Thank you for choosing Montage Auto Studio! For questions, email support@montageautostudio.com.
+            </p>
+        </div>";
+    }
+
     /**
      * Send email notification to client
      * 
@@ -17,33 +143,40 @@ class Mailer {
      */
     public static function send($to, $subject, $htmlContent) {
         // Retrieve configurations (either defined constants or defaults)
-        $apiKey = defined('RESEND_API_KEY') ? RESEND_API_KEY : '';
-        $fromEmail = defined('MAIL_FROM_EMAIL') ? MAIL_FROM_EMAIL : 'no-reply@montageautostudio.com';
+        $brevoKey = defined('BREVO_API_KEY') ? BREVO_API_KEY : '';
+        $fromEmail = defined('MAIL_FROM_EMAIL') ? MAIL_FROM_EMAIL : 'bactasa.ak@gmail.com';
         $fromName = defined('MAIL_FROM_NAME') ? MAIL_FROM_NAME : 'Montage Auto Studio';
         $replyTo = defined('MAIL_REPLY_TO') ? MAIL_REPLY_TO : 'support@montageautostudio.com';
 
-        if (!empty($apiKey)) {
-            // Send using Resend Web API via HTTPS cURL
-            return self::sendViaResend($apiKey, $to, $subject, $htmlContent, $fromEmail, $fromName, $replyTo);
+        if (!empty($brevoKey)) {
+            // Send using Brevo Web API (allows personal verified senders like Gmail)
+            return self::sendViaBrevo($brevoKey, $to, $subject, $htmlContent, $fromEmail, $fromName, $replyTo);
         } else {
             // Fallback to native PHP mail()
-            error_log("Mailer Info: Resend API key not configured. Falling back to native PHP mail().");
+            error_log("Mailer Info: No Brevo API key configured. Falling back to native PHP mail().");
             return self::sendViaNativeMail($to, $subject, $htmlContent, $fromEmail, $fromName, $replyTo);
         }
     }
 
     /**
-     * Send email via Resend Web API (Port 443 / HTTPS)
+     * Send email via Brevo SMTP API (Port 443 / HTTPS)
      */
-    private static function sendViaResend($apiKey, $to, $subject, $htmlContent, $fromEmail, $fromName, $replyTo) {
-        $url = 'https://api.resend.com/emails';
+    private static function sendViaBrevo($apiKey, $to, $subject, $htmlContent, $fromEmail, $fromName, $replyTo) {
+        $url = 'https://api.brevo.com/v3/smtp/email';
         
         $payload = [
-            'from' => "{$fromName} <{$fromEmail}>",
-            'to' => [$to],
+            'sender' => [
+                'name' => $fromName,
+                'email' => $fromEmail
+            ],
+            'to' => [
+                ['email' => $to]
+            ],
             'subject' => $subject,
-            'html' => $htmlContent,
-            'reply_to' => $replyTo
+            'htmlContent' => $htmlContent,
+            'replyTo' => [
+                'email' => $replyTo
+            ]
         ];
 
         $jsonData = json_encode($payload);
@@ -52,7 +185,7 @@ class Mailer {
         curl_setopt($ch, CURLOPT_POST, 1);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonData);
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Authorization: Bearer ' . $apiKey,
+            'api-key: ' . $apiKey,
             'Content-Type: application/json'
         ]);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -65,16 +198,15 @@ class Mailer {
         curl_close($ch);
 
         if ($error) {
-            error_log("Resend API Connection Error: " . $error);
+            error_log("Brevo API Connection Error: " . $error);
             return false;
         }
 
-        // Resend returns 200 OK or 201 Created on success
         if ($httpCode >= 200 && $httpCode < 300) {
-            log_mail_event("Email successfully dispatched via Resend API to: {$to}");
+            log_mail_event("Email successfully dispatched via Brevo API to: {$to}");
             return true;
         } else {
-            error_log("Resend API returned error code {$httpCode}. Response: " . $response);
+            error_log("Brevo API returned error code {$httpCode}. Response: " . $response);
             return false;
         }
     }
@@ -89,7 +221,6 @@ class Mailer {
                    "Reply-To: {$replyTo}\r\n" .
                    "X-Mailer: PHP/" . phpversion();
 
-        // Strip HTML wrapper tags for a raw alternative text representation (optional but good practice)
         $result = @mail($to, $subject, $htmlContent, $headers);
         if ($result) {
             log_mail_event("Email successfully dispatched via native mail() to: {$to}");
@@ -105,6 +236,6 @@ class Mailer {
  * Log email events gracefully
  */
 function log_mail_event($msg) {
-    // Print to PHP system error log
     error_log("Mailer Service Log: " . $msg);
 }
+?>

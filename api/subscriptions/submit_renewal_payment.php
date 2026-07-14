@@ -40,7 +40,11 @@ try {
 
     // 2. Guard against double payment within the active billing cycle:
     // Check if the subscription is already prepaid (last_billing_date is in the future)
-    $subQuery = "SELECT subscription_id, last_billing_date, plan_status FROM Subscription WHERE customer_id = :customer_id LIMIT 1";
+    $subQuery = "SELECT s.subscription_id, s.last_billing_date, s.plan_status, c.full_name, COALESCE(u.email, c.email) AS email
+                 FROM Subscription s
+                 JOIN Customer c ON s.customer_id = c.customer_id
+                 LEFT JOIN User u ON c.customer_id = u.customer_id
+                 WHERE s.customer_id = :customer_id LIMIT 1";
     $subStmt = $conn->prepare($subQuery);
     $subStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
     $subStmt->execute();
@@ -164,6 +168,33 @@ try {
     }
 
     $conn->commit();
+
+    // Send subscription renewal pending confirmation email
+    if ($sub && !empty($sub['email']) && filter_var($sub['email'], FILTER_VALIDATE_EMAIL)) {
+        require_once __DIR__ . '/../utils/mailer.php';
+        $subject = "Subscription Renewal Pending Verification - Montage Auto Studio";
+
+        $invoiceData = [
+            'title' => 'Pro-forma Invoice',
+            'invoice_no' => 'INV-' . $invoice_id,
+            'date' => date('Y-m-d'),
+            'client_name' => $sub['full_name'],
+            'client_email' => $sub['email'],
+            'item_name' => 'VIP Unlimited Plan (Renewal)',
+            'item_subtext' => 'Monthly subscription plan with priority scheduling.',
+            'item_price' => 1500.00,
+            'subtotal' => 1500.00,
+            'total_due' => 1500.00,
+            'status_bg' => '#fef9e7',
+            'status_border' => '#f39c12',
+            'status_color' => '#d35400',
+            'status_label' => 'PENDING VERIFICATION',
+            'status_detail' => 'We have received your GCash renewal payment screenshot. Please allow 24-48 hours for administrative verification.'
+        ];
+
+        $htmlContent = Mailer::formatInvoice($invoiceData);
+        Mailer::send($sub['email'], $subject, $htmlContent);
+    }
 
     http_response_code(201);
     echo json_encode([

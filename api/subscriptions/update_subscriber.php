@@ -221,60 +221,61 @@ try {
     if ($clientEmail && filter_var($clientEmail, FILTER_VALIDATE_EMAIL)) {
         require_once __DIR__ . '/../utils/mailer.php';
 
+        // Fetch latest invoice details for this subscription renewal
+        $invQuery = "SELECT invoice_id, total_amount, issued_at 
+                     FROM Invoice 
+                     WHERE subscription_id = :subscription_id 
+                       AND invoice_type = 'Monthly Roster' 
+                     ORDER BY issued_at DESC LIMIT 1";
+        $invStmt = $conn->prepare($invQuery);
+        $invStmt->bindValue(':subscription_id', $subscriber['subscription_id'], PDO::PARAM_INT);
+        $invStmt->execute();
+        $latestInv = $invStmt->fetch();
+        
+        $invoice_id = $latestInv ? (int)$latestInv['invoice_id'] : 0;
+        $amount = $latestInv ? (float)$latestInv['total_amount'] : 1500.00;
+        $invDate = $latestInv ? substr($latestInv['issued_at'], 0, 10) : date('Y-m-d');
+
+        $invoiceData = [
+            'invoice_no' => 'INV-' . $invoice_id,
+            'date' => $invDate,
+            'client_name' => $fullName,
+            'client_email' => $clientEmail,
+            'item_name' => 'VIP Unlimited Plan',
+            'item_subtext' => 'Monthly VIP subscription roster payment.',
+            'item_price' => $amount,
+            'subtotal' => $amount,
+            'total_due' => $amount
+        ];
+
         if ($status === 'Approved') {
             $subject = "Subscription Approved - VIP Unlimited Plan";
-            $htmlContent = "
-                <div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 25px; border: 1px solid #eee; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.03);'>
-                    <div style='text-align: center; margin-bottom: 20px;'>
-                        <span style='font-size: 9px; font-weight: bold; letter-spacing: 2px; color: #999; text-transform: uppercase;'>Montage Auto Studio</span>
-                        <h2 style='color: #27ae60; margin-top: 5px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px;'>Subscription Approved</h2>
-                    </div>
-                    <p>Hello <strong>{$fullName}</strong>,</p>
-                    <p>Your subscription registration has been approved! Your <strong>VIP Unlimited Plan</strong> is now Active.</p>
-                    <p style='background-color: #f4fbf7; border-left: 3px solid #27ae60; padding: 12px; color: #27ae60;'>
-                        You can now log in to your dashboard to schedule your covered detailing sessions and enjoy priority access.
-                    </p>
-                    <hr style='border: none; border-top: 1px solid #eee; margin: 25px 0;'>
-                    <p style='font-size: 11px; color: #888; text-align: center;'>If you have any questions, reach us at support@montageautostudio.com</p>
-                </div>
-            ";
+            $invoiceData['title'] = 'Official Invoice';
+            $invoiceData['status_bg'] = '#f4fbf7';
+            $invoiceData['status_border'] = '#27ae60';
+            $invoiceData['status_color'] = '#27ae60';
+            $invoiceData['status_label'] = 'PAID / ACTIVE';
+            $invoiceData['status_detail'] = 'Your registration payment has been successfully approved! Your VIP Unlimited Plan is now ACTIVE.';
         } elseif ($status === 'Rejected') {
             $subject = "Subscription Registration Rejected";
-            $htmlContent = "
-                <div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 25px; border: 1px solid #eee; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.03);'>
-                    <div style='text-align: center; margin-bottom: 20px;'>
-                        <span style='font-size: 9px; font-weight: bold; letter-spacing: 2px; color: #999; text-transform: uppercase;'>Montage Auto Studio</span>
-                        <h2 style='color: #c0392b; margin-top: 5px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px;'>Registration Rejected</h2>
-                    </div>
-                    <p>Hello <strong>{$fullName}</strong>,</p>
-                    <p>We regret to inform you that your subscription registration payment proof has been rejected by our team.</p>
-                    <p style='background-color: #fdf2f2; border-left: 3px solid #c0392b; padding: 12px; color: #c0392b;'>
-                        Your registration attempt has been archived. Please review your GCash payment receipt details and resubmit registration with a valid proof of payment.
-                    </p>
-                    <hr style='border: none; border-top: 1px solid #eee; margin: 25px 0;'>
-                    <p style='font-size: 11px; color: #888; text-align: center;'>If you have any questions, reach us at support@montageautostudio.com</p>
-                </div>
-            ";
+            $invoiceData['title'] = 'Rejection Notice';
+            $invoiceData['status_bg'] = '#fdf2f2';
+            $invoiceData['status_border'] = '#c0392b';
+            $invoiceData['status_color'] = '#c0392b';
+            $invoiceData['status_label'] = 'PAYMENT REJECTED';
+            $invoiceData['status_detail'] = 'We regret to inform you that your subscription registration payment proof was rejected. Please review your GCash receipt details and resubmit registration.';
         } else {
             // Inactive / manual downgrade
             $subject = "Subscription Service Status Update";
-            $htmlContent = "
-                <div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 25px; border: 1px solid #eee; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.03);'>
-                    <div style='text-align: center; margin-bottom: 20px;'>
-                        <span style='font-size: 9px; font-weight: bold; letter-spacing: 2px; color: #999; text-transform: uppercase;'>Montage Auto Studio</span>
-                        <h2 style='color: #e67e22; margin-top: 5px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px;'>Subscription Inactive</h2>
-                    </div>
-                    <p>Hello <strong>{$fullName}</strong>,</p>
-                    <p>Your subscription VIP Unlimited Plan has been manually updated to <strong>Inactive</strong> (Expired).</p>
-                    <p style='background-color: #fef9e7; border-left: 3px solid #e67e22; padding: 12px; color: #d35400;'>
-                        Your active VIP privileges have been revoked. If you believe this is in error, please contact our support team or renew your subscription from the booking page.
-                    </p>
-                    <hr style='border: none; border-top: 1px solid #eee; margin: 25px 0;'>
-                    <p style='font-size: 11px; color: #888; text-align: center;'>If you have any questions, reach us at support@montageautostudio.com</p>
-                </div>
-            ";
+            $invoiceData['title'] = 'Subscription Downgraded';
+            $invoiceData['status_bg'] = '#fef9e7';
+            $invoiceData['status_border'] = '#e67e22';
+            $invoiceData['status_color'] = '#d35400';
+            $invoiceData['status_label'] = 'INACTIVE / EXPIRED';
+            $invoiceData['status_detail'] = 'Your VIP Unlimited Plan subscription has been updated to INACTIVE. Your priority scheduling access and detailing wash session benefits are now expired.';
         }
 
+        $htmlContent = Mailer::formatInvoice($invoiceData);
         Mailer::send($clientEmail, $subject, $htmlContent);
     }
 

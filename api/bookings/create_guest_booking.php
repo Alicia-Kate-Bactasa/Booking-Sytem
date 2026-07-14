@@ -283,46 +283,26 @@ try {
     if ($client_email && filter_var($client_email, FILTER_VALIDATE_EMAIL)) {
         require_once __DIR__ . '/../utils/mailer.php';
         $subject = "Booking Received - Montage Auto Studio";
-        
-        $statusDetail = "<p style='background-color: #fef9e7; border-left: 3px solid #f39c12; padding: 12px; color: #d35400;'>Your booking is <strong>Pending Verification</strong>. Please allow our team 24-48 hours to review your GCash payment screenshot. We look forward to servicing your vehicle!</p>";
 
-        $htmlContent = "
-            <div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 25px; border: 1px solid #eee; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.03);'>
-                <div style='text-align: center; margin-bottom: 20px;'>
-                    <span style='font-size: 9px; font-weight: bold; letter-spacing: 2px; color: #999; text-transform: uppercase;'>Montage Auto Studio</span>
-                    <h2 style='color: #111; margin-top: 5px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px;'>Booking Request Received</h2>
-                </div>
-                <p>Hello <strong>{$client_name}</strong>,</p>
-                <p>We have received your guest booking request for the following detailing session:</p>
-                <div style='background-color: #f9f9f9; padding: 15px; border-radius: 10px; margin-bottom: 20px;'>
-                    <table style='width: 100%; font-size: 14px;'>
-                        <tr>
-                            <td style='padding: 5px 0; color: #666;'><strong>Service:</strong></td>
-                            <td style='padding: 5px 0; color: #111;'>{$service_name}</td>
-                        </tr>
-                        <tr>
-                            <td style='padding: 5px 0; color: #666;'><strong>Date:</strong></td>
-                            <td style='padding: 5px 0; color: #111;'>{$scheduled_date}</td>
-                        </tr>
-                        <tr>
-                            <td style='padding: 5px 0; color: #666;'><strong>Time Slot:</strong></td>
-                            <td style='padding: 5px 0; color: #111;'>{$time_slot}</td>
-                        </tr>
-                        <tr>
-                            <td style='padding: 5px 0; color: #666;'><strong>Bay:</strong></td>
-                            <td style='padding: 5px 0; color: #111;'>{$bay_number}</td>
-                        </tr>
-                        <tr>
-                            <td style='padding: 5px 0; color: #666;'><strong>Price:</strong></td>
-                            <td style='padding: 5px 0; color: #111;'>₱" . number_format($purchased_price, 2) . "</td>
-                        </tr>
-                    </table>
-                </div>
-                {$statusDetail}
-                <hr style='border: none; border-top: 1px solid #eee; margin: 25px 0;'>
-                <p style='font-size: 11px; color: #888; text-align: center;'>If you have any questions, reach us at support@montageautostudio.com</p>
-            </div>
-        ";
+        $invoiceData = [
+            'title' => 'Booking Invoice',
+            'invoice_no' => 'INV-' . $invoice_id,
+            'date' => date('Y-m-d'),
+            'client_name' => $client_name,
+            'client_email' => $client_email,
+            'item_name' => $service_name,
+            'item_subtext' => "Scheduled for {$bay_number} on {$scheduled_date} at {$time_slot}",
+            'item_price' => (float)$purchased_price,
+            'subtotal' => (float)$purchased_price,
+            'total_due' => (float)$purchased_price,
+            'status_bg' => '#fef9e7',
+            'status_border' => '#f39c12',
+            'status_color' => '#d35400',
+            'status_label' => 'PENDING VERIFICATION',
+            'status_detail' => 'We have received your guest booking request. Please allow our team 24-48 hours to review your GCash payment screenshot.'
+        ];
+
+        $htmlContent = Mailer::formatInvoice($invoiceData);
         Mailer::send($client_email, $subject, $htmlContent);
     }
 
