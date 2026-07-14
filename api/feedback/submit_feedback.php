@@ -3,7 +3,7 @@
 header("Content-Type: application/json; charset=UTF-8");
 
 // === SECTION: CENTRALIZED CONNECTION ===
-require_once '../config.php';
+require_once __DIR__ . '/../utils/config.php';
 
 // === SECTION: REQUEST METHOD VALIDATION ===
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -27,9 +27,11 @@ if ($inputData === null) {
     exit();
 }
 
-$booking_id_raw = isset($inputData['booking_id']) ? $inputData['booking_id'] : null;
+$booking_id_raw = isset($inputData['booking_id']) ? trim((string)$inputData['booking_id']) : null;
 $rating = isset($inputData['rating']) ? $inputData['rating'] : null;
 $comments = isset($inputData['comments']) ? trim($inputData['comments']) : null;
+$client_name = isset($inputData['name']) ? trim((string)$inputData['name']) : '';
+$service_name = isset($inputData['service']) ? trim((string)$inputData['service']) : '';
 
 // === SECTION: INPUT VALIDATION ===
 if ($rating === null) {
@@ -50,21 +52,62 @@ if (!filter_var($rating, FILTER_VALIDATE_INT) || $rating < 1 || $rating > 5) {
     exit();
 }
 
+if ($client_name === '') {
+    http_response_code(400);
+    echo json_encode([
+        "status" => "error",
+        "message" => "Name is required."
+    ]);
+    exit();
+}
+
+if ($service_name === '') {
+    http_response_code(400);
+    echo json_encode([
+        "status" => "error",
+        "message" => "Service is required."
+    ]);
+    exit();
+}
+
 // Clean up MTG- prefix if present in booking_id
-if (is_string($booking_id_raw)) {
+if (is_string($booking_id_raw) && $booking_id_raw !== '') {
     $booking_id_raw = str_replace('MTG-', '', $booking_id_raw);
 }
 
 // === SECTION: TRANSACTION & DATABASE OPERATION ===
 try {
-    // Require authentication (either Subscriber or Admin)
-    require_auth(['Subscriber', 'Admin']);
-
     $booking_id = null;
     $customer_id = null;
 
+    $ensureFeedbackSchema = function ($conn) {
+        $requiredColumns = [
+            'client_name' => "VARCHAR(255) NULL",
+            'service_name' => "VARCHAR(255) NULL",
+            'feedback_type' => "VARCHAR(20) NOT NULL DEFAULT 'subscriber'"
+        ];
+
+        foreach ($requiredColumns as $columnName => $definition) {
+            $columnCheckStmt = $conn->query("SHOW COLUMNS FROM Feedback LIKE " . $conn->quote($columnName));
+            if (!$columnCheckStmt->fetch()) {
+                $conn->exec("ALTER TABLE Feedback ADD COLUMN {$columnName} {$definition}");
+            }
+        }
+
+        $nullableColumns = ['booking_id', 'customer_id'];
+        foreach ($nullableColumns as $columnName) {
+            $columnStmt = $conn->query("SHOW COLUMNS FROM Feedback LIKE " . $conn->quote($columnName));
+            $columnInfo = $columnStmt->fetch(PDO::FETCH_ASSOC);
+            if ($columnInfo && strtoupper($columnInfo['Null']) === 'NO') {
+                $conn->exec("ALTER TABLE Feedback MODIFY COLUMN {$columnName} {$columnInfo['Type']} NULL");
+            }
+        }
+    };
+
+    $ensureFeedbackSchema($conn);
+
     if (empty($booking_id_raw)) {
-        if ($_SESSION['role'] === 'Subscriber') {
+        if (isset($_SESSION['role']) && $_SESSION['role'] === 'Subscriber' && isset($_SESSION['customer_id'])) {
             // Find the latest completed booking for this customer to automatically associate the feedback
             $findBookingQuery = "SELECT booking_id, customer_id FROM Booking WHERE customer_id = :customer_id AND booking_status = 'Completed' ORDER BY scheduled_date DESC, time_slot DESC LIMIT 1";
             $findBookingStmt = $conn->prepare($findBookingQuery);
@@ -83,12 +126,8 @@ try {
                 exit();
             }
         } else {
-            http_response_code(400);
-            echo json_encode([
-                "status" => "error",
-                "message" => "booking_id is required."
-            ]);
-            exit();
+            $booking_id = null;
+            $customer_id = null;
         }
     } else {
         if (!filter_var($booking_id_raw, FILTER_VALIDATE_INT)) {
@@ -129,7 +168,7 @@ try {
         $customer_id = (int)$booking['customer_id'];
 
         // If Subscriber, ensure the booking belongs to them
-        if ($_SESSION['role'] === 'Subscriber' && (int)$_SESSION['customer_id'] !== $customer_id) {
+        if (isset($_SESSION['role']) && $_SESSION['role'] === 'Subscriber' && isset($_SESSION['customer_id']) && (int)$_SESSION['customer_id'] !== $customer_id) {
             http_response_code(403);
             echo json_encode([
                 "status" => "error",
@@ -140,11 +179,14 @@ try {
     }
 
     // Insert feedback into Feedback table
-    $insertQuery = "INSERT INTO Feedback (booking_id, customer_id, rating, comments) 
-                    VALUES (:booking_id, :customer_id, :rating, :comments)";
+    $insertQuery = "INSERT INTO Feedback (booking_id, customer_id, client_name, service_name, feedback_type, rating, comments) 
+                    VALUES (:booking_id, :customer_id, :client_name, :service_name, :feedback_type, :rating, :comments)";
     $insertStmt = $conn->prepare($insertQuery);
-    $insertStmt->bindValue(':booking_id', $booking_id, PDO::PARAM_INT);
-    $insertStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+    $insertStmt->bindValue(':booking_id', $booking_id, $booking_id === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
+    $insertStmt->bindValue(':customer_id', $customer_id, $customer_id === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
+    $insertStmt->bindValue(':client_name', $client_name, PDO::PARAM_STR);
+    $insertStmt->bindValue(':service_name', $service_name, PDO::PARAM_STR);
+    $insertStmt->bindValue(':feedback_type', empty($booking_id_raw) ? 'public' : 'subscriber', PDO::PARAM_STR);
     $insertStmt->bindValue(':rating', $rating, PDO::PARAM_INT);
     $insertStmt->bindValue(':comments', $comments, PDO::PARAM_STR);
     $insertStmt->execute();

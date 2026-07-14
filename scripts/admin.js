@@ -1249,16 +1249,13 @@ const defaultServices = [
                     }
 
                     feedbacks.forEach(entry => {
-                        let bookingIdText = String(entry.booking_id);
-                        if (!bookingIdText.startsWith('MTG-')) {
-                            bookingIdText = 'MTG-' + bookingIdText;
-                        }
+                        const bookingIdText = entry.booking_id ? `MTG-${String(entry.booking_id).replace(/^MTG-/, '')}` : 'Public Feedback';
                         container.innerHTML += `
                             <div class="p-8 space-y-3">
                                 <div class="flex justify-between items-start">
                                     <div>
                                         <h4 class="font-bold text-base text-black">${entry.client}</h4>
-                                        <p class="text-xs font-mono text-neutral-400 mt-0.5">Booking ID: #${bookingIdText.replace('#', '')} • Service: ${entry.service}</p>
+                                        <p class="text-xs font-mono text-neutral-400 mt-0.5">Booking ID: ${bookingIdText} • Service: ${entry.service}</p>
                                     </div>
                                     <div class="bg-neutral-900 text-white px-3 py-1 rounded-full text-xs font-bold tracking-wider uppercase">
                                         Rating Score: ${entry.rating} / 5

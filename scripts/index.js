@@ -507,6 +507,17 @@
         let activeRating = 4;
         function setFeedbackRating(score) {
             activeRating = score;
+            const hiddenInput = document.getElementById('feedbackRating');
+            if (hiddenInput) hiddenInput.value = score;
+
+            const stars = document.querySelectorAll('.rating-star');
+            stars.forEach((star, index) => {
+                if (index < score) {
+                    star.className = "rating-star text-amber-500 text-lg hover:scale-110 transition-transform focus:outline-none";
+                } else {
+                    star.className = "rating-star text-neutral-300 text-lg hover:scale-110 transition-transform focus:outline-none";
+                }
+            });
         }
 
         function submitCustomerFeedback(event) {
@@ -515,11 +526,13 @@
             const form = event.target;
             const submitButton = form.querySelector('button[type="submit"]');
             const name = document.getElementById('feedbackName').value.trim();
-            const email = document.getElementById('feedbackEmail').value.trim();
-            const message = document.getElementById('feedbackMessage').value.trim();
+            const bookingId = document.getElementById('feedbackBookingId').value.trim();
+            const service = document.getElementById('feedbackService').value.trim();
+            const rating = parseInt(document.getElementById('feedbackRating').value, 10) || 5;
+            const comments = document.getElementById('feedbackComments').value.trim();
 
-            if (!message) {
-                alert('Please enter a message before submitting feedback.');
+            if (!name || !service || !comments) {
+                alert('Please complete the required feedback fields before submitting.');
                 return;
             }
 
@@ -528,16 +541,18 @@
                 submitButton.textContent = 'Sending...';
             }
 
-            fetch('api/public-feedback', {
+            fetch('api/feedback/submit_feedback.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json'
                 },
                 body: JSON.stringify({
-                    name: name || null,
-                    email: email || null,
-                    message
+                    name,
+                    booking_id: bookingId || null,
+                    service,
+                    rating,
+                    comments
                 })
             })
                 .then(async response => {
@@ -548,6 +563,7 @@
 
                     alert(payload.message || 'Thank you for your feedback!');
                     form.reset();
+                    setFeedbackRating(5);
                     toggleModal('feedbackModal');
                 })
                 .catch(error => {
@@ -561,4 +577,5 @@
                 });
         }
 
+            window.setFeedbackRating = setFeedbackRating;
         window.submitCustomerFeedback = submitCustomerFeedback;

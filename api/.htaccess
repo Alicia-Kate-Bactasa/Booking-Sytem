@@ -1,3 +1,0 @@
-<Files "public-feedback">
-    SetHandler application/x-httpd-php
-</Files>
