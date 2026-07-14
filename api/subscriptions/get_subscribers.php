@@ -28,7 +28,7 @@ try {
                      p.proof_of_payment AS img
               FROM Subscription s
               JOIN Customer c ON s.customer_id = c.customer_id
-              JOIN User u ON c.user_id = u.user_id
+              JOIN User u ON c.customer_id = u.customer_id
               LEFT JOIN (
                   SELECT i1.subscription_id, p1.proof_of_payment
                   FROM Invoice i1

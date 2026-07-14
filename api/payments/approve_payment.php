@@ -101,7 +101,7 @@ try {
     // Fetch customer email and name (from User if subscriber, or directly from Customer if regular guest)
     $emailQuery = "SELECT COALESCE(u.email, c.email) AS email, c.full_name 
                    FROM Customer c
-                   LEFT JOIN User u ON c.user_id = u.user_id
+                   LEFT JOIN User u ON c.customer_id = u.customer_id
                    WHERE c.customer_id = :customer_id LIMIT 1";
     $emailStmt = $conn->prepare($emailQuery);
     $emailStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);

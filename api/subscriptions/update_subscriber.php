@@ -59,7 +59,7 @@ try {
     $subQuery = "SELECT s.subscription_id, s.customer_id, s.plan_status, u.email, c.full_name 
                  FROM Subscription s
                  JOIN Customer c ON s.customer_id = c.customer_id
-                 JOIN User u ON c.user_id = u.user_id
+                 JOIN User u ON c.customer_id = u.customer_id
                  WHERE u.email = :email LIMIT 1";
     $subStmt = $conn->prepare($subQuery);
     $subStmt->bindValue(':email', $email, PDO::PARAM_STR);

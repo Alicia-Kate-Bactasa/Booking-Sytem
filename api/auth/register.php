@@ -169,27 +169,27 @@ try {
         $counter++;
     }
 
-    // 2. Insert into User table
-    $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-    $userQuery = "INSERT INTO User (email, username, password, role) 
-                  VALUES (:email, :username, :password, 'Customer')";
-    $userStmt = $conn->prepare($userQuery);
-    $userStmt->bindValue(':email', $email, PDO::PARAM_STR);
-    $userStmt->bindValue(':username', $username, PDO::PARAM_STR);
-    $userStmt->bindValue(':password', $hashedPassword, PDO::PARAM_STR);
-    $userStmt->execute();
-    $user_id = (int)$conn->lastInsertId();
-
-    // 3. Insert into Customer table
-    $customerQuery = "INSERT INTO Customer (user_id, full_name, phone_number, customer_type) 
-                      VALUES (:user_id, :full_name, :phone_number, :customer_type)";
+    // 2. Insert into Customer table
+    $customerQuery = "INSERT INTO Customer (full_name, phone_number, customer_type) 
+                      VALUES (:full_name, :phone_number, :customer_type)";
     $customerStmt = $conn->prepare($customerQuery);
-    $customerStmt->bindValue(':user_id', $user_id, PDO::PARAM_INT);
     $customerStmt->bindValue(':full_name', $name, PDO::PARAM_STR);
     $customerStmt->bindValue(':phone_number', 'N/A', PDO::PARAM_STR);
     $customerStmt->bindValue(':customer_type', 'Regular', PDO::PARAM_STR);
     $customerStmt->execute();
     $customer_id = (int)$conn->lastInsertId();
+
+    // 3. Insert into User table
+    $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+    $userQuery = "INSERT INTO User (customer_id, email, username, password, role) 
+                  VALUES (:customer_id, :email, :username, :password, 'Customer')";
+    $userStmt = $conn->prepare($userQuery);
+    $userStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+    $userStmt->bindValue(':email', $email, PDO::PARAM_STR);
+    $userStmt->bindValue(':username', $username, PDO::PARAM_STR);
+    $userStmt->bindValue(':password', $hashedPassword, PDO::PARAM_STR);
+    $userStmt->execute();
+    $user_id = (int)$conn->lastInsertId();
 
     // 4. Insert into Subscription table
     $subscriptionQuery = "INSERT INTO Subscription (customer_id, plan_tier, plan_status, last_billing_date, next_billing_date) 

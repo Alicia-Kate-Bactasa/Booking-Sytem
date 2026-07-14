@@ -44,7 +44,7 @@ try {
                         p.payment_id, p.payment_method, p.payment_status, p.proof_of_payment
                  FROM Subscription s
                  JOIN Customer c ON s.customer_id = c.customer_id
-                 JOIN User u ON c.user_id = u.user_id
+                 JOIN User u ON c.customer_id = u.customer_id
                  JOIN Invoice i ON s.subscription_id = i.subscription_id
                  JOIN Payment p ON i.invoice_id = p.invoice_id
                  WHERE p.payment_status = 'Pending Approval'
@@ -60,7 +60,7 @@ try {
                           c.full_name, u.email
                    FROM Subscription s
                    JOIN Customer c ON s.customer_id = c.customer_id
-                   JOIN User u ON c.user_id = u.user_id
+                   JOIN User u ON c.customer_id = u.customer_id
                    WHERE s.plan_status = 'Active'
                      AND s.next_billing_date < CURRENT_DATE()";
     $alertStmt = $conn->prepare($alertQuery);

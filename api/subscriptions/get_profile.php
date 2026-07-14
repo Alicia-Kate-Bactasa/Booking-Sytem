@@ -50,7 +50,7 @@ try {
     $query = "SELECT s.subscription_id AS subscriber_id, s.customer_id, u.email, s.plan_tier, s.plan_status, s.last_billing_date, s.next_billing_date, c.full_name 
               FROM Subscription s
               JOIN Customer c ON s.customer_id = c.customer_id
-              JOIN User u ON c.user_id = u.user_id
+              JOIN User u ON c.customer_id = u.customer_id
               WHERE {$whereClause} 
               LIMIT 1";
               

@@ -53,7 +53,7 @@ try {
     // ------------------------------------------------------------------
     // STEP 1: Query User Table
     // ------------------------------------------------------------------
-    $userQuery = "SELECT user_id, email, username, password, role 
+    $userQuery = "SELECT user_id, customer_id, email, username, password, role 
                   FROM User 
                   WHERE username = :username_input OR email = :email_input 
                   LIMIT 1";
@@ -93,10 +93,10 @@ try {
                 // Fetch associated Customer record
                 $customerQuery = "SELECT customer_id, full_name, phone_number, customer_type 
                                   FROM Customer 
-                                  WHERE user_id = :user_id 
+                                  WHERE customer_id = :customer_id 
                                   LIMIT 1";
                 $customerStmt = $conn->prepare($customerQuery);
-                $customerStmt->bindValue(':user_id', $user['user_id'], PDO::PARAM_INT);
+                $customerStmt->bindValue(':customer_id', $user['customer_id'], PDO::PARAM_INT);
                 $customerStmt->execute();
                 $customer = $customerStmt->fetch();
 

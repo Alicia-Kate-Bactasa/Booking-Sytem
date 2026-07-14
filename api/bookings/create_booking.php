@@ -65,8 +65,8 @@ try {
     // Start transaction
     $conn->beginTransaction();
 
-    // 1. Retrieve the service price and duration
-    $serviceQuery = "SELECT service_price, service_duration FROM Service WHERE service_id = :service_id LIMIT 1";
+    // 1. Retrieve the service price, duration and name
+    $serviceQuery = "SELECT service_name, service_price, service_duration FROM Service WHERE service_id = :service_id LIMIT 1";
     $serviceStmt = $conn->prepare($serviceQuery);
     $serviceStmt->bindValue(':service_id', $service_id, PDO::PARAM_INT);
     $serviceStmt->execute();
@@ -163,12 +163,16 @@ try {
         }
     }
 
-    // 3. Check customer type to see if they are a subscriber or regular guest
-    $custQuery = "SELECT customer_type FROM Customer WHERE customer_id = :customer_id LIMIT 1";
+    // 3. Check customer type and details to see if they are a subscriber or regular guest
+    $custQuery = "SELECT c.customer_type, c.full_name, COALESCE(u.email, c.email) AS email
+                  FROM Customer c
+                  LEFT JOIN User u ON c.customer_id = u.customer_id
+                  WHERE c.customer_id = :customer_id LIMIT 1";
     $custStmt = $conn->prepare($custQuery);
     $custStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
     $custStmt->execute();
-    $customer = $custStmt->fetch();
+    $customerInfo = $custStmt->fetch();
+    $customer = $customerInfo;
 
     $invoice_id = null;
     $booking_status = 'Pending';
@@ -224,6 +228,63 @@ try {
         // Log transaction in System_Logs
         log_system_event($conn, 'Booking Created', "Booking ID {$booking_id} created for Customer ID {$customer_id}. Status: {$booking_status}. Linked Invoice ID: {$invoice_id}.");
         $conn->commit();
+
+        // Send booking confirmation email to client
+        if ($customerInfo && !empty($customerInfo['email']) && filter_var($customerInfo['email'], FILTER_VALIDATE_EMAIL)) {
+            require_once __DIR__ . '/../utils/mailer.php';
+            $clientEmail = $customerInfo['email'];
+            $fullName = $customerInfo['full_name'];
+            $subject = "Booking Received - Montage Auto Studio";
+            
+            // Build confirmation message based on status
+            if ($booking_status === 'Pending') {
+                // For subscribers (free)
+                $statusDetail = "<p style='background-color: #f4fbf7; border-left: 3px solid #27ae60; padding: 12px; color: #27ae60;'>Your booking is scheduled and <strong>Pending</strong>. Since this is covered by your VIP subscription, no extra payment is required. We look forward to servicing your vehicle!</p>";
+            } else {
+                // For regular customers (payment pending)
+                $statusDetail = "<p style='background-color: #fef9e7; border-left: 3px solid #f39c12; padding: 12px; color: #d35400;'>Your booking is <strong>Pending Verification</strong>. Please ensure you have uploaded your GCash payment proof in your dashboard to secure your slot.</p>";
+            }
+
+            $htmlContent = "
+                <div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 25px; border: 1px solid #eee; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.03);'>
+                    <div style='text-align: center; margin-bottom: 20px;'>
+                        <span style='font-size: 9px; font-weight: bold; letter-spacing: 2px; color: #999; text-transform: uppercase;'>Montage Auto Studio</span>
+                        <h2 style='color: #111; margin-top: 5px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px;'>Booking Request Received</h2>
+                    </div>
+                    <p>Hello <strong>{$fullName}</strong>,</p>
+                    <p>We have received your booking request for the following detailing session:</p>
+                    <div style='background-color: #f9f9f9; padding: 15px; border-radius: 10px; margin-bottom: 20px;'>
+                        <table style='width: 100%; font-size: 14px;'>
+                            <tr>
+                                <td style='padding: 5px 0; color: #666;'><strong>Service:</strong></td>
+                                <td style='padding: 5px 0; color: #111;'>{$service['service_name']}</td>
+                            </tr>
+                            <tr>
+                                <td style='padding: 5px 0; color: #666;'><strong>Date:</strong></td>
+                                <td style='padding: 5px 0; color: #111;'>{$scheduled_date}</td>
+                            </tr>
+                            <tr>
+                                <td style='padding: 5px 0; color: #666;'><strong>Time Slot:</strong></td>
+                                <td style='padding: 5px 0; color: #111;'>{$time_slot}</td>
+                            </tr>
+                            <tr>
+                                <td style='padding: 5px 0; color: #666;'><strong>Bay:</strong></td>
+                                <td style='padding: 5px 0; color: #111;'>{$bay_number}</td>
+                            </tr>
+                            <tr>
+                                <td style='padding: 5px 0; color: #666;'><strong>Price:</strong></td>
+                                <td style='padding: 5px 0; color: #111;'>₱" . number_format($purchased_price, 2) . "</td>
+                            </tr>
+                        </table>
+                    </div>
+                    {$statusDetail}
+                    <hr style='border: none; border-top: 1px solid #eee; margin: 25px 0;'>
+                    <p style='font-size: 11px; color: #888; text-align: center;'>If you have any questions, reach us at support@montageautostudio.com</p>
+                </div>
+            ";
+            Mailer::send($clientEmail, $subject, $htmlContent);
+        }
+
         // === SECTION: SUCCESS RESPONSE ===
         http_response_code(201);
         echo json_encode([
