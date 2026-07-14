@@ -68,16 +68,16 @@ try {
         exit();
     }
 
-    $customer_id = (int)$profile['customer_id'];
+    $subscription_id = (int)$profile['subscriber_id'];
     
     // Check if a pending invoice exists of type 'Monthly Roster' and status 'Pending'
     $pendingInvoiceQuery = "SELECT invoice_id FROM Invoice 
-                            WHERE customer_id = :customer_id 
+                            WHERE subscription_id = :subscription_id 
                               AND invoice_type = 'Monthly Roster'
                               AND invoice_status = 'Pending'
                             LIMIT 1";
     $pendingInvoiceStmt = $conn->prepare($pendingInvoiceQuery);
-    $pendingInvoiceStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+    $pendingInvoiceStmt->bindValue(':subscription_id', $subscription_id, PDO::PARAM_INT);
     $pendingInvoiceStmt->execute();
     $hasPendingInvoice = (bool)$pendingInvoiceStmt->fetch();
 

@@ -20,10 +20,11 @@ try {
 
     // 1. Guard against duplicate proof submissions / spam:
     // Check if there is already a Pending Monthly Roster invoice for this customer
-    $pendingInvoiceQuery = "SELECT invoice_id FROM Invoice 
-                            WHERE customer_id = :customer_id 
-                              AND invoice_type = 'Monthly Roster'
-                              AND invoice_status = 'Pending'
+    $pendingInvoiceQuery = "SELECT i.invoice_id FROM Invoice i
+                            JOIN Subscription s ON i.subscription_id = s.subscription_id
+                            WHERE s.customer_id = :customer_id 
+                              AND i.invoice_type = 'Monthly Roster'
+                              AND i.invoice_status = 'Pending'
                             LIMIT 1";
     $pendingInvoiceStmt = $conn->prepare($pendingInvoiceQuery);
     $pendingInvoiceStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
@@ -39,7 +40,7 @@ try {
 
     // 2. Guard against double payment within the active billing cycle:
     // Check if the subscription is already prepaid (last_billing_date is in the future)
-    $subQuery = "SELECT last_billing_date, plan_status FROM Subscription WHERE customer_id = :customer_id LIMIT 1";
+    $subQuery = "SELECT subscription_id, last_billing_date, plan_status FROM Subscription WHERE customer_id = :customer_id LIMIT 1";
     $subStmt = $conn->prepare($subQuery);
     $subStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
     $subStmt->execute();
@@ -136,11 +137,13 @@ try {
     // Start transaction
     $conn->beginTransaction();
 
+    $subscription_id = $sub ? (int)$sub['subscription_id'] : null;
+
     // Create a new Invoice of type 'Monthly Roster'
-    $invoiceQuery = "INSERT INTO Invoice (customer_id, total_amount, invoice_type, invoice_status) 
-                     VALUES (:customer_id, 1500.00, 'Monthly Roster', 'Pending')";
+    $invoiceQuery = "INSERT INTO Invoice (subscription_id, total_amount, invoice_type, invoice_status) 
+                     VALUES (:subscription_id, 1500.00, 'Monthly Roster', 'Pending')";
     $invoiceStmt = $conn->prepare($invoiceQuery);
-    $invoiceStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+    $invoiceStmt->bindValue(':subscription_id', $subscription_id, $subscription_id === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
     $invoiceStmt->execute();
     $invoice_id = (int)$conn->lastInsertId();
 

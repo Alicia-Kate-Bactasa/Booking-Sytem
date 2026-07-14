@@ -30,17 +30,17 @@ try {
               JOIN Customer c ON s.customer_id = c.customer_id
               JOIN User u ON c.user_id = u.user_id
               LEFT JOIN (
-                  SELECT i1.customer_id, p1.proof_of_payment
+                  SELECT i1.subscription_id, p1.proof_of_payment
                   FROM Invoice i1
                   JOIN Payment p1 ON i1.invoice_id = p1.invoice_id
                   WHERE i1.invoice_type = 'Monthly Roster'
                     AND i1.invoice_id = (
                         SELECT MAX(invoice_id) 
                         FROM Invoice 
-                        WHERE customer_id = i1.customer_id 
+                        WHERE subscription_id = i1.subscription_id 
                           AND invoice_type = 'Monthly Roster'
                     )
-              ) p ON c.customer_id = p.customer_id
+              ) p ON s.subscription_id = p.subscription_id
               WHERE s.plan_status != 'Payment Pending'
               ORDER BY s.subscription_id DESC";
               

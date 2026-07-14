@@ -244,10 +244,9 @@ try {
     $customer_id = (int)$conn->lastInsertId();
 
     // 4. Create Invoice
-    $invoiceQuery = "INSERT INTO Invoice (customer_id, total_amount, invoice_type, invoice_status) 
-                     VALUES (:customer_id, :total_amount, 'Single Detailing', 'Pending')";
+    $invoiceQuery = "INSERT INTO Invoice (subscription_id, total_amount, invoice_type, invoice_status) 
+                     VALUES (NULL, :total_amount, 'Single Detailing', 'Pending')";
     $invoiceStmt = $conn->prepare($invoiceQuery);
-    $invoiceStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
     $invoiceStmt->bindValue(':total_amount', $purchased_price, PDO::PARAM_STR);
     $invoiceStmt->execute();
     $invoice_id = (int)$conn->lastInsertId();

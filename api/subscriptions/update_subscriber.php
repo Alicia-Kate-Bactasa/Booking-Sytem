@@ -123,8 +123,9 @@ try {
         // Update Payment status to 'Paid'
         $updatePay = "UPDATE Payment p
                       JOIN Invoice i ON p.invoice_id = i.invoice_id
+                      JOIN Subscription s ON i.subscription_id = s.subscription_id
                       SET p.payment_status = 'Paid'
-                      WHERE i.customer_id = :customer_id
+                      WHERE s.customer_id = :customer_id
                         AND i.invoice_type = 'Monthly Roster'
                         AND p.payment_status = 'Pending Approval'";
         $stmtPay = $conn->prepare($updatePay);
@@ -132,11 +133,12 @@ try {
         $stmtPay->execute();
 
         // Update Invoice status to 'Paid'
-        $updateInv = "UPDATE Invoice 
-                      SET invoice_status = 'Paid' 
-                      WHERE customer_id = :customer_id 
-                        AND invoice_type = 'Monthly Roster'
-                        AND invoice_status = 'Pending'";
+        $updateInv = "UPDATE Invoice i
+                      JOIN Subscription s ON i.subscription_id = s.subscription_id
+                      SET i.invoice_status = 'Paid' 
+                      WHERE s.customer_id = :customer_id 
+                        AND i.invoice_type = 'Monthly Roster'
+                        AND i.invoice_status = 'Pending'";
         $stmtInv = $conn->prepare($updateInv);
         $stmtInv->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
         $stmtInv->execute();
@@ -201,8 +203,9 @@ try {
         // Update Payment status to 'Rejected'
         $updatePay = "UPDATE Payment p
                       JOIN Invoice i ON p.invoice_id = i.invoice_id
+                      JOIN Subscription s ON i.subscription_id = s.subscription_id
                       SET p.payment_status = 'Rejected'
-                      WHERE i.customer_id = :customer_id
+                      WHERE s.customer_id = :customer_id
                         AND i.invoice_type = 'Monthly Roster'
                         AND p.payment_status = 'Pending Approval'";
         $stmtPay = $conn->prepare($updatePay);

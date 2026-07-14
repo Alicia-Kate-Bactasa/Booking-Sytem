@@ -174,22 +174,29 @@ try {
     $booking_status = 'Pending';
 
     if ($customer && $customer['customer_type'] === 'Subscriber') {
+        // Fetch active subscription ID
+        $subIdQuery = "SELECT subscription_id FROM Subscription WHERE customer_id = :customer_id AND plan_status = 'Active' LIMIT 1";
+        $subIdStmt = $conn->prepare($subIdQuery);
+        $subIdStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+        $subIdStmt->execute();
+        $subData = $subIdStmt->fetch();
+        $subscription_id = $subData ? (int)$subData['subscription_id'] : null;
+
         // Zero-Value Invoices: To maintain a complete activity ledger, every booking generates an Invoice row
         // For subscribers: total_amount is 0.00; invoice_status is marked 'Paid'
-        $invoiceQuery = "INSERT INTO Invoice (customer_id, total_amount, invoice_type, invoice_status) 
-                         VALUES (:customer_id, 0.00, 'Single Detailing', 'Paid')";
+        $invoiceQuery = "INSERT INTO Invoice (subscription_id, total_amount, invoice_type, invoice_status) 
+                         VALUES (:subscription_id, 0.00, 'Single Detailing', 'Paid')";
         $invoiceStmt = $conn->prepare($invoiceQuery);
-        $invoiceStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+        $invoiceStmt->bindValue(':subscription_id', $subscription_id, $subscription_id === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
         $invoiceStmt->execute();
         $invoice_id = (int)$conn->lastInsertId();
         
         $booking_status = 'Pending'; // Straight to Pending
     } else {
         // Create a standard Pending Invoice for walk-in/regular customer
-        $invoiceQuery = "INSERT INTO Invoice (customer_id, total_amount, invoice_type, invoice_status) 
-                         VALUES (:customer_id, :total_amount, 'Single Detailing', 'Pending')";
+        $invoiceQuery = "INSERT INTO Invoice (subscription_id, total_amount, invoice_type, invoice_status) 
+                         VALUES (NULL, :total_amount, 'Single Detailing', 'Pending')";
         $invoiceStmt = $conn->prepare($invoiceQuery);
-        $invoiceStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
         $invoiceStmt->bindValue(':total_amount', $purchased_price, PDO::PARAM_STR);
         $invoiceStmt->execute();
         $invoice_id = (int)$conn->lastInsertId();

@@ -30,7 +30,8 @@ try {
                      p.payment_status, 
                      p.proof_of_payment AS img
               FROM Invoice i
-              JOIN Customer c ON i.customer_id = c.customer_id
+              JOIN Booking b ON i.invoice_id = b.invoice_id
+              JOIN Customer c ON b.customer_id = c.customer_id
               LEFT JOIN Payment p ON i.invoice_id = p.invoice_id
               WHERE i.invoice_type = 'Single Detailing' AND i.total_amount > 0.00
               ORDER BY i.issued_at DESC";

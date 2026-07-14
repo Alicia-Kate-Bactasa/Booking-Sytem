@@ -45,7 +45,7 @@ try {
                  FROM Subscription s
                  JOIN Customer c ON s.customer_id = c.customer_id
                  JOIN User u ON c.user_id = u.user_id
-                 JOIN Invoice i ON c.customer_id = i.customer_id
+                 JOIN Invoice i ON s.subscription_id = i.subscription_id
                  JOIN Payment p ON i.invoice_id = p.invoice_id
                  WHERE p.payment_status = 'Pending Approval'
                    AND s.plan_status = 'Payment Pending'

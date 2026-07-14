@@ -74,7 +74,13 @@ try {
     $conn->beginTransaction();
 
     // 2. Fetch Invoice details
-    $invQuery = "SELECT customer_id, total_amount, invoice_type FROM Invoice WHERE invoice_id = :invoice_id LIMIT 1";
+    $invQuery = "SELECT COALESCE(s.customer_id, b.customer_id) AS customer_id, 
+                        i.total_amount, 
+                        i.invoice_type 
+                 FROM Invoice i
+                 LEFT JOIN Subscription s ON i.subscription_id = s.subscription_id
+                 LEFT JOIN Booking b ON i.invoice_id = b.invoice_id
+                 WHERE i.invoice_id = :invoice_id LIMIT 1";
     $invStmt = $conn->prepare($invQuery);
     $invStmt->bindValue(':invoice_id', $invoice_id, PDO::PARAM_INT);
     $invStmt->execute();

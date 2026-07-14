@@ -7,7 +7,7 @@ try {
 
     // 1. Fetch Monthly Roster invoices (subscriber payments)
     $rosterQuery = "SELECT i.invoice_id, 
-                           i.customer_id,
+                           s.customer_id,
                            i.total_amount AS total, 
                            i.invoice_status AS status, 
                            i.issued_at AS date,
@@ -16,7 +16,8 @@ try {
                            p.payment_status, 
                            p.proof_of_payment AS img
                     FROM Invoice i
-                    JOIN Customer c ON i.customer_id = c.customer_id
+                    JOIN Subscription s ON i.subscription_id = s.subscription_id
+                    JOIN Customer c ON s.customer_id = c.customer_id
                     LEFT JOIN Payment p ON i.invoice_id = p.invoice_id
                     WHERE i.invoice_type = 'Monthly Roster'
                     ORDER BY i.issued_at DESC";
@@ -31,7 +32,7 @@ try {
     foreach ($rosters as $r) {
         $cid = (int)$r['customer_id'];
         // Check if there are older Monthly Roster invoices for this customer
-        $countQuery = "SELECT COUNT(*) FROM Invoice WHERE customer_id = :customer_id AND invoice_type = 'Monthly Roster' AND invoice_id < :invoice_id";
+        $countQuery = "SELECT COUNT(*) FROM Invoice i JOIN Subscription s ON i.subscription_id = s.subscription_id WHERE s.customer_id = :customer_id AND i.invoice_type = 'Monthly Roster' AND i.invoice_id < :invoice_id";
         $countStmt = $conn->prepare($countQuery);
         $countStmt->bindValue(':customer_id', $cid, PDO::PARAM_INT);
         $countStmt->bindValue(':invoice_id', (int)$r['invoice_id'], PDO::PARAM_INT);
@@ -64,8 +65,8 @@ try {
                          c.full_name AS client,
                          s.service_name
                   FROM Invoice i
-                  JOIN Customer c ON i.customer_id = c.customer_id
                   JOIN Booking b ON i.invoice_id = b.invoice_id
+                  JOIN Customer c ON b.customer_id = c.customer_id
                   JOIN Service s ON b.service_id = s.service_id
                   WHERE i.invoice_type = 'Single Detailing' 
                     AND i.total_amount = 0.00

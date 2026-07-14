@@ -200,10 +200,10 @@ try {
     $subscription_id = (int)$conn->lastInsertId();
 
     // 5. Insert into Invoice table (Subscription registration fee 1500 PHP)
-    $invoiceQuery = "INSERT INTO Invoice (customer_id, total_amount, invoice_type, invoice_status) 
-                     VALUES (:customer_id, 1500, 'Monthly Roster', 'Pending')";
+    $invoiceQuery = "INSERT INTO Invoice (subscription_id, total_amount, invoice_type, invoice_status) 
+                     VALUES (:subscription_id, 1500, 'Monthly Roster', 'Pending')";
     $invoiceStmt = $conn->prepare($invoiceQuery);
-    $invoiceStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+    $invoiceStmt->bindValue(':subscription_id', $subscription_id, PDO::PARAM_INT);
     $invoiceStmt->execute();
     $invoice_id = (int)$conn->lastInsertId();
 
