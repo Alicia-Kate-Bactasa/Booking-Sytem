@@ -369,28 +369,12 @@
             </div>
             <form id="feedbackForm" onsubmit="submitCustomerFeedback(event)" class="space-y-4">
                 <div>
-                    <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1.5">Your Name</label>
-                    <input type="text" id="feedbackName" required class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-semibold focus:outline-none focus:border-dark px-5">
-                </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1.5">Booking ID (Optional)</label>
-                        <input type="text" id="feedbackBookingId" placeholder="MTG-XXXXXX" class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-semibold focus:outline-none focus:border-dark px-5">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1.5">Service</label>
-                        <select id="feedbackService" required class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-semibold focus:outline-none focus:border-dark px-5 cursor-pointer">
-                            <option value="Standard Car Wash">Standard Car Wash</option>
-                            <option value="Deluxe Car Wash">Deluxe Car Wash</option>
-                            <option value="Premium Car Wash">Premium Car Wash</option>
-                            <option value="Under Chassis Wash">Under Chassis Wash</option>
-                            <option value="Complete Interior Detailing">Complete Detailing</option>
-                        </select>
-                    </div>
+                    <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1.5">Name (Optional)</label>
+                    <input type="text" id="feedbackName" placeholder="Your name" class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-semibold focus:outline-none focus:border-dark px-5">
                 </div>
 
                 <div>
+<<<<<<< HEAD
                     <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1.5">Rating (1 to 5 Stars)</label>
                     <div class="flex items-center space-x-3 bg-neutral-50 border border-neutral-200 p-3.5 rounded-full justify-center">
                         <button type="button" onclick="setFeedbackRating(1)" class="rating-star text-amber-500 text-lg hover:scale-110 transition-transform">★</button>
@@ -400,14 +384,18 @@
                         <button type="button" onclick="setFeedbackRating(5)" class="rating-star text-amber-500 text-lg hover:scale-110 transition-transform">★</button>
                     </div>
                     <input type="hidden" id="feedbackRating" value="5" required>
+=======
+                    <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1.5">Email (Optional)</label>
+                    <input type="email" id="feedbackEmail" placeholder="you@example.com" class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-semibold focus:outline-none focus:border-dark px-5">
+>>>>>>> 8ef65fb (Add public feedback submission flow)
                 </div>
 
                 <div>
-                    <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1.5">Comments</label>
-                    <textarea id="feedbackComments" required placeholder="Write your review here..." class="w-full bg-neutral-50 border border-neutral-200 p-4 rounded-[1.5rem] text-xs font-medium focus:outline-none focus:border-dark h-24 resize-none"></textarea>
+                    <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1.5">Message</label>
+                    <textarea id="feedbackMessage" required placeholder="Tell us what you think..." class="w-full bg-neutral-50 border border-neutral-200 p-4 rounded-[1.5rem] text-xs font-medium focus:outline-none focus:border-dark h-28 resize-none"></textarea>
                 </div>
 
-                <button type="submit" class="w-full bg-dark text-light text-xs font-bold tracking-widest uppercase py-3.5 rounded-full border border-dark hover:bg-neutral-800 shadow-sm transition-all focus:outline-none">Submit Feedback</button>
+                <button type="submit" class="w-full bg-dark text-light text-xs font-bold tracking-widest uppercase py-3.5 rounded-full border border-dark hover:bg-neutral-800 shadow-sm transition-all focus:outline-none">Send Feedback</button>
             </form>
         </div>
     </div>

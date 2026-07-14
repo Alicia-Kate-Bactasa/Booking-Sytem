@@ -507,75 +507,58 @@
         let activeRating = 4;
         function setFeedbackRating(score) {
             activeRating = score;
-            const hiddenInput = document.getElementById('feedbackRating');
-            if (hiddenInput) hiddenInput.value = score;
-            
-            const stars = document.querySelectorAll('.rating-star');
-            stars.forEach((star, index) => {
-                if (index < score) {
-                    star.className = "rating-star text-amber-500 text-lg hover:scale-110 transition-transform focus:outline-none";
-                } else {
-                    star.className = "rating-star text-neutral-300 text-lg hover:scale-110 transition-transform focus:outline-none";
-                }
-            });
         }
 
-        async function submitCustomerFeedback(event) {
+        function submitCustomerFeedback(event) {
             event.preventDefault();
-            const rating = parseInt(document.querySelector('input[name="rating"]:checked')?.value || '5', 10);
-            const comments = document.getElementById('feedbackComments').value.trim();
-            const client = document.getElementById('feedbackClient').value.trim();
-            const booking_id_raw = document.getElementById('feedbackBookingId').value.trim();
 
-            if (!comments || !client || !booking_id_raw) {
-                await showErrorModal('All fields are required.');
+            const form = event.target;
+            const submitButton = form.querySelector('button[type="submit"]');
+            const name = document.getElementById('feedbackName').value.trim();
+            const email = document.getElementById('feedbackEmail').value.trim();
+            const message = document.getElementById('feedbackMessage').value.trim();
+
+            if (!message) {
+                alert('Please enter a message before submitting feedback.');
                 return;
             }
 
-            try {
-                const res = await fetch('api/feedback/create_feedback.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        client: client,
-                        booking_id: booking_id_raw,
-                        rating: rating,
-                        comments: comments
-                    })
-                });
-
-                if (res.status === 401 || res.status === 403) {
-                    await showErrorModal('You must be logged in as a subscriber to leave feedback.');
-                    toggleModal('feedbackModal');
-                    toggleModal('loginModal');
-                    return;
-                }
-
-                const data = await res.json();
-                if (!res.ok) {
-                    throw new Error(data.message || 'Failed to submit feedback');
-                }
-
-                await alert(data.data?.message || 'Thank you! Your feedback has been submitted successfully.');
-                
-                // Store in localStorage for backward compatibility or local display
-                const service = document.getElementById('feedbackService').value;
-                const feedbacks = JSON.parse(localStorage.getItem('montage_feedbacks') || '[]');
-                feedbacks.unshift({ client, booking_id: booking_id_raw, service, rating, comments });
-                localStorage.setItem('montage_feedbacks', JSON.stringify(feedbacks));
-
-                // Reset and close
-                document.getElementById('feedbackForm').reset();
-                setFeedbackRating(5); // Reset to 5 stars default
-                toggleModal('feedbackModal');
-            } catch (err) {
-                if (err && err.message) {
-                    await showErrorModal(err.message);
-                }
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.textContent = 'Sending...';
             }
+
+            fetch('api/public-feedback', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    name: name || null,
+                    email: email || null,
+                    message
+                })
+            })
+                .then(async response => {
+                    const payload = await response.json().catch(() => ({}));
+                    if (!response.ok) {
+                        throw new Error(payload.message || 'Unable to submit feedback right now.');
+                    }
+
+                    alert(payload.message || 'Thank you for your feedback!');
+                    form.reset();
+                    toggleModal('feedbackModal');
+                })
+                .catch(error => {
+                    alert(error.message || 'Unable to submit feedback right now.');
+                })
+                .finally(() => {
+                    if (submitButton) {
+                        submitButton.disabled = false;
+                        submitButton.textContent = 'Send Feedback';
+                    }
+                });
         }
 
-        window.setFeedbackRating = setFeedbackRating;
         window.submitCustomerFeedback = submitCustomerFeedback;
