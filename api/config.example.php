@@ -80,7 +80,7 @@ try {
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
     $conn->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
-} catch (PDOException $exception) {
+} catch (P and whDOException $exception) {
     error_log("Database connection failed: " . $exception->getMessage());
     http_response_code(500);
     echo json_encode([
