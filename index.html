@@ -317,7 +317,10 @@
             <form onsubmit="handleRegistrationStep(event)" class="space-y-4">
                 <input type="text" id="subRegName" placeholder="Full Name" required class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-medium px-5 focus:outline-none focus:border-dark">
                 <input type="email" id="subRegEmail" placeholder="Primary Email Address" required class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-medium px-5 focus:outline-none focus:border-dark">
-                <input type="password" id="subRegPassword" placeholder="Password" required class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-medium px-5 focus:outline-none focus:border-dark">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <input type="password" id="subRegPassword" placeholder="Password" required class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-medium px-5 focus:outline-none focus:border-dark">
+                    <input type="password" id="subRegConfirmPassword" placeholder="Confirm Password" required class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-medium px-5 focus:outline-none focus:border-dark">
+                </div>
                 <button type="submit" class="w-full bg-dark text-light text-xs font-bold tracking-widest uppercase py-3.5 rounded-full shadow-sm">Continue to GCash Payment ➔</button>
             </form>
         </div>

@@ -8,6 +8,17 @@
 * safe UTF-8 encoding and throw exceptions on error.
 */
 
+// Authentication and input validation limits
+if (!defined('MAX_EMAIL_LENGTH')) {
+   define('MAX_EMAIL_LENGTH', 255);
+}
+if (!defined('MAX_USERNAME_LENGTH')) {
+   define('MAX_USERNAME_LENGTH', 40);
+}
+if (!defined('MAX_PASSWORD_LENGTH')) {
+   define('MAX_PASSWORD_LENGTH', 255);
+}
+
 // Establish CORS and JSON response headers supporting credentials
 if (isset($_SERVER['HTTP_ORIGIN'])) {
    header("Access-Control-Allow-Origin: " . $_SERVER['HTTP_ORIGIN']);

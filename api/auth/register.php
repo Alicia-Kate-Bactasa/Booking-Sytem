@@ -21,13 +21,50 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $name = isset($_POST['name']) ? trim($_POST['name']) : null;
 $email = isset($_POST['email']) ? trim($_POST['email']) : null;
 $password = isset($_POST['password']) ? $_POST['password'] : null;
+$confirmPassword = isset($_POST['confirm_password']) ? $_POST['confirm_password'] : null;
 
 // === SECTION: INPUT VALIDATION ===
-if (empty($name) || empty($email) || empty($password)) {
+if (empty($name) || empty($email) || empty($password) || empty($confirmPassword)) {
     http_response_code(400);
     echo json_encode([
         "status" => "error",
-        "message" => "Incomplete request. Name, email, and password are required fields."
+        "message" => "Incomplete request. Name, email, password, and confirm password are required fields."
+    ]);
+    exit();
+}
+
+if (strlen($email) > MAX_EMAIL_LENGTH) {
+    http_response_code(400);
+    echo json_encode([
+        "status" => "error",
+        "message" => "Email must not exceed " . MAX_EMAIL_LENGTH . " characters."
+    ]);
+    exit();
+}
+
+if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    http_response_code(400);
+    echo json_encode([
+        "status" => "error",
+        "message" => "Please provide a valid email address."
+    ]);
+    exit();
+}
+
+if (strlen($password) > MAX_PASSWORD_LENGTH) {
+    http_response_code(400);
+    echo json_encode([
+        "status" => "error",
+        "message" => "Password must not exceed " . MAX_PASSWORD_LENGTH . " characters."
+    ]);
+    exit();
+}
+
+if ($password !== $confirmPassword) {
+    http_response_code(400);
+    echo json_encode([
+        "status" => "error",
+        "message" => "Password and confirm password must match."
     ]);
     exit();
 }

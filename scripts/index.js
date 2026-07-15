@@ -311,6 +311,20 @@
 
         function handleRegistrationStep(event) {
             event.preventDefault();
+
+            const passwordVal = document.getElementById('subRegPassword').value;
+            const confirmPasswordVal = document.getElementById('subRegConfirmPassword').value;
+
+            if (!passwordVal || !confirmPasswordVal) {
+                showErrorModal('Please enter and confirm your password.');
+                return;
+            }
+
+            if (passwordVal !== confirmPasswordVal) {
+                showErrorModal('Passwords do not match. Please re-enter your password and confirmation.');
+                return;
+            }
+
             toggleModal('availSubModal');
             toggleModal('subPaymentModal');
         }
@@ -328,6 +342,17 @@
             const nameVal = document.getElementById('subRegName').value.trim();
             const emailVal = document.getElementById('subRegEmail').value.trim().toLowerCase();
             const passwordVal = document.getElementById('subRegPassword').value;
+            const confirmPasswordVal = document.getElementById('subRegConfirmPassword').value;
+
+            if (!passwordVal || !confirmPasswordVal) {
+                showErrorModal('Please enter and confirm your password.');
+                return;
+            }
+
+            if (passwordVal !== confirmPasswordVal) {
+                showErrorModal('Passwords do not match. Please re-enter your password and confirmation.');
+                return;
+            }
 
             // Show a submitting state or disable button
             const submitBtn = event.target.querySelector('button[type="submit"]');
@@ -342,6 +367,7 @@
             formData.append('name', nameVal);
             formData.append('email', emailVal);
             formData.append('password', passwordVal);
+            formData.append('confirm_password', confirmPasswordVal);
             formData.append('proof_of_payment', paymentProofFile);
 
 

@@ -48,6 +48,33 @@ if (empty($login_input) || empty($password)) {
     exit();
 }
 
+if (strlen($login_input) > MAX_USERNAME_LENGTH) {
+    http_response_code(400);
+    echo json_encode([
+        "status" => "error",
+        "message" => "Username/Email must not exceed " . MAX_USERNAME_LENGTH . " characters."
+    ]);
+    exit();
+}
+
+if (strlen($password) > MAX_PASSWORD_LENGTH) {
+    http_response_code(400);
+    echo json_encode([
+        "status" => "error",
+        "message" => "Password must not exceed " . MAX_PASSWORD_LENGTH . " characters."
+    ]);
+    exit();
+}
+
+if (strpos($login_input, '@') !== false && !filter_var($login_input, FILTER_VALIDATE_EMAIL)) {
+    http_response_code(400);
+    echo json_encode([
+        "status" => "error",
+        "message" => "Please provide a valid email address."
+    ]);
+    exit();
+}
+
 // === SECTION: DATABASE QUERY & AUTHENTICATION ===
 try {
     // ------------------------------------------------------------------
