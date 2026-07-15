@@ -1,4 +1,15 @@
 <?php
+/**
+ * File: api/bookings/reschedule_booking.php
+ * Purpose: Allows customers or administrators to update the scheduled date and time slot of an active booking.
+ * Input Params: JSON body (booking_id, new_date, new_slot, new_bay)
+ * Validation rules:
+ *   - The user session must be authenticated.
+ *   - The reschedule target date must be today or in the future (no rescheduling into past dates).
+ *   - The capacity limit for the target slot must not be exceeded.
+ * Output: JSON response indicating success or specific rescheduled slot validation error.
+ */
+
 header("Content-Type: application/json; charset=UTF-8");
 require_once '../config.php';
 
@@ -31,6 +42,15 @@ if (empty($booking_id) || empty($scheduled_date) || empty($time_slot)) {
     echo json_encode([
         "status" => "error",
         "message" => "Incomplete request. booking_id, scheduled_date, and time_slot are required."
+    ]);
+    exit();
+}
+
+if (strtotime($scheduled_date) < strtotime(date('Y-m-d'))) {
+    http_response_code(400);
+    echo json_encode([
+        "status" => "error",
+        "message" => "Reschedule date cannot be in the past."
     ]);
     exit();
 }

@@ -1,6 +1,10 @@
-// ===============================================
-//             dashboard.html script
-// ===============================================
+/**
+ * File: scripts/dashboard.js
+ * Purpose: Main logic handler for the subscriber dashboard (api/dashboard.php).
+ *          Fetches real-time member profile state, completed detailing booking history,
+ *          handles validations for reschedule requests, renewal payment receipt image uploads,
+ *          renders feedback star UI widgets, and runs the Pay button renewal state machine.
+ */
 
 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
@@ -10,7 +14,6 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
         */
         let currentAppointments = [];
         let historyAppointments = [];
-        let baseCompletedAppointmentsCount = 14;
         let selectedRescheduleId = null;
         let activeSubTabState = "active";
 
@@ -75,7 +78,7 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
         let userProfileSession = {
             name: "VIP Member",
             customer_type: "Subscriber",
-            next_billing_date: "July 15, 2026"
+            next_billing_date: ""
         };
 
           /* ===================== DASHBOARD MODAL UTILITIES =====================
@@ -204,7 +207,8 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                 });
             }
 
-            document.getElementById('subParamCount').innerText = `${baseCompletedAppointmentsCount + currentAppointments.length} Appointments Done`;
+            const completedCount = historyAppointments.filter(app => app.type === 'completed').length;
+            document.getElementById('subParamCount').innerText = `${completedCount} Appointments Done`;
         }
 
           /* ===================== DASHBOARD DROPDOWNS / SUMMARY =====================
@@ -375,8 +379,19 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
             const targetDate = document.getElementById('reschDate').value;
             const targetTime = document.getElementById('reschTime').value;
 
+            if (!targetDate) {
+                showErrorModal("Please select a reschedule date.");
+                return;
+            }
+
+            const todayStr = new Date().toISOString().split('T')[0];
+            if (targetDate < todayStr) {
+                showErrorModal("Reschedule date cannot be in the past.");
+                return;
+            }
+
             if (!targetTime) {
-                await alert("Please select another time slot from the list.");
+                showErrorModal("Please select another time slot from the list.");
                 return;
             }
 
@@ -405,7 +420,7 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                 const result = await response.json();
 
                 if (response.ok && result.status === 'success') {
-                    await alert(result.message || `Appointment rescheduled successfully.`);
+                    showErrorModal(result.message || `Appointment rescheduled successfully.`, true);
                     toggleModal('rescheduleModal');
                     
                     const activeProfileName = localStorage.getItem('subscriber_name') || 'VIP Member';
@@ -500,9 +515,19 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
             }
 
             const dateVal = document.getElementById('bookingDate').value;
+            if (!dateVal) {
+                showErrorModal("Please select a booking date.");
+                return;
+            }
+
+            const todayStr = new Date().toISOString().split('T')[0];
+            if (dateVal < todayStr) {
+                showErrorModal("Booking date cannot be in the past.");
+                return;
+            }
 
             if (!activeDashTimeState) {
-                await alert("Please select a booking time before confirming.");
+                showErrorModal("Please select a booking time before confirming.");
                 return;
             }
 
@@ -568,11 +593,25 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
             event.preventDefault();
             const fileCtrl = document.getElementById('renewalProofFile');
             if(!fileCtrl || fileCtrl.files.length === 0) {
-                await alert('Please upload your GCash renewal proof of payment.');
+                showErrorModal('Please upload your GCash renewal proof of payment.');
                 return;
             }
 
             const file = fileCtrl.files[0];
+
+            const allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+            const fileParts = file.name.split('.');
+            const fileExtension = fileParts[fileParts.length - 1].toLowerCase();
+            if (!allowedExtensions.includes(fileExtension)) {
+                showErrorModal('Invalid file extension. Only JPG, JPEG, PNG, GIF, and WEBP images are allowed.');
+                return;
+            }
+
+            const maxFileSize = 8 * 1024 * 1024; // 8MB
+            if (file.size > maxFileSize) {
+                showErrorModal('File size exceeds the allowable limit of 8MB.');
+                return;
+            }
             const submitBtn = event.target.querySelector('button[type="submit"]') || event.target.querySelector('button');
             const originalText = submitBtn ? submitBtn.innerText : '';
             if (submitBtn) {
@@ -605,7 +644,7 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                 const result = await response.json();
 
                 if (response.ok && result.status === 'success') {
-                    await alert("GCash renewal proof submitted! Your payment is pending admin approval.");
+                    showErrorModal("GCash renewal proof submitted! Your payment is pending admin approval.", true);
                     toggleModal('renewalHubModal');
                     fileCtrl.value = '';
                     syncProfileWithDatabase();
@@ -746,7 +785,7 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                 const approvedAccounts = JSON.parse(event.newValue || '[]');
                 const activeAccount = approvedAccounts.find(acc => acc.email && acc.email.toLowerCase() === (email || '').toLowerCase());
                 if (activeAccount) {
-                    userProfileSession.next_billing_date = activeAccount.next_billing_date || 'July 15, 2026';
+                    userProfileSession.next_billing_date = activeAccount.next_billing_date || 'Awaiting Payment Approval';
                     userProfileSession.customer_type = activeAccount.status === 'Verified' ? 'Subscriber' : 'Inactive Member';
                     const nextBillingEl = document.getElementById('subParamNextBilling');
                     if (nextBillingEl) nextBillingEl.innerText = userProfileSession.next_billing_date;
@@ -874,6 +913,23 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                             customerTypeEl.innerText = userProfileSession.customer_type;
                         }
 
+                        if (prof.created_at) {
+                            const createdAtEl = document.getElementById('subParamCreatedAt');
+                            if (createdAtEl) createdAtEl.innerText = prof.created_at;
+                        }
+                        if (prof.last_visit) {
+                            const lastVisitEl = document.getElementById('subParamLastVisit');
+                            if (lastVisitEl) lastVisitEl.innerText = prof.last_visit;
+                        }
+                        if (prof.last_billing_date) {
+                            const lastBillingEl = document.getElementById('subParamLastBilling');
+                            if (lastBillingEl) lastBillingEl.innerText = prof.last_billing_date;
+                        }
+                        if (prof.completed_sessions_count !== undefined) {
+                            const completedCountEl = document.getElementById('subParamCount');
+                            if (completedCountEl) completedCountEl.innerText = `${prof.completed_sessions_count} Appointments Done`;
+                        }
+
                         // Handle renewal button states dynamically via state-machine
                         updateRenewalButtonState(prof);
 
@@ -901,7 +957,7 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
             const activeAccount = approvedAccounts.find(acc => acc.email && acc.email.toLowerCase() === (email || '').toLowerCase());
 
             if (activeAccount) {
-                userProfileSession.next_billing_date = activeAccount.next_billing_date || 'July 15, 2026';
+                userProfileSession.next_billing_date = activeAccount.next_billing_date || 'Awaiting Payment Approval';
                 userProfileSession.customer_type = activeAccount.status === 'Verified' ? 'Subscriber' : 'Inactive Member';
             }
 
@@ -958,6 +1014,16 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
             const rating = parseInt(document.getElementById('feedbackRating').value) || 5;
             const comments = document.getElementById('feedbackComments').value.trim();
 
+            if (!comments) {
+                showErrorModal('Please enter your feedback comments.');
+                return;
+            }
+
+            if (comments.length > 1000) {
+                showErrorModal('Comments must not exceed 1000 characters.');
+                return;
+            }
+
             try {
                 const res = await fetch('feedback/submit_feedback.php', {
                     method: 'POST',
@@ -985,7 +1051,7 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                     throw new Error(data.message || 'Failed to submit feedback');
                 }
 
-                await alert(data.data?.message || 'Thank you! Your feedback has been submitted successfully.');
+                showErrorModal(data.data?.message || 'Thank you! Your feedback has been submitted successfully.', true);
                 
                 // Reset and close
                 document.getElementById('feedbackForm').reset();
@@ -1029,41 +1095,39 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
             const payBtn = document.getElementById('payRenewalBtn');
             if (!payBtn) return;
 
-            if (prof.plan_status === 'Active') {
-                if (prof.renewal_status === 'Payment Awaiting Approval') {
-                    payBtn.disabled = false; // Enabled so click is captured
-                    payBtn.innerText = "Payment awaiting admin approval.";
-                    payBtn.className = "w-full bg-neutral-200 text-neutral-400 text-xs font-bold py-4 rounded-full transition-all text-center cursor-pointer border border-neutral-300 focus:outline-none";
-                    payBtn.onclick = () => {
-                        showErrorModal("Payment awaiting admin approval.", true);
-                    };
-                } else if (prof.renewal_status === 'Locked') {
-                    payBtn.disabled = false; // Enabled so click is captured
-                    payBtn.innerText = "Pay Next Monthly Renewal";
-                    payBtn.className = "w-full bg-neutral-200 text-neutral-400 text-xs font-bold py-4 rounded-full transition-all text-center cursor-pointer border border-neutral-300 focus:outline-none";
-                    payBtn.onclick = () => {
-                        showErrorModal("Renewal is not yet available.", true);
-                    };
-                } else {
-                    payBtn.disabled = false;
-                    payBtn.innerText = "Pay Next Monthly Renewal";
-                    payBtn.className = "w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-4 rounded-full transition-all text-center shadow-sm focus:outline-none";
-                    payBtn.onclick = () => toggleModal('renewalHubModal');
-                }
+            if (prof.plan_status === 'Expired' || prof.plan_status === 'Inactive') {
+                payBtn.disabled = true;
+                payBtn.innerText = "Subscription Expired";
+                payBtn.removeAttribute('onclick');
+                payBtn.className = "w-full bg-neutral-200 text-neutral-400 text-xs font-bold py-4 rounded-full transition-all text-center cursor-not-allowed border border-neutral-300 focus:outline-none";
+                return;
+            }
+
+            if (prof.renewal_status === 'Awaiting Approval') {
+                payBtn.disabled = false; // Enabled styled as disabled so click can trigger modal
+                payBtn.innerText = "Payment Awaiting Approval";
+                payBtn.className = "w-full bg-neutral-200 text-neutral-400 text-xs font-bold py-4 rounded-full transition-all text-center cursor-not-allowed border border-neutral-300 focus:outline-none";
+                payBtn.onclick = () => {
+                    showErrorModal("Your renewal payment is currently awaiting administrator review.", true);
+                };
+            } else if (prof.renewal_status === 'Temporal Lock') {
+                payBtn.disabled = false; // Enabled styled as disabled so click can trigger modal
+                payBtn.innerText = "Next Month Already Paid";
+                payBtn.className = "w-full bg-neutral-200 text-neutral-400 text-xs font-bold py-4 rounded-full transition-all text-center cursor-not-allowed border border-neutral-300 focus:outline-none";
+                payBtn.onclick = () => {
+                    showErrorModal(`You have already prepaid for the upcoming cycle. The next renewal window opens on ${prof.last_billing_date_plus_1 || 'the start of the next cycle'}.`, true);
+                };
+            } else if (prof.renewal_status === 'Payment Rejected') {
+                payBtn.disabled = false;
+                payBtn.innerText = "Pay Next Monthly Renewal Bill";
+                payBtn.className = "w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-4 rounded-full transition-all text-center shadow-sm focus:outline-none";
+                payBtn.onclick = () => toggleModal('renewalHubModal');
             } else {
-                if (prof.plan_status === 'Payment Pending') {
-                    payBtn.disabled = false; // Enabled so click is captured
-                    payBtn.innerText = "Payment awaiting admin approval.";
-                    payBtn.className = "w-full bg-neutral-200 text-neutral-400 text-xs font-bold py-4 rounded-full transition-all text-center cursor-pointer border border-neutral-300 focus:outline-none";
-                    payBtn.onclick = () => {
-                        showErrorModal("Payment awaiting admin approval.", true);
-                    };
-                } else {
-                    payBtn.disabled = true;
-                    payBtn.innerText = "Subscription Expired";
-                    payBtn.removeAttribute('onclick');
-                    payBtn.className = "w-full bg-neutral-200 text-neutral-400 text-xs font-bold py-4 rounded-full transition-all text-center cursor-not-allowed border border-neutral-300 focus:outline-none";
-                }
+                // Active & Eligible to Pay
+                payBtn.disabled = false;
+                payBtn.innerText = "Pay Next Monthly Renewal Bill";
+                payBtn.className = "w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-4 rounded-full transition-all text-center shadow-sm focus:outline-none";
+                payBtn.onclick = () => toggleModal('renewalHubModal');
             }
         }
 

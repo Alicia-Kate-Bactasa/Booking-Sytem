@@ -1,4 +1,15 @@
 <?php
+/**
+ * File: api/subscriptions/update_subscriber.php
+ * Purpose: Allows administrators to verify, approve, or reject subscriber monthly roster payments or manually activate/expire accounts.
+ *          Extends plans appropriately (30 days from next billing date on early approvals) and sends HTML invoice emails.
+ * Input Params: JSON body (customer_id, status ['Approved', 'Rejected', 'Inactive'])
+ * Validation rules:
+ *   - User must be logged in as an Admin.
+ *   - The subscription and customer records must exist.
+ * Output: JSON response indicating success or specific validation error.
+ */
+
 // === SECTION: HEADER & CORS ===
 header("Content-Type: application/json; charset=UTF-8");
 

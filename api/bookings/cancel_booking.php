@@ -1,4 +1,14 @@
 <?php
+/**
+ * File: api/bookings/cancel_booking.php
+ * Purpose: Allows customers (subscribers) or administrators to cancel an upcoming booked detailing appointment.
+ * Input Params: JSON body (booking_id)
+ * Validation rules:
+ *   - The user session must be authenticated.
+ *   - Subscribers can only cancel their own bookings (ownership check).
+ * Output: JSON response indicating success or specific cancellation error.
+ */
+
 header("Content-Type: application/json; charset=UTF-8");
 require_once '../config.php';
 

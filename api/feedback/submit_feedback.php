@@ -1,4 +1,15 @@
 <?php
+/**
+ * File: api/feedback/submit_feedback.php
+ * Purpose: Inserts a new customer rating and feedback comment for a completed detailing session.
+ * Input Params: JSON body (name, booking_id, service, rating, comments)
+ * Validation rules:
+ *   - Fields must not be empty.
+ *   - The feedback comment length must be less than or equal to 1000 characters.
+ *   - The rating must be an integer between 1 and 5.
+ * Output: JSON response indicating success or specific validation error.
+ */
+
 // === SECTION: HEADER & CORS ===
 header("Content-Type: application/json; charset=UTF-8");
 
@@ -39,6 +50,15 @@ if ($rating === null) {
     echo json_encode([
         "status" => "error",
         "message" => "Incomplete request. rating is a required field."
+    ]);
+    exit();
+}
+
+if ($comments !== null && strlen($comments) > 1000) {
+    http_response_code(400);
+    echo json_encode([
+        "status" => "error",
+        "message" => "Comments must not exceed 1000 characters."
     ]);
     exit();
 }

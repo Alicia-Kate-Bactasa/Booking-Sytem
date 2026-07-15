@@ -1,10 +1,8 @@
 <?php
 /**
- * Database Configuration Template (Safe for GitHub Version Control)
- * * Instructions:
- * 1. Copy this template file and rename the copy to 'config.php'.
- * 2. Keep 'config.php' untracked by Git via your .gitignore settings.
- * 3. Provide your environment credentials below.
+ * File: api/config.example.php
+ * Purpose: Template database connection configuration configuration file. 
+ *          Instructions: Copy to config.php and populate environment credentials.
  */
 
 // Establish CORS and JSON response headers supporting credentials

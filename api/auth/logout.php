@@ -1,9 +1,8 @@
 <?php
 /**
- * Logout Endpoint
- * 
- * Securely destroys the current session and clears session cookies,
- * logging the user out from the server-side.
+ * File: api/auth/logout.php
+ * Purpose: Securely destroys the current PHP session, clears cookies, and logs the user out.
+ * Output: JSON response indicating successful logout.
  */
 require_once '../config.php';
 

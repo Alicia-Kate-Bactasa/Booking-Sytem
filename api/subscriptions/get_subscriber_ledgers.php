@@ -1,4 +1,12 @@
 <?php
+/**
+ * File: api/subscriptions/get_subscriber_ledgers.php
+ * Purpose: Retrieves payment records (invoices, status, proof paths, totals) for subscriber roster payments and zero-amount detailing appointments.
+ *          Maps image paths with proper "../" parent directories for dashboard rendering.
+ * Input Params: None (requires Admin authentication)
+ * Output: JSON response returning lists of roster payments and detailing bookings.
+ */
+
 header("Content-Type: application/json; charset=UTF-8");
 require_once '../config.php';
 

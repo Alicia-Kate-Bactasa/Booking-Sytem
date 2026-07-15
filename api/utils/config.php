@@ -1,12 +1,10 @@
 <?php
 /**
-* Database Configuration and Connection Script
-*
-* Establishes a secure PDO connection to the MySQL database "montage_carwash_db".
-* Sets appropriate CORS (Cross-Origin Resource Sharing) headers to allow seamless
-* communication with decoupled frontend applications, and configures PDO to use
-* safe UTF-8 encoding and throw exceptions on error.
-*/
+ * File: api/utils/config.php
+ * Purpose: Centralized Database Connection and Configuration utility for utility directories.
+ *          Establishes a secure PDO connection to the MySQL database "montage_carwash_db",
+ *          defines constant parameters (CORS headers, length limits), and initializes sessions securely.
+ */
 
 // Authentication and input validation limits
 if (!defined('MAX_EMAIL_LENGTH')) {

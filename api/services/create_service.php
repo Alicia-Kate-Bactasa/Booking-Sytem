@@ -1,4 +1,16 @@
 <?php
+/**
+ * File: api/services/create_service.php
+ * Purpose: Allows administrators to register a new vehicle detailing service package in the catalog.
+ * Input Params: JSON body (name, description, duration_minutes, service_price)
+ * Validation rules:
+ *   - User must be logged in as an Admin.
+ *   - The name, description, duration, and price are required.
+ *   - Duration must be a positive integer greater than or equal to 1 minute.
+ *   - Service price must be a non-negative decimal greater than or equal to ₱0.00.
+ * Output: JSON response indicating success or specific validation error.
+ */
+
 // === SECTION: HEADER & CORS ===
 header("Content-Type: application/json; charset=UTF-8");
 
@@ -33,6 +45,24 @@ try {
         echo json_encode([
             "status" => "error",
             "message" => "Incomplete request. Name, duration, and price are required."
+        ]);
+        exit();
+    }
+
+    if ($price < 0) {
+        http_response_code(400);
+        echo json_encode([
+            "status" => "error",
+            "message" => "Price cannot be negative."
+        ]);
+        exit();
+    }
+
+    if ($duration < 1) {
+        http_response_code(400);
+        echo json_encode([
+            "status" => "error",
+            "message" => "Duration must be at least 1 minute."
         ]);
         exit();
     }

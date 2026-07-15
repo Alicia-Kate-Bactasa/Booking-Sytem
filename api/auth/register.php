@@ -1,4 +1,20 @@
 <?php
+/**
+ * File: api/auth/register.php
+ * Purpose: Handles step 2 of subscriber registration. Creates Customer, User, and Subscription records, 
+ *          processes the uploaded GCash payment receipt image, saves it to the uploads folder,
+ *          and sends a confirmation email to the subscriber.
+ * Input Params: POST fields (name, email, password, confirm_password), FILE field (proof_of_payment)
+ * Validation rules:
+ *   - Fields must not be empty.
+ *   - Name must contain only letters/spaces and be at least 3 characters.
+ *   - Password must be at least 8 characters with uppercase, lowercase, numbers, and symbols.
+ *   - Email format validation, maximum size bounds checks.
+ *   - GCash payment screenshot must be a valid image format (JPG, PNG, GIF, WEBP) and <= 8MB.
+ *   - Email uniqueness check against existing User database records.
+ * Output: JSON response indicating success or specific validation error.
+ */
+
 // === SECTION: HEADER & CORS ===
 header("Content-Type: application/json; charset=UTF-8");
 
@@ -29,6 +45,29 @@ if (empty($name) || empty($email) || empty($password) || empty($confirmPassword)
     echo json_encode([
         "status" => "error",
         "message" => "Incomplete request. Name, email, password, and confirm password are required fields."
+    ]);
+    exit();
+}
+
+if (!preg_match("/^[a-zA-Z\s]+$/", $name) || strlen($name) < 3) {
+    http_response_code(400);
+    echo json_encode([
+        "status" => "error",
+        "message" => "Name must only contain letters and spaces, and be at least 3 characters long."
+    ]);
+    exit();
+}
+
+if (strlen($password) < 8 || 
+    !preg_match("/[A-Z]/", $password) || 
+    !preg_match("/[a-z]/", $password) || 
+    !preg_match("/[0-9]/", $password) || 
+    !preg_match("/[^a-zA-Z0-9]/", $password)) {
+    
+    http_response_code(400);
+    echo json_encode([
+        "status" => "error",
+        "message" => "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character."
     ]);
     exit();
 }

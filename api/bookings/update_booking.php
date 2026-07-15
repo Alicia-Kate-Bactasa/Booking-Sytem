@@ -1,4 +1,14 @@
 <?php
+/**
+ * File: api/bookings/update_booking.php
+ * Purpose: Allows administrators to update attributes (date, time slot, bay, status) of an active booking.
+ * Input Params: JSON body (booking_id, scheduled_date, time_slot, bay_number, booking_status)
+ * Validation rules:
+ *   - User must be logged in as an Admin.
+ *   - Booking status parameter must match allowed ENUM values.
+ * Output: JSON response indicating success or specific validation error.
+ */
+
 // === SECTION: HEADER & CORS ===
 header("Content-Type: application/json; charset=UTF-8");
 

@@ -1,6 +1,10 @@
-// ===============================================
-//             index.html script
-// ===============================================
+/**
+ * File: scripts/index.js
+ * Purpose: Main logic handler for index.html.
+ *          Manages UI states (toggleModal), validation scripts (login, registration step 1, guest bookings),
+ *          handles dynamic timeline slot creation, capacity checker limits, Brevo/mail confirmations, 
+ *          password visibility toggles, and email uniqueness validation via fetch queries.
+ */
 
  /* ===================== LANDING PAGE CONFIG / STATE =====================
            Feature: Global booking capacity ceiling and base UI configuration values.
@@ -192,8 +196,19 @@
             event.preventDefault();
 
             const selectedDate = document.getElementById('bookingDate').value;
+            if (!selectedDate) {
+                showErrorModal('Please select a booking date.');
+                return;
+            }
+
+            const todayStr = new Date().toISOString().split('T')[0];
+            if (selectedDate < todayStr) {
+                showErrorModal('Booking date cannot be in the past.');
+                return;
+            }
+
             if (!activeTimeState) {
-                await alert('Please provide a valid open scheduling time slot window.');
+                showErrorModal('Please select an available time slot.');
                 return;
             }
 
@@ -201,7 +216,7 @@
             const paymentProofFile = paymentProofInput ? paymentProofInput.files[0] : null;
 
             if (!paymentProofFile) {
-                await alert('Please upload your GCash payment proof.');
+                showErrorModal('Please upload your GCash proof of payment.');
                 return;
             }
 
@@ -209,8 +224,20 @@
             const clientPhone = document.getElementById('custPhone').value.trim();
             const clientEmail = document.getElementById('custEmail').value.trim();
 
-            if (!clientEmail || !clientEmail.includes('@')) {
-                await alert('Please enter a valid email address.');
+            if (!clientName || clientName.length < 3 || !/^[a-zA-Z\s]+$/.test(clientName)) {
+                showErrorModal('Name must only contain letters and spaces, and be at least 3 characters long.');
+                return;
+            }
+
+            const phoneRegex = /^(09|\+639)\d{9}$|^[0-9]{7,15}$/;
+            if (!clientPhone || !phoneRegex.test(clientPhone)) {
+                showErrorModal('Please enter a valid phone number (e.g. 09123456789 or 7-15 digits).');
+                return;
+            }
+
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!clientEmail || !emailRegex.test(clientEmail)) {
+                showErrorModal('Please enter a valid email address.');
                 return;
             }
 
@@ -263,9 +290,32 @@
         function simulateLoginRedirect(event) {
             event.preventDefault();
             const form = event.target.closest('form') || document.querySelector('#loginModal form');
-            const emailInput = document.getElementById('loginEmail').value;
+            const emailInput = document.getElementById('loginEmail').value.trim();
             const passwordField = document.getElementById('loginPassword') || (form ? form.querySelector('input[type="password"]') : null);
             const passwordInput = passwordField ? passwordField.value : '';
+
+            if (!emailInput) {
+                showErrorModal('Please enter your email or username.');
+                return;
+            }
+
+            if (emailInput.includes('@')) {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(emailInput)) {
+                    showErrorModal('Please enter a valid email address.');
+                    return;
+                }
+            } else {
+                if (!/^[a-zA-Z0-9_\-\.]+$/.test(emailInput)) {
+                    showErrorModal('Username contains invalid characters.');
+                    return;
+                }
+            }
+
+            if (!passwordInput) {
+                showErrorModal('Please enter your password.');
+                return;
+            }
 
             fetch('api/auth/login.php', {
                 method: 'POST',
@@ -309,14 +359,45 @@
             });
         }
 
-        function handleRegistrationStep(event) {
+        async function handleRegistrationStep(event) {
             event.preventDefault();
 
+            const nameVal = document.getElementById('subRegName').value.trim();
+            const emailVal = document.getElementById('subRegEmail').value.trim();
             const passwordVal = document.getElementById('subRegPassword').value;
             const confirmPasswordVal = document.getElementById('subRegConfirmPassword').value;
 
-            if (!passwordVal || !confirmPasswordVal) {
-                showErrorModal('Please enter and confirm your password.');
+            if (!nameVal || nameVal.length < 3 || !/^[a-zA-Z\s]+$/.test(nameVal)) {
+                showErrorModal('Name must only contain letters and spaces, and be at least 3 characters long.');
+                return;
+            }
+
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailVal || !emailRegex.test(emailVal)) {
+                showErrorModal('Please enter a valid email address.');
+                return;
+            }
+
+            // Check if email already exists in User table
+            try {
+                const checkRes = await fetch('api/auth/check_email.php?email=' + encodeURIComponent(emailVal));
+                const checkData = await checkRes.json();
+                if (checkData && checkData.status === 'success' && checkData.exists) {
+                    showErrorModal('An account with this email address already exists. Please use another email.');
+                    return;
+                }
+            } catch (err) {
+                console.error("Email uniqueness verification failed:", err);
+            }
+
+            if (!passwordVal) {
+                showErrorModal('Please enter a password.');
+                return;
+            }
+
+            const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z\d]).{8,}$/;
+            if (!passwordRegex.test(passwordVal)) {
+                showErrorModal('Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.');
                 return;
             }
 
@@ -344,13 +425,30 @@
             const passwordVal = document.getElementById('subRegPassword').value;
             const confirmPasswordVal = document.getElementById('subRegConfirmPassword').value;
 
-            if (!passwordVal || !confirmPasswordVal) {
-                showErrorModal('Please enter and confirm your password.');
+            if (!nameVal || nameVal.length < 3 || !/^[a-zA-Z\s]+$/.test(nameVal)) {
+                showErrorModal('Name must only contain letters and spaces, and be at least 3 characters long.');
+                return;
+            }
+
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailVal || !emailRegex.test(emailVal)) {
+                showErrorModal('Please enter a valid email address.');
+                return;
+            }
+
+            if (!passwordVal) {
+                showErrorModal('Please enter a password.');
+                return;
+            }
+
+            const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z\d]).{8,}$/;
+            if (!passwordRegex.test(passwordVal)) {
+                showErrorModal('Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.');
                 return;
             }
 
             if (passwordVal !== confirmPasswordVal) {
-                showErrorModal('Passwords do not match. Please re-enter your password and confirmation.');
+                showErrorModal('Passwords do not match.');
                 return;
             }
 
@@ -605,3 +703,26 @@
 
             window.setFeedbackRating = setFeedbackRating;
         window.submitCustomerFeedback = submitCustomerFeedback;
+
+        function togglePasswordVisibility(inputId, btn) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            if (input.type === 'password') {
+                input.type = 'text';
+                btn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.815 7.815 3 3m-3-3-3.67-3.67m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" />
+                    </svg>
+                `;
+            } else {
+                input.type = 'password';
+                btn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                    </svg>
+                `;
+            }
+        }
+
+        window.togglePasswordVisibility = togglePasswordVisibility;

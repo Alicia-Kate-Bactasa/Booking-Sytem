@@ -1,4 +1,18 @@
 <?php
+/**
+ * File: api/payments/approve_payment.php
+ * Purpose: Executed by administrators to approve or reject a submitted proof of payment (GCash screenshot).
+ *          Approving a detailing booking sets the booking to 'Confirmed'. Approving a renewal payment
+ *          sets the Subscription to 'Active', extends the next_billing_date by 30 days, and sends an invoice email
+ *          highlighting their Booking Reference ID. Rejection sets statuses back and prompts the user to resubmit.
+ * Input Params: JSON body (invoice_id, status ['Paid' or 'Rejected'])
+ * Validation rules:
+ *   - User must be logged in as an Admin.
+ *   - The invoice and payment records must exist.
+ *   - Subscription dates rollover appropriately on early renewal.
+ * Output: JSON response indicating success or specific error.
+ */
+
 // === SECTION: HEADER & CORS ===
 header("Content-Type: application/json; charset=UTF-8");
 
@@ -77,7 +91,8 @@ try {
     $invQuery = "SELECT COALESCE(s.customer_id, b.customer_id) AS customer_id, 
                         i.total_amount, 
                         i.invoice_type,
-                        ser.service_name
+                        ser.service_name,
+                        b.booking_id
                  FROM Invoice i
                  LEFT JOIN Subscription s ON i.subscription_id = s.subscription_id
                  LEFT JOIN Booking b ON i.invoice_id = b.invoice_id
@@ -134,8 +149,23 @@ try {
 
         // If Subscription renewal payment, activate membership
         if ($invoice['invoice_type'] === 'Monthly Roster') {
+            // Fetch current subscription dates
+            $dateFetchQuery = "SELECT next_billing_date, plan_status FROM Subscription WHERE customer_id = :customer_id LIMIT 1";
+            $dateFetchStmt = $conn->prepare($dateFetchQuery);
+            $dateFetchStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+            $dateFetchStmt->execute();
+            $subDates = $dateFetchStmt->fetch();
+
             $today = date('Y-m-d');
-            $nextBilling = date('Y-m-d', strtotime('+30 days'));
+            if ($subDates && $subDates['plan_status'] === 'Active' && !empty($subDates['next_billing_date']) && $subDates['next_billing_date'] >= $today) {
+                // Early renewal: extend from the current next billing date
+                $nextBillingDate = date('Y-m-d', strtotime($subDates['next_billing_date'] . ' + 30 days'));
+                $lastBillingDate = $subDates['next_billing_date'];
+            } else {
+                // Standard/first-time/expired renewal: extend from today
+                $nextBillingDate = date('Y-m-d', strtotime('+30 days'));
+                $lastBillingDate = $today;
+            }
 
             // Set Customer to Subscriber
             $updateCust = "UPDATE Customer SET customer_type = 'Subscriber' WHERE customer_id = :customer_id";
@@ -150,8 +180,8 @@ try {
                               next_billing_date = :next_billing 
                           WHERE customer_id = :customer_id";
             $stmtSub = $conn->prepare($updateSub);
-            $stmtSub->bindValue(':last_billing', $today, PDO::PARAM_STR);
-            $stmtSub->bindValue(':next_billing', $nextBilling, PDO::PARAM_STR);
+            $stmtSub->bindValue(':last_billing', $lastBillingDate, PDO::PARAM_STR);
+            $stmtSub->bindValue(':next_billing', $nextBillingDate, PDO::PARAM_STR);
             $stmtSub->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
             $stmtSub->execute();
         }
@@ -199,7 +229,8 @@ try {
             'item_subtext' => $itemSubtext,
             'item_price' => (float)$payment['amount'],
             'subtotal' => (float)$payment['amount'],
-            'total_due' => (float)$payment['amount']
+            'total_due' => (float)$payment['amount'],
+            'booking_id' => !empty($invoice['booking_id']) ? (int)$invoice['booking_id'] : null
         ];
 
         if ($status === 'Paid') {

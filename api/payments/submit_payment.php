@@ -1,4 +1,14 @@
 <?php
+/**
+ * File: api/payments/submit_payment.php
+ * Purpose: Allows users to submit a payment proof (GCash receipt image) for an outstanding pending invoice.
+ * Input Params: POST fields (invoice_id, amount, payment_method), FILE field (proof_of_payment)
+ * Validation rules:
+ *   - The invoice must exist and be 'Pending'.
+ *   - Checks that file uploaded is valid image format (JPG, PNG, GIF, WEBP) <= 8MB.
+ * Output: JSON response indicating success or specific validation error.
+ */
+
 // === SECTION: HEADER & CORS ===
 header("Content-Type: application/json; charset=UTF-8");
 

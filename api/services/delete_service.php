@@ -1,4 +1,14 @@
 <?php
+/**
+ * File: api/services/delete_service.php
+ * Purpose: Allows administrators to delete a detailing service package from the catalog database.
+ * Input Params: JSON body (service_id)
+ * Validation rules:
+ *   - User must be logged in as an Admin.
+ *   - The service package must exist.
+ * Output: JSON response indicating success or specific validation error.
+ */
+
 // === SECTION: HEADER & CORS ===
 header("Content-Type: application/json; charset=UTF-8");
 

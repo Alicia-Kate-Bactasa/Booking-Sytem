@@ -1,4 +1,11 @@
 <?php
+/**
+ * File: api/feedback/get_feedbacks.php
+ * Purpose: Retrieves all active customer rating and feedback comment records.
+ * Input Params: GET request
+ * Output: JSON response returning lists of feedback records (name, rating, comments, date).
+ */
+
 // === SECTION: HEADER & CORS ===
 header("Content-Type: application/json; charset=UTF-8");
 

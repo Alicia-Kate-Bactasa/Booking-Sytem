@@ -1,4 +1,12 @@
 <?php
+/**
+ * File: api/admin.php
+ * Purpose: Renders the admin dashboard HTML UI layout.
+ *          Validates that the active session belongs to an Admin, loads scripts/admin.js to dynamically sync
+ *          and render subscriber approvals, booking logs, catalog management panels, and ledger histories.
+ * Output: Protected HTML content with interactive management controls.
+ */
+
 require_once 'config.php';
 header("Content-Type: text/html; charset=UTF-8");
 

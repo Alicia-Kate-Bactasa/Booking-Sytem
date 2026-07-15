@@ -1,4 +1,16 @@
 <?php
+/**
+ * File: api/services/update_service.php
+ * Purpose: Allows administrators to update attributes (name, description, duration, price) of an existing service package.
+ * Input Params: JSON body (service_id, name, description, duration_minutes, service_price)
+ * Validation rules:
+ *   - User must be logged in as an Admin.
+ *   - The service package must exist.
+ *   - Duration must be a positive integer >= 1 minute.
+ *   - Price must be a non-negative decimal >= ₱0.00.
+ * Output: JSON response indicating success or specific validation error.
+ */
+
 // === SECTION: HEADER & CORS ===
 header("Content-Type: application/json; charset=UTF-8");
 
@@ -34,6 +46,24 @@ try {
         echo json_encode([
             "status" => "error",
             "message" => "Incomplete request. Service ID, name, duration, and price are required."
+        ]);
+        exit();
+    }
+
+    if ($price < 0) {
+        http_response_code(400);
+        echo json_encode([
+            "status" => "error",
+            "message" => "Price cannot be negative."
+        ]);
+        exit();
+    }
+
+    if ($duration < 1) {
+        http_response_code(400);
+        echo json_encode([
+            "status" => "error",
+            "message" => "Duration must be at least 1 minute."
         ]);
         exit();
     }

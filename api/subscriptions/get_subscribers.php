@@ -1,4 +1,13 @@
 <?php
+/**
+ * File: api/subscriptions/get_subscribers.php
+ * Purpose: Fetches the listing of active subscribers for the administrative directory dashboard.
+ * Input Params: None (requires Admin authentication)
+ * Logical Rules:
+ *   - Prepends '../' to relative database image paths so they load correctly relative to the admin dashboard.
+ * Output: JSON response returning subscriber accounts data.
+ */
+
 // === SECTION: HEADER & CORS ===
 header("Content-Type: application/json; charset=UTF-8");
 
@@ -56,6 +65,11 @@ try {
             $status = 'Rejected / Overdue';
         }
         
+        $img = $sub['img'];
+        if ($img && !preg_match('/^(http|data:|..\/)/', $img)) {
+            $img = '../' . $img;
+        }
+
         return [
             "id" => "sub-" . $sub['subscription_id'],
             "subscriber_id" => (int)$sub['subscription_id'],
@@ -63,7 +77,7 @@ try {
             "email" => $sub['email'],
             "next_billing_date" => $sub['next_billing_date'] ? $sub['next_billing_date'] : '—',
             "status" => $status,
-            "proof_image" => $sub['img'] ? $sub['img'] : ''
+            "proof_image" => $img ? $img : ''
         ];
     }, $subscribers);
 

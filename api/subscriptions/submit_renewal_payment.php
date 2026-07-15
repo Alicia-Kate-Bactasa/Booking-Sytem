@@ -1,4 +1,18 @@
 <?php
+/**
+ * File: api/subscriptions/submit_renewal_payment.php
+ * Purpose: Handles upload of GCash payment receipts for subscriber plan renewals from the dashboard.
+ *          Processes image file upload, checks duplicate pending payments, enforces temporal window locks, 
+ *          reuses existing outstanding pending invoices, and logs system audit details.
+ * Input Params: POST file (proof_of_payment)
+ * Validation rules:
+ *   - User session must belong to a Subscriber.
+ *   - Duplicate pending payment check (cannot submit payments if one is awaiting approval).
+ *   - Temporal Lock: CURRENT_DATE > last_billing_date (must enter current cycle to pay next one).
+ *   - Uploaded GCash proof must be valid image format (JPG, PNG, GIF, WEBP) <= 8MB.
+ * Output: JSON response indicating success or specific validation error.
+ */
+
 header("Content-Type: application/json; charset=UTF-8");
 require_once '../config.php';
 
@@ -19,12 +33,14 @@ try {
     $customer_id = (int)$_SESSION['customer_id'];
 
     // 1. Guard against duplicate proof submissions / spam:
-    // Check if there is already a Pending Monthly Roster invoice for this customer
+    // Check if there is already a Pending Monthly Roster invoice for this customer that has a payment awaiting approval
     $pendingInvoiceQuery = "SELECT i.invoice_id FROM Invoice i
                             JOIN Subscription s ON i.subscription_id = s.subscription_id
+                            JOIN Payment p ON i.invoice_id = p.invoice_id
                             WHERE s.customer_id = :customer_id 
                               AND i.invoice_type = 'Monthly Roster'
                               AND i.invoice_status = 'Pending'
+                              AND p.payment_status = 'Pending Approval'
                             LIMIT 1";
     $pendingInvoiceStmt = $conn->prepare($pendingInvoiceQuery);
     $pendingInvoiceStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
@@ -38,8 +54,7 @@ try {
         exit();
     }
 
-    // 2. Guard against double payment within the active billing cycle:
-    // Check if the subscription is already prepaid (last_billing_date is in the future)
+    // 2. Fetch Subscription details
     $subQuery = "SELECT s.subscription_id, s.last_billing_date, s.plan_status, c.full_name, COALESCE(u.email, c.email) AS email
                  FROM Subscription s
                  JOIN Customer c ON s.customer_id = c.customer_id
@@ -50,13 +65,15 @@ try {
     $subStmt->execute();
     $sub = $subStmt->fetch();
 
+    // 3. Guard against early prepayment (Temporal Eligibility Lock)
+    // Ensure CURRENT_DATE > last_billing_date
     $today = date('Y-m-d');
-    if ($sub && $sub['plan_status'] === 'Active' && !empty($sub['next_billing_date'])) {
-        if ($sub['next_billing_date'] >= $today) {
+    if ($sub && !empty($sub['last_billing_date'])) {
+        if ($today <= $sub['last_billing_date']) {
             http_response_code(400);
             echo json_encode([
                 "status" => "error",
-                "message" => "Double Payment Blocked: Renewal is not yet available."
+                "message" => "Temporal Eligibility Violation: You have already prepaid for the upcoming cycle."
             ]);
             exit();
         }
@@ -143,13 +160,29 @@ try {
 
     $subscription_id = $sub ? (int)$sub['subscription_id'] : null;
 
-    // Create a new Invoice of type 'Monthly Roster'
-    $invoiceQuery = "INSERT INTO Invoice (subscription_id, total_amount, invoice_type, invoice_status) 
-                     VALUES (:subscription_id, 1500.00, 'Monthly Roster', 'Pending')";
-    $invoiceStmt = $conn->prepare($invoiceQuery);
-    $invoiceStmt->bindValue(':subscription_id', $subscription_id, $subscription_id === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
-    $invoiceStmt->execute();
-    $invoice_id = (int)$conn->lastInsertId();
+    // Determine if we reuse an existing outstanding Pending invoice
+    $pendingInvQuery = "SELECT invoice_id FROM Invoice 
+                        WHERE subscription_id = :subscription_id 
+                          AND invoice_type = 'Monthly Roster'
+                          AND invoice_status = 'Pending'
+                        ORDER BY issued_at ASC
+                        LIMIT 1";
+    $pendingInvStmt = $conn->prepare($pendingInvQuery);
+    $pendingInvStmt->bindValue(':subscription_id', $subscription_id, PDO::PARAM_INT);
+    $pendingInvStmt->execute();
+    $pendingInvoice = $pendingInvStmt->fetch();
+
+    if ($pendingInvoice) {
+        $invoice_id = (int)$pendingInvoice['invoice_id'];
+    } else {
+        // Create a new Invoice of type 'Monthly Roster'
+        $invoiceQuery = "INSERT INTO Invoice (subscription_id, total_amount, invoice_type, invoice_status) 
+                         VALUES (:subscription_id, 1500.00, 'Monthly Roster', 'Pending')";
+        $invoiceStmt = $conn->prepare($invoiceQuery);
+        $invoiceStmt->bindValue(':subscription_id', $subscription_id, $subscription_id === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
+        $invoiceStmt->execute();
+        $invoice_id = (int)$conn->lastInsertId();
+    }
 
     // Create Payment of status 'Pending Approval' linked to the invoice
     $paymentQuery = "INSERT INTO Payment (invoice_id, amount, payment_method, proof_of_payment, payment_status) 

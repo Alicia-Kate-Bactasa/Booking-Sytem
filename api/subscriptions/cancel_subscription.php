@@ -1,4 +1,12 @@
 <?php
+/**
+ * File: api/subscriptions/cancel_subscription.php
+ * Purpose: Allows subscribers to cancel their active VIP membership.
+ *          Updates Subscription status to 'Inactive' and logs audit events.
+ * Input Params: None (reads session customer_id)
+ * Output: JSON response indicating success or cancellation error.
+ */
+
 // === SECTION: HEADER & CORS ===
 header("Content-Type: application/json; charset=UTF-8");
 

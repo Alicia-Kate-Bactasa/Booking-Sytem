@@ -1,4 +1,15 @@
 <?php
+/**
+ * File: api/auth/login.php
+ * Purpose: Processes user portal authentication requests. 
+ *          Queries database, validates passwords, and initiates active session parameters (role, email, customer_id).
+ * Input Params: JSON body (email, password)
+ * Validation rules:
+ *   - Fields must not be empty.
+ *   - Limits maximum input sizes.
+ * Output: JSON response returning verification status, name, role, and redirect targets.
+ */
+
 // === SECTION: HEADER & CORS ===
 header("Content-Type: application/json; charset=UTF-8");
 

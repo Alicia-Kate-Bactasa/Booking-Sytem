@@ -1,4 +1,17 @@
 <?php
+/**
+ * File: api/bookings/create_booking.php
+ * Purpose: Registers an appointment booking for active VIP subscribers.
+ *          Checks calendar slot capacity limitations, inserts a new Booking, creates a 0-amount Invoice (since VIP is prepaid),
+ *          logs system events, and sends an HTML invoice confirmation email highlighting their Booking Reference ID.
+ * Input Params: JSON body (service_id, scheduled_date, time_slot, bay_number)
+ * Validation rules:
+ *   - User must be logged in as a Subscriber.
+ *   - The booking date must be today or in the future (no past date bookings).
+ *   - The time slot bay capacity ceiling constraint (max 2 cars) must not be exceeded.
+ * Output: JSON response indicating success or specific booking limitation error.
+ */
+
 // === SECTION: HEADER & CORS ===
 header("Content-Type: application/json; charset=UTF-8");
 
@@ -38,6 +51,15 @@ if (empty($customer_id) || empty($service_id) || empty($scheduled_date) || empty
     echo json_encode([
         "status" => "error",
         "message" => "Incomplete request. customer_id, service_id, scheduled_date, and time_slot are required fields."
+    ]);
+    exit();
+}
+
+if (strtotime($scheduled_date) < strtotime(date('Y-m-d'))) {
+    http_response_code(400);
+    echo json_encode([
+        "status" => "error",
+        "message" => "Booking date cannot be in the past."
     ]);
     exit();
 }
@@ -254,7 +276,8 @@ try {
                 'item_price' => $subtotal,
                 'subtotal' => $subtotal,
                 'discount' => $discount,
-                'total_due' => $totalDue
+                'total_due' => $totalDue,
+                'booking_id' => $booking_id
             ];
 
             if ($booking_status === 'Pending') {

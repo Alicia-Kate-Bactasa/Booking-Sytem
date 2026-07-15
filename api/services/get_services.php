@@ -1,4 +1,12 @@
 <?php
+/**
+ * File: api/services/get_services.php
+ * Purpose: Public endpoint to fetch all registered detailing service packages from the catalog database.
+ *          Maps descriptions, duration estimates, prices, and names.
+ * Input Params: GET request
+ * Output: JSON response returning active detailing service packages list.
+ */
+
 // === SECTION: HEADER & CORS ===
 header("Content-Type: application/json; charset=UTF-8");
 

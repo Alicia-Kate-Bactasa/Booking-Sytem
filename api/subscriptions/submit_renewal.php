@@ -1,4 +1,18 @@
 <?php
+/**
+ * File: api/subscriptions/submit_renewal.php
+ * Purpose: Endpoint to handle subscriber monthly membership renewals.
+ *          Processes upload file, checks duplicate pending payments, prevents prepayment bypasses, 
+ *          associates details with outstanding pending invoices, and logs system events.
+ * Input Params: POST file (proof_of_payment)
+ * Validation rules:
+ *   - User session must belong to a Subscriber.
+ *   - Duplicate pending payment check (cannot spam uploads if one is awaiting approval).
+ *   - Temporal Lock: CURRENT_DATE > last_billing_date (cannot renew early).
+ *   - Uploaded GCash proof must be valid image <= 8MB.
+ * Output: JSON response indicating success or specific validation error.
+ */
+
 header("Content-Type: application/json; charset=UTF-8");
 require_once '../config.php';
 
@@ -52,12 +66,12 @@ try {
     $sub = $subStmt->fetch();
 
     $today = date('Y-m-d');
-    if ($sub && $sub['plan_status'] === 'Active' && !empty($sub['last_billing_date'])) {
-        if ($sub['last_billing_date'] > $today) {
+    if ($sub && !empty($sub['last_billing_date'])) {
+        if ($sub['last_billing_date'] >= $today) {
             http_response_code(400);
             echo json_encode([
                 "status" => "error",
-                "message" => "Double Payment Blocked: You have already paid for the upcoming billing cycle."
+                "message" => "Temporal Eligibility Violation: You have already prepaid for the upcoming cycle."
             ]);
             exit();
         }

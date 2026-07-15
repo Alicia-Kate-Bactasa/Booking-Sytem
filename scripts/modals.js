@@ -1,7 +1,11 @@
 /**
- * Montage Auto Studio - Custom Modal System
- * Replaces native blocking window.alert and window.confirm with beautiful, 
- * animated, promise-based HTML dialogs matching the studio's premium aesthetic.
+ * File: scripts/modals.js
+ * Purpose: Custom Modal System for Montage Auto Studio.
+ *          Replaces native blocking window.alert and window.confirm with custom,
+ *          animated, promise-based HTML dialogs matching the studio's premium dark aesthetic.
+ * Public APIs exposed on window:
+ *   - window.showErrorModal(message, isInfo): Shows alert dialog. Resolves promise when OK clicked.
+ *   - window.showConfirmModal(message): Shows confirmation dialog. Resolves promise with true (Yes) or false (No).
  */
 
 (function() {

@@ -1,4 +1,12 @@
 <?php
+/**
+ * File: api/dashboard.php
+ * Purpose: Renders the subscriber dashboard HTML UI wrapper layout.
+ *          Validates that the active session belongs to a Subscriber, loads scripts/dashboard.js to dynamically sync
+ *          profile details, render completed booking statistics, time slots rescheduling modals, and renewal buttons.
+ * Output: Protected HTML content with placeholders for dynamic hydration.
+ */
+
 require_once 'config.php';
 header("Content-Type: text/html; charset=UTF-8");
 
@@ -214,34 +222,34 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Subscriber') {
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm">
                             <div>
                                 <span class="text-xs text-neutral-400 font-medium uppercase tracking-wider block">Account Holder</span>
-                                <span id="subParamName" class="font-bold text-dark text-base">VIP Member</span>
+                                <span id="subParamName" class="font-bold text-dark text-base">Loading...</span>
                             </div>
                             <div>
                                 <span class="text-xs text-neutral-400 font-medium uppercase tracking-wider block">Plan Creation Timestamp</span>
-                                <span class="font-bold text-dark text-base">January 15, 2026</span>
+                                <span id="subParamCreatedAt" class="font-bold text-dark text-base">Loading...</span>
                             </div>
                             <div>
                                 <span class="text-xs text-neutral-400 font-medium uppercase tracking-wider block">Last Visit</span>
-                                <span class="font-bold text-dark text-base">June 18, 2026</span>
+                                <span id="subParamLastVisit" class="font-bold text-dark text-base">Loading...</span>
                             </div>
                             <div>
                                 <span class="text-xs text-neutral-400 font-medium uppercase tracking-wider block">Completed Sessions Count</span>
-                                <span id="subParamCount" class="font-bold text-dark text-base">14 Appointments Done</span>
+                                <span id="subParamCount" class="font-bold text-dark text-base">Loading...</span>
                             </div>
                         </div>
 
                         <div class="border-t border-neutral-100 pt-6 grid grid-cols-1 sm:grid-cols-3 gap-6 text-sm">
                             <div>
                                 <span class="text-xs text-neutral-400 font-medium uppercase tracking-wider block">Last Billing Log Date</span>
-                                <span class="font-bold text-dark text-base">June 15, 2026</span>
+                                <span id="subParamLastBilling" class="font-bold text-dark text-base">Loading...</span>
                             </div>
                             <div>
                                 <span class="text-xs text-neutral-400 font-medium uppercase tracking-wider block">Next Billing Date</span>
-                                <span id="subParamNextBilling" class="font-bold text-emerald-700 text-base">July 15, 2026</span>
+                                <span id="subParamNextBilling" class="font-bold text-emerald-700 text-base">Loading...</span>
                             </div>
                             <div>
                                 <span class="text-xs text-neutral-400 font-medium uppercase tracking-wider block">Account Classification</span>
-                                <span id="subParamType" class="font-bold text-dark text-base">Subscriber</span>
+                                <span id="subParamType" class="font-bold text-dark text-base">Loading...</span>
                             </div>
                         </div>
                     </div>

@@ -1,3 +1,9 @@
+<!--
+  File: index.html
+  Purpose: The client-facing landing page for Montage Auto Studio. 
+           Contains the service catalogs, interactive booking forms, modal portals for user log in, 
+           and subscription registration step wizardry. Employs Tailwind CSS and custom stylesheets.
+-->
 <!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
 <head>
@@ -296,8 +302,16 @@
                 <p class="text-xs text-neutral-400 font-normal mt-1.5 leading-relaxed">Already a subscriber? Log in to your profile dashboard.</p>
             </div>
             <form onsubmit="simulateLoginRedirect(event)" class="space-y-4">
-                <input type="email" id="loginEmail" placeholder="Email Address" required class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-semibold focus:outline-none focus:border-dark px-5">
-                <input type="password" placeholder="Password" required class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-semibold focus:outline-none focus:border-dark px-5">
+                <input type="email" id="loginEmail" placeholder="Email/Username" required class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-semibold focus:outline-none focus:border-dark px-5">
+                <div class="relative w-full">
+                    <input type="password" id="loginPassword" placeholder="Password" required class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-semibold focus:outline-none focus:border-dark px-5 pr-12">
+                    <button type="button" class="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-dark focus:outline-none" onclick="togglePasswordVisibility('loginPassword', this)">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                        </svg>
+                    </button>
+                </div>
                 <button type="submit" class="w-full bg-dark text-light text-xs font-bold tracking-widest uppercase py-3.5 rounded-full border border-dark hover:bg-neutral-800 shadow-sm transition-all">Sign In</button>
             </form>
             <div class="mt-6 pt-4 border-t border-neutral-100 text-center">
@@ -306,7 +320,7 @@
             </div>
         </div>
     </div>
-
+ 
     <div id="availSubModal" class="fixed inset-0 z-50 flex items-center justify-center bg-dark/60 backdrop-blur-sm hidden">
         <div class="bg-white p-8 w-full max-w-md relative rounded-[2rem] shadow-2xl mx-4">
             <button onclick="toggleModal('availSubModal')" type="button" class="absolute top-5 right-5 text-neutral-400 hover:text-dark text-xs font-bold">✕</button>
@@ -318,8 +332,24 @@
                 <input type="text" id="subRegName" placeholder="Full Name" required class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-medium px-5 focus:outline-none focus:border-dark">
                 <input type="email" id="subRegEmail" placeholder="Primary Email Address" required class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-medium px-5 focus:outline-none focus:border-dark">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <input type="password" id="subRegPassword" placeholder="Password" required class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-medium px-5 focus:outline-none focus:border-dark">
-                    <input type="password" id="subRegConfirmPassword" placeholder="Confirm Password" required class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-medium px-5 focus:outline-none focus:border-dark">
+                    <div class="relative w-full">
+                        <input type="password" id="subRegPassword" placeholder="Password" required class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-medium px-5 pr-12 focus:outline-none focus:border-dark">
+                        <button type="button" class="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-dark focus:outline-none" onclick="togglePasswordVisibility('subRegPassword', this)">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="relative w-full">
+                        <input type="password" id="subRegConfirmPassword" placeholder="Confirm Password" required class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-medium px-5 pr-12 focus:outline-none focus:border-dark">
+                        <button type="button" class="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-dark focus:outline-none" onclick="togglePasswordVisibility('subRegConfirmPassword', this)">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
                 <button type="submit" class="w-full bg-dark text-light text-xs font-bold tracking-widest uppercase py-3.5 rounded-full shadow-sm">Continue to GCash Payment ➔</button>
             </form>

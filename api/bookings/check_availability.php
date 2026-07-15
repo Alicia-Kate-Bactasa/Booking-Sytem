@@ -1,4 +1,14 @@
 <?php
+/**
+ * File: api/bookings/check_availability.php
+ * Purpose: Public endpoint to check how many active detailing slots are occupied on a specific date and time window.
+ *          Helps client check bay constraints before scheduling a wash.
+ * Input Params: GET or POST (date, time_slot)
+ * Validation rules:
+ *   - Date must be present and correctly formatted.
+ * Output: JSON response returning the counts of occupied slots and confirmation of availability.
+ */
+
 // === SECTION: HEADER & CORS ===
 header("Content-Type: application/json; charset=UTF-8");
 

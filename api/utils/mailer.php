@@ -1,9 +1,9 @@
 <?php
 /**
- * Montage Auto Studio - Centralized Mailing Service (Brevo API)
- * 
- * Supports sending reliable HTML emails via Brevo's SMTP Web API (HTTPS)
- * with a clean fallback to PHP's native mail() when no API key is configured.
+ * File: api/utils/mailer.php
+ * Purpose: Centralized Mailing Service (Gmail SMTP / Brevo SMTP API / native PHP mail fallback).
+ *          Handles preparation of premium HTML invoice templates and sends them out.
+ *          Highlights the Booking Reference ID block in the body of the invoice if present.
  */
 
 class Mailer {
@@ -41,6 +41,17 @@ class Mailer {
                     <td style='color: #27ae60;'>Discount/VIP:</td>
                     <td style='text-align: right; font-weight: bold; color: #27ae60;'>-₱{$discountStr}</td>
                 </tr>";
+        }
+
+        $bookingIdHighlight = '';
+        if (isset($data['booking_id']) && !empty($data['booking_id'])) {
+            $bookingIdHtml = htmlspecialchars($data['booking_id']);
+            $bookingIdHighlight = "
+            <!-- Booking ID Highlight Card -->
+            <div style='background-color: #f8f9fa; border: 2px solid #111; padding: 15px; margin-bottom: 25px; border-radius: 8px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05);'>
+                <span style='font-size: 10px; text-transform: uppercase; color: #777; font-weight: bold; letter-spacing: 2px; display: block; margin-bottom: 5px;'>Booking Reference</span>
+                <strong style='font-size: 24px; color: #111; font-family: monospace; letter-spacing: 0.5px;'>#{$bookingIdHtml}</strong>
+            </div>";
         }
 
         return "
@@ -81,6 +92,8 @@ class Mailer {
                 <strong>Status: {$statusLabel}</strong><br>
                 {$statusDetail}
             </div>
+
+            {$bookingIdHighlight}
 
             <!-- Items Table -->
             <table style='width: 100%; border-collapse: collapse; margin-bottom: 25px; font-size: 13px;'>

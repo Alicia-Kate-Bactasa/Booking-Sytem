@@ -1,4 +1,13 @@
 <?php
+/**
+ * File: api/admin/get_admin_dashboard_data.php
+ * Purpose: Retrieves aggregate datasets required by the administrative dashboard dashboard view.
+ *          Gathers pending subscription registrations, pending GCash detailing payment verifications, 
+ *          and billing alerts (overdue subscriber memberships).
+ * Input Params: GET/POST (requires Admin authentication)
+ * Output: JSON response returning aggregated lists.
+ */
+
 // === SECTION: HEADER & CORS ===
 header("Content-Type: application/json; charset=UTF-8");
 

@@ -1,4 +1,15 @@
 <?php
+/**
+ * File: api/services/check_service_bookings.php
+ * Purpose: Allows administrators to check if a service package has any active scheduled bookings in the future.
+ *          Used as a safeguard warning prompt when administrators change service durations.
+ * Input Params: GET or POST (service_name)
+ * Validation rules:
+ *   - User must be logged in as an Admin.
+ *   - Service name parameter must be present.
+ * Output: JSON response returning count of active future bookings.
+ */
+
 // === SECTION: HEADER & CORS ===
 header("Content-Type: application/json; charset=UTF-8");
 

@@ -1,6 +1,10 @@
-// ===============================================
-//             admin.html script
-// ===============================================
+/**
+ * File: scripts/admin.js
+ * Purpose: Main logic handler for the administrative dashboard (api/admin.php).
+ *          Loads data grids (subscriber directory, detailing booking logs, invoice ledger lists),
+ *          manages approval/rejection operations for payment proofs (GCash screenshots),
+ *          and validates the creation/modification of catalog service packages.
+ */
 
 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
@@ -870,8 +874,18 @@ const defaultServices = [
             const desc = document.getElementById(`edit-desc-${index}`).value.trim();
             const price = parseFloat(document.getElementById(`edit-price-${index}`).value);
 
-            if (!name || isNaN(proposedDuration) || isNaN(price)) {
-                await alert('Please enter valid service details.');
+            if (!name || name.length < 3) {
+                await showErrorModal('Service name must be at least 3 characters long.');
+                return;
+            }
+
+            if (isNaN(proposedDuration) || proposedDuration < 1) {
+                await showErrorModal('Service duration must be at least 1 minute.');
+                return;
+            }
+
+            if (isNaN(price) || price < 0) {
+                await showErrorModal('Service price cannot be negative.');
                 return;
             }
 
@@ -903,7 +917,7 @@ const defaultServices = [
                 }
 
                 if (data.status === 'success') {
-                    await alert('Service package updated successfully!');
+                    await showErrorModal('Service package updated successfully!');
                     loadServices();
                 } else {
                     await showErrorModal(data.message || 'Failed to update service.');
@@ -971,12 +985,21 @@ const defaultServices = [
             const duration = document.getElementById('serviceDurationInput').value.trim();
             const price = parseFloat(document.getElementById('servicePriceInput').value);
 
-            if (!name || !duration || isNaN(price)) {
-                await alert('Please enter valid service details.');
+            if (!name || name.length < 3) {
+                await showErrorModal('Service name must be at least 3 characters long.');
                 return;
             }
 
             const parsedDuration = parseInt(duration, 10);
+            if (isNaN(parsedDuration) || parsedDuration < 1) {
+                await showErrorModal('Service duration must be at least 1 minute.');
+                return;
+            }
+
+            if (isNaN(price) || price < 0) {
+                await showErrorModal('Service price cannot be negative.');
+                return;
+            }
 
             try {
                 const res = await fetch('services/create_service.php', {
@@ -1005,7 +1028,7 @@ const defaultServices = [
                 }
 
                 if (data.status === 'success') {
-                    await alert(`Service package "${name}" successfully added to catalog!`);
+                    await showErrorModal(`Service package "${name}" successfully added to catalog!`);
                     document.getElementById('addServiceForm').reset();
                     toggleModal('addServiceModal');
                     loadServices();

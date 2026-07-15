@@ -1,4 +1,18 @@
 <?php
+/**
+ * File: api/bookings/create_guest_booking.php
+ * Purpose: Processes and registers appointment bookings for guest (unregistered) clients.
+ *          Saves the GCash proof of payment screenshot, registers a Customer account, creates a pending Detailing Invoice/Payment,
+ *          logs system events, and sends an HTML invoice confirmation email highlighting their Booking Reference ID.
+ * Input Params: POST fields (name, email, phone, service_id, date, slot, bay), FILE field (proof_of_payment)
+ * Validation rules:
+ *   - Inputs must not be empty.
+ *   - Booking date must be today or in the future (no past bookings allowed).
+ *   - The name, email, and phone structure patterns must be valid.
+ *   - GCash payment screenshot must be a valid image format (JPG, PNG, GIF, WEBP) and <= 8MB.
+ * Output: JSON response indicating success or specific validation error.
+ */
+
 // === SECTION: HEADER & CORS ===
 header("Content-Type: application/json; charset=UTF-8");
 
@@ -30,6 +44,15 @@ if (empty($client_name) || empty($client_phone) || empty($client_email) || empty
     echo json_encode([
         "status" => "error",
         "message" => "Incomplete request. Name, phone, email, service, date, and time slot are required fields."
+    ]);
+    exit();
+}
+
+if (strtotime($scheduled_date) < strtotime(date('Y-m-d'))) {
+    http_response_code(400);
+    echo json_encode([
+        "status" => "error",
+        "message" => "Booking date cannot be in the past."
     ]);
     exit();
 }
@@ -299,7 +322,8 @@ try {
             'status_border' => '#f39c12',
             'status_color' => '#d35400',
             'status_label' => 'PENDING VERIFICATION',
-            'status_detail' => 'We have received your guest booking request. Please allow our team 24-48 hours to review your GCash payment screenshot.'
+            'status_detail' => 'We have received your guest booking request. Please allow our team 24-48 hours to review your GCash payment screenshot.',
+            'booking_id' => $booking_id
         ];
 
         $htmlContent = Mailer::formatInvoice($invoiceData);

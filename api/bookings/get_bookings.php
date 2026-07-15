@@ -1,4 +1,13 @@
 <?php
+/**
+ * File: api/bookings/get_bookings.php
+ * Purpose: Retrieves active and past detailing bookings. 
+ *          If Subscriber, filters and returns only their own bookings.
+ *          If Admin, returns all bookings across the studio.
+ * Input Params: None (reads session parameters)
+ * Output: JSON response returning list of bookings.
+ */
+
 // === SECTION: HEADER & CORS ===
 header("Content-Type: application/json; charset=UTF-8");
 

@@ -1,4 +1,11 @@
 <?php
+/**
+ * File: api/test_mail.php
+ * Purpose: A diagnostic script to test the SMTP / Brevo API mail service settings.
+ * Input Params: GET parameter (to)
+ * Output: HTML status page confirming success or error logs.
+ */
+
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/utils/mailer.php';
 

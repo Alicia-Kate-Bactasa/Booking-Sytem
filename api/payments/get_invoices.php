@@ -1,4 +1,14 @@
 <?php
+/**
+ * File: api/payments/get_invoices.php
+ * Purpose: Fetches the detailing session invoice history records for rendering in the admin dashboard ledger tables.
+ *          Maps payment proof images, status flags, total amount values, dates, and names.
+ * Input Params: GET request (requires Admin authentication)
+ * Logical Rules:
+ *   - Prepends '../' to relative database image paths so they load correctly relative to the admin panel.
+ * Output: JSON response containing detailed list of invoices.
+ */
+
 // === SECTION: HEADER & CORS ===
 header("Content-Type: application/json; charset=UTF-8");
 
@@ -59,6 +69,11 @@ try {
             }
         }
         
+        $img = $inv['img'];
+        if ($img && !preg_match('/^(http|data:|..\/)/', $img)) {
+            $img = '../' . $img;
+        }
+        
         return [
             "id" => "INV-" . $inv['invoice_id'],
             "invoice_id" => (int)$inv['invoice_id'],
@@ -67,7 +82,7 @@ try {
             "client" => $inv['client'],
             "service" => $serviceName,
             "total" => (float)$inv['total'],
-            "img" => $inv['img'] ? $inv['img'] : '',
+            "img" => $img ? $img : '',
             "date" => substr($inv['date'], 0, 10)
         ];
     }, $invoices);
