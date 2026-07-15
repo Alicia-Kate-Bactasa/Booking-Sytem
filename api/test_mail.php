@@ -6,17 +6,17 @@ require_once __DIR__ . '/utils/mailer.php';
 $to = isset($_GET['to']) ? $_GET['to'] : '';
 
 if (empty($to)) {
-    echo "<h1>Resend Email Test</h1>";
+    echo "<h1>Gmail SMTP Email Test</h1>";
     echo "<p>Please provide a recipient email address in the URL query string.</p>";
     echo "<p>Example: <code>test_mail.php?to=your-email@example.com</code></p>";
     exit();
 }
 
-$subject = "Resend Integration Test - Montage Auto Studio";
+$subject = "Gmail SMTP Integration Test - Montage Auto Studio";
 $htmlContent = "
     <h2>Test Email</h2>
-    <p>This is a test email sent from <strong>Montage Auto Studio</strong> booking system using the new <strong>Resend</strong> integration.</p>
-    <p>If you received this email, the Resend integration is working perfectly!</p>
+    <p>This is a test email sent from <strong>Montage Auto Studio</strong> booking system using the new <strong>Gmail SMTP</strong> integration.</p>
+    <p>If you received this email, the Gmail SMTP integration is working perfectly!</p>
     <hr>
     <p style='color: #777; font-size: 12px;'>Sent at: " . date('Y-m-d H:i:s') . "</p>
 ";

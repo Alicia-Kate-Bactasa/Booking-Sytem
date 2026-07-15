@@ -167,3 +167,10 @@ define('BREVO_API_KEY', getenv('BREVO_API_KEY') ?: '');
 define('MAIL_FROM_EMAIL', getenv('MAIL_FROM_EMAIL') ?: 'bactasa.ak@gmail.com');
 define('MAIL_FROM_NAME', getenv('MAIL_FROM_NAME') ?: 'Montage Auto Studio');
 define('MAIL_REPLY_TO', getenv('MAIL_REPLY_TO') ?: 'bactasa.kate@gmail.com');
+
+// Gmail SMTP Configuration
+define('SMTP_HOST', getenv('SMTP_HOST') ?: 'smtp.gmail.com');
+define('SMTP_PORT', getenv('SMTP_PORT') ?: 587);
+define('SMTP_SECURE', getenv('SMTP_SECURE') ?: 'tls');
+define('SMTP_USER', getenv('SMTP_USER') ?: 'bactasa.ak@gmail.com');
+define('SMTP_PASS', getenv('SMTP_PASS') ?: ''); // Your 16-character Google App Password

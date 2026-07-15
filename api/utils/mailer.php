@@ -148,13 +148,63 @@ class Mailer {
         $fromName = defined('MAIL_FROM_NAME') ? MAIL_FROM_NAME : 'Montage Auto Studio';
         $replyTo = defined('MAIL_REPLY_TO') ? MAIL_REPLY_TO : 'support@montageautostudio.com';
 
-        if (!empty($brevoKey)) {
+        // Check if Gmail SMTP is configured
+        if (defined('SMTP_USER') && !empty(SMTP_USER) && defined('SMTP_PASS') && !empty(SMTP_PASS)) {
+            return self::sendViaSMTP($to, $subject, $htmlContent, $fromEmail, $fromName, $replyTo);
+        } elseif (!empty($brevoKey)) {
             // Send using Brevo Web API (allows personal verified senders like Gmail)
             return self::sendViaBrevo($brevoKey, $to, $subject, $htmlContent, $fromEmail, $fromName, $replyTo);
         } else {
             // Fallback to native PHP mail()
-            error_log("Mailer Info: No Brevo API key configured. Falling back to native PHP mail().");
+            error_log("Mailer Info: No SMTP credentials or Brevo API key configured. Falling back to native PHP mail().");
             return self::sendViaNativeMail($to, $subject, $htmlContent, $fromEmail, $fromName, $replyTo);
+        }
+    }
+
+    /**
+     * Send email via Gmail / custom SMTP using PHPMailer
+     */
+    private static function sendViaSMTP($to, $subject, $htmlContent, $fromEmail, $fromName, $replyTo) {
+        require_once __DIR__ . '/PHPMailer/Exception.php';
+        require_once __DIR__ . '/PHPMailer/PHPMailer.php';
+        require_once __DIR__ . '/PHPMailer/SMTP.php';
+
+        $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
+
+        try {
+            // Server settings
+            $mail->isSMTP();
+            $mail->Host       = defined('SMTP_HOST') ? SMTP_HOST : 'smtp.gmail.com';
+            $mail->SMTPAuth   = true;
+            $mail->Username   = SMTP_USER;
+            $mail->Password   = SMTP_PASS;
+            
+            $secure = defined('SMTP_SECURE') ? SMTP_SECURE : 'tls';
+            if ($secure === 'ssl') {
+                $mail->SMTPSecure = \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS;
+                $mail->Port       = defined('SMTP_PORT') ? SMTP_PORT : 465;
+            } else {
+                $mail->SMTPSecure = \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+                $mail->Port       = defined('SMTP_PORT') ? SMTP_PORT : 587;
+            }
+
+            // Recipients
+            // Gmail requires From address to match SMTP Username
+            $mail->setFrom(SMTP_USER, $fromName);
+            $mail->addAddress($to);
+            $mail->addReplyTo($replyTo);
+
+            // Content
+            $mail->isHTML(true);
+            $mail->Subject = $subject;
+            $mail->Body    = $htmlContent;
+
+            $mail->send();
+            log_mail_event("Email successfully dispatched via SMTP to: {$to}");
+            return true;
+        } catch (\Exception $e) {
+            error_log("SMTP Mailer Error: {$mail->ErrorInfo}");
+            return false;
         }
     }
 
