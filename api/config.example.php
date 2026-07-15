@@ -32,6 +32,11 @@ if (session_status() === PHP_SESSION_NONE && isset($_SERVER['REQUEST_METHOD'])) 
     session_start();
 }
 
+// Input validation length limits
+define('MAX_EMAIL_LENGTH', 100);
+define('MAX_USERNAME_LENGTH', 100); // Allow up to 100 chars to accommodate email login inputs
+define('MAX_PASSWORD_LENGTH', 72);  // Secure max limit for bcrypt hashing compatibility
+
 /**
  * Enforces role-based authentication check blocks.
  * @param string|array $allowedRoles Roles permitted to access the resource

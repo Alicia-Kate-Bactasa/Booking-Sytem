@@ -363,15 +363,21 @@
                 <h3 class="text-lg font-bold uppercase tracking-tight">Payment Review</h3>
                 <p class="text-xs text-neutral-400 font-normal mt-1">Step 2 of 2: GCash proof only</p>
             </div>
-            <div class="bg-neutral-50 p-4 rounded-xl border border-neutral-200 mb-6 text-xs space-y-2">
-                <div class="flex justify-between font-medium"><span>Payment Method:</span><span class="font-bold">GCash only</span></div>
-                <div class="flex justify-between font-medium"><span>Plan:</span><span class="font-bold">Unlimited VIP Club Plan</span></div>
-                <div class="border-t border-neutral-200 pt-2 flex justify-between font-bold text-sm"><span>Total Due:</span><span>₱1,500.00</span></div>
-            </div>
             <form onsubmit="handleFinalizeSubPaymentRoute(event)" class="space-y-4">
-                <div>
-                    <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-2">Upload GCash proof of payment</label>
-                    <input type="file" id="subscriptionPaymentProof" accept="image/*" required class="w-full bg-neutral-50 border border-neutral-200 p-3 rounded-xl text-xs text-dark focus:outline-none focus:border-dark file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:uppercase file:bg-dark file:text-light hover:file:bg-neutral-800 cursor-pointer">
+                <div class="bg-neutral-900 text-light p-6 rounded-[2rem] border border-neutral-800 shadow-xl space-y-4">
+                    <div class="flex justify-between items-center pb-2 border-b border-neutral-800">
+                        <span class="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Payment Details</span>
+                    </div>
+                    <div class="text-xs space-y-1">
+                        <div class="flex justify-between"><span class="text-neutral-400">Account Name:</span><span class="font-bold text-white">Montage Auto Studio</span></div>
+                        <div class="flex justify-between"><span class="text-neutral-400">Number:</span><span class="font-bold text-white font-mono">0917-XXX-XXXX</span></div>
+                        <div class="flex justify-between"><span class="text-neutral-400">Plan:</span><span class="font-bold text-white">Unlimited VIP Club Plan</span></div>
+                        <div class="border-t border-neutral-800 pt-2 flex justify-between font-bold text-sm text-white"><span>Total Due:</span><span>₱1,500.00</span></div>
+                    </div>
+                    <div class="pt-2">
+                        <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-2">Upload GCash proof of payment</label>
+                        <input type="file" id="subscriptionPaymentProof" accept="image/*" required class="w-full bg-neutral-800 border border-neutral-700 p-3 rounded-xl text-xs text-neutral-300 focus:outline-none focus:border-neutral-500 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:uppercase file:bg-light file:text-dark hover:file:bg-neutral-200 cursor-pointer">
+                    </div>
                 </div>
                 <button type="submit" class="w-full bg-dark text-light text-xs font-bold tracking-widest uppercase py-3.5 rounded-full shadow-sm">Submit Payment</button>
             </form>

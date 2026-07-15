@@ -45,12 +45,22 @@ class Mailer {
 
         $bookingIdHighlight = '';
         if (isset($data['booking_id']) && !empty($data['booking_id'])) {
-            $bookingIdHtml = htmlspecialchars($data['booking_id']);
+            $rawBookingId = $data['booking_id'];
+            if (is_numeric($rawBookingId)) {
+                $bookingRef = 'MTG-' . str_pad($rawBookingId, 3, '0', STR_PAD_LEFT);
+            } else {
+                if (stripos($rawBookingId, 'MTG-') === 0) {
+                    $bookingRef = $rawBookingId;
+                } else {
+                    $bookingRef = 'MTG-' . $rawBookingId;
+                }
+            }
+            $bookingIdHtml = htmlspecialchars($bookingRef);
             $bookingIdHighlight = "
             <!-- Booking ID Highlight Card -->
             <div style='background-color: #f8f9fa; border: 2px solid #111; padding: 15px; margin-bottom: 25px; border-radius: 8px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05);'>
                 <span style='font-size: 10px; text-transform: uppercase; color: #777; font-weight: bold; letter-spacing: 2px; display: block; margin-bottom: 5px;'>Booking Reference</span>
-                <strong style='font-size: 24px; color: #111; font-family: monospace; letter-spacing: 0.5px;'>#{$bookingIdHtml}</strong>
+                <strong style='font-size: 24px; color: #111; font-family: monospace; letter-spacing: 0.5px;'>{$bookingIdHtml}</strong>
             </div>";
         }
 
