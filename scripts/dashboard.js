@@ -954,6 +954,7 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
             event.preventDefault();
             const client = document.getElementById('feedbackName').value.trim();
             let booking_id_raw = document.getElementById('feedbackBookingId').value.trim();
+            const service = document.getElementById('feedbackService').value.trim();
             const rating = parseInt(document.getElementById('feedbackRating').value) || 5;
             const comments = document.getElementById('feedbackComments').value.trim();
 
@@ -965,7 +966,9 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                         'X-CSRF-Token': csrfToken
                     },
                     body: JSON.stringify({
+                        name: client,
                         booking_id: booking_id_raw ? booking_id_raw : null,
+                        service: service,
                         rating: rating,
                         comments: comments
                     })
