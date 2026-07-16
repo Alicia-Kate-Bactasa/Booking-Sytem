@@ -300,7 +300,7 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
 
             let duration = 30; // default fallback
             if (selectedRescheduleId) {
-                const booking = (appointmentsRegistry || []).find(app => app.id === selectedRescheduleId);
+                const booking = (currentAppointments || []).find(app => app.id === selectedRescheduleId);
                 if (booking) {
                     const serviceObj = (masterCatalogPayload || []).find(s => s.name === booking.service || s.service_name === booking.service);
                     if (serviceObj) {
@@ -1168,6 +1168,16 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
         window.toggleSidebar = toggleSidebar;
         window.updateRenewalButtonState = updateRenewalButtonState;
         window.handleDateChange = handleDateChange;
+        window.switchView = switchView;
+        window.terminateSessionLogout = terminateSessionLogout;
+        window.switchAppointmentTab = switchAppointmentTab;
+        window.handleDashboardFormSubmission = handleDashboardFormSubmission;
+        window.toggleDashboardDropdown = toggleDashboardDropdown;
+        window.toggleModal = toggleModal;
+        window.handleRenewalSubmission = handleRenewalSubmission;
+        window.processRescheduleValidation = processRescheduleValidation;
+        window.executeSoftSubscriptionDowngrade = executeSoftSubscriptionDowngrade;
+        window.launchRescheduleWizard = launchRescheduleWizard;
 
         document.addEventListener('DOMContentLoaded', () => {
             const bookingIdInput = document.getElementById('feedbackBookingId');
