@@ -122,6 +122,13 @@ function verify_csrf_request() {
     }
 }
 
+/**
+ * Logs a system event into the error log.
+ */
+function log_system_event($conn, $event_type, $description) {
+    error_log("System Event [{$event_type}]: {$description}");
+}
+
 // =========================================================================
 // ENVIRONMENT DATABASE BOUNDARY SETTINGS (Fill locally; do not push)
 // =========================================================================
