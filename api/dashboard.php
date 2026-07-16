@@ -294,20 +294,31 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Subscriber') {
                     <div class="flex justify-between items-center pb-2 border-b border-neutral-800">
                         <span class="text-[10px] font-bold uppercase tracking-widest text-neutral-400">GCash</span>
                     </div>
-                    <div class="flex justify-center py-2">
-                        <div class="relative group overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950 p-2 transition-all hover:border-neutral-700">
-                            <img src="../assets/gcashQR.jpg" alt="GCash QR Code" class="w-40 h-40 object-contain rounded-lg transition-transform duration-300 group-hover:scale-105">
-                            <div class="absolute inset-0 bg-dark/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-                                <span class="text-[9px] uppercase tracking-widest text-white font-bold bg-neutral-900/80 px-2.5 py-1 rounded-full border border-neutral-800">GCash QR</span>
-                            </div>
-                        </div>
-                    </div>
                     <div class="text-xs space-y-1.5">
                         <div class="flex justify-between"><span class="text-neutral-400">Receiving Name:</span><span class="font-bold text-white">Montage Auto Studio Inc.</span></div>
                         <div class="flex justify-between"><span class="text-neutral-400">Corporate Mobile Number:</span><span class="font-bold text-white font-mono">09671892659</span></div>
                         <div class="flex justify-between border-t border-neutral-800 pt-1.5 font-bold text-sm">
                             <span class="text-neutral-300">Renewal Fee Due:</span>
                             <span class="text-emerald-400">₱1,500.00</span>
+                        </div>
+                    </div>
+                    <div class="pt-1">
+                        <button type="button" onclick="const qr = this.nextElementSibling; qr.classList.toggle('hidden'); const arrow = this.querySelector('.qr-arrow'); arrow.classList.toggle('rotate-180');" class="w-full flex items-center justify-between bg-neutral-800/50 hover:bg-neutral-800 border border-neutral-800 hover:border-neutral-700/80 px-4 py-2.5 rounded-xl text-xs font-semibold text-neutral-200 transition-all select-none">
+                            <span class="flex items-center gap-2">
+                                <svg class="w-4 h-4 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path>
+                                </svg>
+                                <span>Use GCash QR Code</span>
+                            </span>
+                            <svg class="w-4 h-4 text-neutral-400 transition-transform duration-200 qr-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div class="hidden mt-2 p-3 bg-neutral-950/45 border border-neutral-800 rounded-xl flex flex-col items-center justify-center transition-all duration-300">
+                            <div class="relative group overflow-hidden rounded-lg bg-neutral-900 p-1 border border-neutral-800">
+                                <img src="../assets/gcashQR.jpg" alt="GCash QR Code" class="w-36 h-36 object-contain rounded-md transition-transform duration-300 group-hover:scale-105">
+                            </div>
+                            <p class="text-[9px] text-neutral-500 mt-2 uppercase tracking-widest font-bold">Scan with GCash app</p>
                         </div>
                     </div>
                 </div>
