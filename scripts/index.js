@@ -687,8 +687,8 @@
 
                     alert(payload.message || 'Thank you for your feedback!');
                     form.reset();
-                    const serviceSelect = document.getElementById('feedbackService');
-                    if (serviceSelect) serviceSelect.disabled = false;
+                    const detailsContainer = document.getElementById('feedbackBookingDetailsContainer');
+                    if (detailsContainer) detailsContainer.classList.add('hidden');
                     setFeedbackRating(5);
                     toggleModal('feedbackModal');
                 })
@@ -731,12 +731,19 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             const bookingIdInput = document.getElementById('feedbackBookingId');
-            const serviceSelect = document.getElementById('feedbackService');
-            if (bookingIdInput && serviceSelect) {
+            const serviceInput = document.getElementById('feedbackService');
+            const serviceDisplay = document.getElementById('feedbackServiceDisplay');
+            const detailsContainer = document.getElementById('feedbackBookingDetailsContainer');
+            const bookingDateSpan = document.getElementById('feedbackBookingDate');
+            const bookingPriceSpan = document.getElementById('feedbackBookingPrice');
+
+            if (bookingIdInput && serviceInput && serviceDisplay) {
                 const handleBookingIdChange = async () => {
                     const bookingId = bookingIdInput.value.trim();
                     if (!bookingId) {
-                        serviceSelect.disabled = false;
+                        serviceInput.value = '';
+                        serviceDisplay.value = '';
+                        if (detailsContainer) detailsContainer.classList.add('hidden');
                         return;
                     }
                     try {
@@ -745,26 +752,17 @@
                             throw new Error('Not found');
                         }
                         const result = await response.json();
-                        if (result.status === 'success' && result.data && result.data.service_name) {
-                            let matched = false;
-                            for (let i = 0; i < serviceSelect.options.length; i++) {
-                                if (serviceSelect.options[i].value === result.data.service_name) {
-                                    serviceSelect.selectedIndex = i;
-                                    matched = true;
-                                    break;
-                                }
-                            }
-                            if (!matched) {
-                                const opt = document.createElement('option');
-                                opt.value = result.data.service_name;
-                                opt.text = result.data.service_name;
-                                serviceSelect.add(opt);
-                                serviceSelect.value = result.data.service_name;
-                            }
-                            serviceSelect.disabled = true;
+                        if (result.status === 'success' && result.data) {
+                            serviceInput.value = result.data.service_name || '';
+                            serviceDisplay.value = result.data.service_name || '';
+                            if (bookingDateSpan) bookingDateSpan.textContent = result.data.scheduled_date || '-';
+                            if (bookingPriceSpan) bookingPriceSpan.textContent = result.data.purchased_price ? `₱${result.data.purchased_price}` : '-';
+                            if (detailsContainer) detailsContainer.classList.remove('hidden');
                         }
                     } catch (err) {
-                        serviceSelect.disabled = false;
+                        serviceInput.value = '';
+                        serviceDisplay.value = '';
+                        if (detailsContainer) detailsContainer.classList.add('hidden');
                     }
                 };
 

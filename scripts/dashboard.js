@@ -44,6 +44,7 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                             service: app.service_name,
                             date: app.scheduled_date,
                             time: app.time_slot,
+                            price: app.purchased_price,
                             client: app.full_name,
                             userType: app.customer_type === 'Subscriber' ? 'subscriber' : 'regular'
                         };
@@ -188,7 +189,7 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                         : `<span class="inline-flex items-center text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-red-50 text-red-600 border border-red-100">✕ Cancelled</span>`;
 
                     const actionBtn = app.type === 'completed'
-                        ? `<button onclick="openFeedbackForBooking('${app.id}', '${app.service}')" class="bg-neutral-100 border border-neutral-200 px-4 py-2 rounded-full font-bold text-xs hover:bg-dark hover:text-light transition-all">Leave Feedback</button>`
+                        ? `<button onclick="openFeedbackForBooking('${app.id}', '${app.service.replace(/'/g, "\\'")}', '${app.date}', '${app.price}')" class="bg-neutral-100 border border-neutral-200 px-4 py-2 rounded-full font-bold text-xs hover:bg-dark hover:text-light transition-all">Leave Feedback</button>`
                         : `<span class="text-neutral-400 text-xs font-semibold">—</span>`;
 
                     tbody.innerHTML += `
@@ -475,8 +476,8 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
             if (viewId === 'booking') updateSummary();
         }
 
-        function handleDateChange(warningElementId) {
-            const dateInput = event.target.value;
+        function handleDateChange(warningElementId, inputEl) {
+            const dateInput = inputEl ? inputEl.value : (window.event ? window.event.target.value : '');
             const warningElement = document.getElementById(warningElementId);
             if (dateInput && new Date(dateInput).getUTCDay() === 6) {
                 warningElement.classList.remove('hidden');
@@ -996,12 +997,21 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
             });
         }
 
-        function openFeedbackForBooking(bookingId, serviceName) {
+        function openFeedbackForBooking(bookingId, serviceName, date, price) {
             const bookingInput = document.getElementById('feedbackBookingId');
             const serviceInput = document.getElementById('feedbackService');
+            const serviceDisplay = document.getElementById('feedbackServiceDisplay');
+            const detailsContainer = document.getElementById('feedbackBookingDetailsContainer');
+            const bookingDateSpan = document.getElementById('feedbackBookingDate');
+            const bookingPriceSpan = document.getElementById('feedbackBookingPrice');
 
             if (bookingInput) bookingInput.value = bookingId;
             if (serviceInput) serviceInput.value = serviceName;
+            if (serviceDisplay) serviceDisplay.value = serviceName;
+
+            if (bookingDateSpan) bookingDateSpan.textContent = date || '-';
+            if (bookingPriceSpan) bookingPriceSpan.textContent = price ? `₱${price}` : '-';
+            if (detailsContainer) detailsContainer.classList.remove('hidden');
 
             toggleModal('feedbackModal');
         }
@@ -1055,8 +1065,8 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                 
                 // Reset and close
                 document.getElementById('feedbackForm').reset();
-                const serviceSelect = document.getElementById('feedbackService');
-                if (serviceSelect) serviceSelect.disabled = false;
+                const detailsContainer = document.getElementById('feedbackBookingDetailsContainer');
+                if (detailsContainer) detailsContainer.classList.add('hidden');
                 const activeProfileName = localStorage.getItem('subscriber_name') || 'VIP Member';
                 document.getElementById('feedbackName').value = activeProfileName;
                 setFeedbackRating(5); // Reset to 5 stars default
@@ -1138,15 +1148,23 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
         window.submitCustomerFeedback = submitCustomerFeedback;
         window.toggleSidebar = toggleSidebar;
         window.updateRenewalButtonState = updateRenewalButtonState;
+        window.handleDateChange = handleDateChange;
 
         document.addEventListener('DOMContentLoaded', () => {
             const bookingIdInput = document.getElementById('feedbackBookingId');
-            const serviceSelect = document.getElementById('feedbackService');
-            if (bookingIdInput && serviceSelect) {
+            const serviceInput = document.getElementById('feedbackService');
+            const serviceDisplay = document.getElementById('feedbackServiceDisplay');
+            const detailsContainer = document.getElementById('feedbackBookingDetailsContainer');
+            const bookingDateSpan = document.getElementById('feedbackBookingDate');
+            const bookingPriceSpan = document.getElementById('feedbackBookingPrice');
+
+            if (bookingIdInput && serviceInput && serviceDisplay) {
                 const handleBookingIdChange = async () => {
                     const bookingId = bookingIdInput.value.trim();
                     if (!bookingId) {
-                        serviceSelect.disabled = false;
+                        serviceInput.value = '';
+                        serviceDisplay.value = '';
+                        if (detailsContainer) detailsContainer.classList.add('hidden');
                         return;
                     }
                     try {
@@ -1155,26 +1173,17 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                             throw new Error('Not found');
                         }
                         const result = await response.json();
-                        if (result.status === 'success' && result.data && result.data.service_name) {
-                            let matched = false;
-                            for (let i = 0; i < serviceSelect.options.length; i++) {
-                                if (serviceSelect.options[i].value === result.data.service_name) {
-                                    serviceSelect.selectedIndex = i;
-                                    matched = true;
-                                    break;
-                                }
-                            }
-                            if (!matched) {
-                                const opt = document.createElement('option');
-                                opt.value = result.data.service_name;
-                                opt.text = result.data.service_name;
-                                serviceSelect.add(opt);
-                                serviceSelect.value = result.data.service_name;
-                            }
-                            serviceSelect.disabled = true;
+                        if (result.status === 'success' && result.data) {
+                            serviceInput.value = result.data.service_name || '';
+                            serviceDisplay.value = result.data.service_name || '';
+                            if (bookingDateSpan) bookingDateSpan.textContent = result.data.scheduled_date || '-';
+                            if (bookingPriceSpan) bookingPriceSpan.textContent = result.data.purchased_price ? `₱${result.data.purchased_price}` : '-';
+                            if (detailsContainer) detailsContainer.classList.remove('hidden');
                         }
                     } catch (err) {
-                        serviceSelect.disabled = false;
+                        serviceInput.value = '';
+                        serviceDisplay.value = '';
+                        if (detailsContainer) detailsContainer.classList.add('hidden');
                     }
                 };
 

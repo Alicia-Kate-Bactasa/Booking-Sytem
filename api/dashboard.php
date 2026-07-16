@@ -170,7 +170,7 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Subscriber') {
                                 <label class="block text-xs font-bold uppercase tracking-wider text-neutral-400 mb-3">2. Schedule Appointment </label>
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
-                                        <input type="date" id="bookingDate" required class="w-full bg-white border border-neutral-200 p-4 rounded-full text-sm font-semibold focus:outline-none focus:border-dark transition-all px-6" onchange="handleDateChange('capacityWarning')">
+                                        <input type="date" id="bookingDate" required class="w-full bg-white border border-neutral-200 p-4 rounded-full text-sm font-semibold focus:outline-none focus:border-dark transition-all px-6" onchange="handleDateChange('capacityWarning', this)">
                                     </div>
                                     <div class="relative z-20">
                                         <button type="button" onclick="toggleDashboardDropdown('dashTimeDropdownMenu')" class="w-full bg-white border border-neutral-200 p-4 rounded-full text-sm font-semibold text-left flex justify-between items-center focus:outline-none focus:border-dark transition-all px-6 shadow-sm hover:border-neutral-400">
@@ -348,7 +348,7 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Subscriber') {
             <form onsubmit="processRescheduleValidation(event)" class="space-y-4">
                 <div>
                     <label class="block text-xs font-bold uppercase tracking-wider text-neutral-400 mb-2">Choose a new date</label>
-                    <input type="date" id="reschDate" required class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-sm font-semibold focus:outline-none focus:border-dark transition-all px-5" onchange="handleDateChange('reschCapacityWarning')">
+                    <input type="date" id="reschDate" required class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-sm font-semibold focus:outline-none focus:border-dark transition-all px-5" onchange="handleDateChange('reschCapacityWarning', this)">
                 </div>
                 <div>
                     <label class="block text-xs font-bold uppercase tracking-wider text-neutral-400 mb-2">Choose a new time</label>
@@ -419,13 +419,20 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Subscriber') {
                     </div>
                     <div>
                         <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1.5">Service</label>
-                        <select id="feedbackService" required class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-semibold focus:outline-none focus:border-dark px-5 cursor-pointer">
-                            <option value="Standard Car Wash">Standard Car Wash</option>
-                            <option value="Deluxe Car Wash">Deluxe Car Wash</option>
-                            <option value="Premium Car Wash">Premium Car Wash</option>
-                            <option value="Under Chassis Wash">Under Chassis Wash</option>
-                            <option value="Complete Interior Detailing">Complete Detailing</option>
-                        </select>
+                        <input type="text" id="feedbackServiceDisplay" readonly placeholder="Auto-filled" class="w-full bg-neutral-100 border border-neutral-200 p-3.5 rounded-full text-xs font-bold text-neutral-500 focus:outline-none px-5 cursor-not-allowed">
+                        <input type="hidden" id="feedbackService" required>
+                    </div>
+                </div>
+
+                <!-- Auto-populated Booking Details (Date & Price) -->
+                <div id="feedbackBookingDetailsContainer" class="hidden grid grid-cols-2 gap-4 bg-neutral-50 border border-neutral-200 p-4 rounded-[1.5rem] text-[11px]">
+                    <div>
+                        <span class="block text-[9px] font-bold uppercase tracking-wider text-neutral-400 mb-0.5">Booking Date</span>
+                        <span id="feedbackBookingDate" class="font-semibold text-neutral-700">-</span>
+                    </div>
+                    <div>
+                        <span class="block text-[9px] font-bold uppercase tracking-wider text-neutral-400 mb-0.5">Price Paid</span>
+                        <span id="feedbackBookingPrice" class="font-bold text-emerald-600">-</span>
                     </div>
                 </div>
 

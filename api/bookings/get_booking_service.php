@@ -1,9 +1,9 @@
 <?php
 /**
  * File: api/bookings/get_booking_service.php
- * Purpose: Retrieves the service name associated with a Booking ID (public access for feedback).
+ * Purpose: Retrieves the service name, scheduled date, and price associated with a Booking ID (public access for feedback).
  * Input Params: GET ?booking_id=123 (or MTG-123)
- * Output: JSON response returning the service name.
+ * Output: JSON response returning the service name, date, and price.
  */
 
 header("Content-Type: application/json; charset=UTF-8");
@@ -35,7 +35,7 @@ if (!filter_var($booking_id_raw, FILTER_VALIDATE_INT)) {
 $booking_id = (int)$booking_id_raw;
 
 try {
-    $query = "SELECT s.service_name 
+    $query = "SELECT s.service_name, b.scheduled_date, b.purchased_price 
               FROM Booking b 
               JOIN Service s ON b.service_id = s.service_id 
               WHERE b.booking_id = :booking_id LIMIT 1";
@@ -54,11 +54,13 @@ try {
     echo json_encode([
         "status" => "success",
         "data" => [
-            "service_name" => $booking['service_name']
+            "service_name" => $booking['service_name'],
+            "scheduled_date" => $booking['scheduled_date'],
+            "purchased_price" => $booking['purchased_price']
         ]
     ]);
 } catch (PDOException $e) {
-    error_log("Failed to fetch booking service: " . $e->getMessage());
+    error_log("Failed to fetch booking details: " . $e->getMessage());
     http_response_code(500);
     echo json_encode(["status" => "error", "message" => "Server error."]);
 }

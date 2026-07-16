@@ -121,7 +121,6 @@ try {
     }
 
     // 4. Validate Sunday Constraint
-    $dateObj = new Date($scheduled_date);
     if (date('N', strtotime($scheduled_date)) == 7) {
         http_response_code(400);
         echo json_encode([
