@@ -433,7 +433,7 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Admin') {
                 
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-2">Duration</label>
+                        <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-2">Duration (mins)</label>
                         <input type="text" id="serviceDurationInput" required placeholder="e.g. 30 Minutes " class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-bold text-black focus:outline-none focus:border-black px-5">
                     </div>
                     <div>
