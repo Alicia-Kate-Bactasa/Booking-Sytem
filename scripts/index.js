@@ -656,7 +656,7 @@
             const comments = document.getElementById('feedbackComments').value.trim();
 
             if (!name || !bookingId || !service || !comments) {
-                alert('Please complete all required feedback fields, including your Booking ID.');
+                showErrorModal('Please complete all required feedback fields, including your Booking ID.');
                 return;
             }
 
@@ -691,7 +691,7 @@
                     toggleModal('feedbackModal');
                 })
                 .catch(error => {
-                    alert(error.message || 'Unable to submit feedback right now.');
+                    showErrorModal(error.message || 'Unable to submit feedback right now.');
                 })
                 .finally(() => {
                     if (submitButton) {

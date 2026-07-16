@@ -217,6 +217,22 @@ try {
         }
     }
 
+    // Check if feedback has already been submitted for this booking
+    if ($booking_id !== null) {
+        $feedbackCheckQuery = "SELECT feedback_id FROM Feedback WHERE booking_id = :booking_id LIMIT 1";
+        $feedbackCheckStmt = $conn->prepare($feedbackCheckQuery);
+        $feedbackCheckStmt->bindValue(':booking_id', $booking_id, PDO::PARAM_INT);
+        $feedbackCheckStmt->execute();
+        if ($feedbackCheckStmt->fetch()) {
+            http_response_code(409); // Conflict
+            echo json_encode([
+                "status" => "error",
+                "message" => "You've already submitted your feedback for this booking."
+            ]);
+            exit();
+        }
+    }
+
     // Insert feedback into Feedback table
     $insertQuery = "INSERT INTO Feedback (booking_id, customer_id, client_name, service_name, feedback_type, rating, comments) 
                     VALUES (:booking_id, :customer_id, :client_name, :service_name, :feedback_type, :rating, :comments)";
