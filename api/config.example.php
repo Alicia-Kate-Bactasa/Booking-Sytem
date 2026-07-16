@@ -69,10 +69,10 @@ function require_auth($allowedRoles) {
 // =========================================================================
 // ENVIRONMENT DATABASE BOUNDARY SETTINGS (Fill locally; do not push)
 // =========================================================================
-$host = "localhost";
-$db_name = "YOUR_DATABASE_NAME_HERE"; // e.g., s22104079_montageAutoStudio
-$username = "YOUR_USERNAME_HERE";      // Identical to DB name on DCISM live server
-$password = "YOUR_PASSWORD_HERE";      // Your live database panel password secret
+$host = "localhost";                       // Kept as localhost since PHP and MySQL run on the same machine
+$db_name = "YOUR_DATABASE_NAME_HERE";      // Your live full database name
+$username = "YOUR_USERNAME_HERE";          // Your DCISM username is identical to the full DB name
+$password = "YOUR_PASSWORD_HERE";          // REPLACE WITH THE PASSWORD YOU SET IN ADMIN.DCISM.ORG
 $conn = null;
 
 try {
@@ -80,7 +80,7 @@ try {
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
     $conn->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
-} catch (P and whDOException $exception) {
+} catch (PDOException $exception) {
     error_log("Database connection failed: " . $exception->getMessage());
     http_response_code(500);
     echo json_encode([
@@ -93,7 +93,9 @@ try {
 // =========================================================================
 // EMAIL / MAILER SERVICE CONFIGURATION
 // =========================================================================
-define('BREVO_API_KEY', 'YOUR_BREVO_API_KEY_HERE'); 
-define('MAIL_FROM_EMAIL', 'your-verified-sender-email@gmail.com');
-define('MAIL_FROM_NAME', 'Montage Auto Studio');
-define('MAIL_REPLY_TO', 'support@montageautostudio.com');
+// Gmail SMTP Configuration
+define('SMTP_HOST', 'smtp.gmail.com');
+define('SMTP_PORT', 587);
+define('SMTP_SECURE', 'tls'); // Use 'tls' (port 587) or 'ssl' (port 465)
+define('SMTP_USER', 'YOUR_GMAIL_ADDRESS_HERE'); // Your Gmail Address
+define('SMTP_PASS', 'YOUR_GMAIL_APP_PASSWORD_HERE'); // Your 16-character Google App Password (e.g. 'abcd efgh ijkl mnop')
