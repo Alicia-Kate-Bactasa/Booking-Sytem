@@ -67,7 +67,10 @@ const defaultServices = [
                 const approvedData = data.filter(app => {
                     // Regular/guest bookings only appear in the bookings panel if payment is approved ('Paid')
                     // Subscribers are pre-approved (payment_status is null)
-                    return app.payment_status === 'Paid' || app.payment_status === null || app.customer_type === 'Subscriber';
+                    if (app.payment_status !== null) {
+                        return app.payment_status === 'Paid';
+                    }
+                    return true;
                 });
                 appointmentsRegistry = approvedData.map(app => {
                     let type = 'cancelled';
