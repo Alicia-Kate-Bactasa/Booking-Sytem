@@ -101,6 +101,21 @@ try {
     $customer_id = null;
 
     $ensureFeedbackSchema = function ($conn) {
+        // Create table if it doesn't exist
+        $tableCheck = $conn->query("SHOW TABLES LIKE 'Feedback'");
+        if (!$tableCheck->fetch()) {
+            $conn->exec("CREATE TABLE Feedback (
+                feedback_id INT AUTO_INCREMENT PRIMARY KEY,
+                booking_id INT UNIQUE NULL,
+                customer_id INT NULL,
+                rating INT CHECK (rating >= 1 AND rating <= 5),
+                comments TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (booking_id) REFERENCES Booking(booking_id) ON DELETE CASCADE,
+                FOREIGN KEY (customer_id) REFERENCES Customer(customer_id) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+        }
+
         $requiredColumns = [
             'client_name' => "VARCHAR(255) NULL",
             'service_name' => "VARCHAR(255) NULL",

@@ -28,6 +28,21 @@ try {
     require_auth('Admin');
 
     $ensureFeedbackSchema = function ($conn) {
+        // Create table if it doesn't exist
+        $tableCheck = $conn->query("SHOW TABLES LIKE 'Feedback'");
+        if (!$tableCheck->fetch()) {
+            $conn->exec("CREATE TABLE Feedback (
+                feedback_id INT AUTO_INCREMENT PRIMARY KEY,
+                booking_id INT UNIQUE NULL,
+                customer_id INT NULL,
+                rating INT CHECK (rating >= 1 AND rating <= 5),
+                comments TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (booking_id) REFERENCES Booking(booking_id) ON DELETE CASCADE,
+                FOREIGN KEY (customer_id) REFERENCES Customer(customer_id) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+        }
+
         $requiredColumns = [
             'client_name' => "VARCHAR(255) NULL",
             'service_name' => "VARCHAR(255) NULL",
@@ -38,6 +53,15 @@ try {
             $columnCheckStmt = $conn->query("SHOW COLUMNS FROM Feedback LIKE " . $conn->quote($columnName));
             if (!$columnCheckStmt->fetch()) {
                 $conn->exec("ALTER TABLE Feedback ADD COLUMN {$columnName} {$definition}");
+            }
+        }
+
+        $nullableColumns = ['booking_id', 'customer_id'];
+        foreach ($nullableColumns as $columnName) {
+            $columnStmt = $conn->query("SHOW COLUMNS FROM Feedback LIKE " . $conn->quote($columnName));
+            $columnInfo = $columnStmt->fetch(PDO::FETCH_ASSOC);
+            if ($columnInfo && strtoupper($columnInfo['Null']) === 'NO') {
+                $conn->exec("ALTER TABLE Feedback MODIFY COLUMN {$columnName} {$columnInfo['Type']} NULL");
             }
         }
     };

@@ -1291,7 +1291,7 @@ const defaultServices = [
                 })
                 .catch(err => {
                     console.error("Failed to load feedbacks from database:", err);
-                    container.innerHTML = '<div class="p-8 text-neutral-400 text-sm font-medium">Failed to load customer feedback.</div>';
+                    container.innerHTML = '<div class="p-8 text-neutral-400 text-sm font-medium">No customer feedback has been submitted yet.</div>';
                 });
         }
 
