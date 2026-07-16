@@ -64,7 +64,12 @@ const defaultServices = [
                 const responseObj = await res.json();
 
                 const data = (responseObj && responseObj.status === 'success') ? responseObj.data : (Array.isArray(responseObj) ? responseObj : []);
-                appointmentsRegistry = data.map(app => {
+                const approvedData = data.filter(app => {
+                    // Regular/guest bookings only appear in the bookings panel if payment is approved ('Paid')
+                    // Subscribers are pre-approved (payment_status is null)
+                    return app.payment_status === 'Paid' || app.payment_status === null || app.customer_type === 'Subscriber';
+                });
+                appointmentsRegistry = approvedData.map(app => {
                     let type = 'cancelled';
                     if (app.booking_status === 'Pending Verification' || app.booking_status === 'Confirmed' || app.booking_status === 'Pending' || app.booking_status === 'Paid') {
                         type = 'pending';

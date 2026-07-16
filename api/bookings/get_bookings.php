@@ -29,10 +29,13 @@ try {
     // Allow both Admin and Subscriber users to retrieve booking list
     require_auth(['Admin', 'Subscriber']);
 
-    $query = "SELECT b.booking_id, b.time_slot, b.scheduled_date, b.booking_status, b.bay_number, b.purchased_price, s.service_name, c.full_name, c.customer_type 
+    $query = "SELECT b.booking_id, b.time_slot, b.scheduled_date, b.booking_status, b.bay_number, b.purchased_price, s.service_name, c.full_name, c.customer_type,
+                     p.payment_status
               FROM Booking b 
               JOIN Service s ON b.service_id = s.service_id 
-              JOIN Customer c ON b.customer_id = c.customer_id";
+              JOIN Customer c ON b.customer_id = c.customer_id
+              LEFT JOIN Invoice i ON b.invoice_id = i.invoice_id
+              LEFT JOIN Payment p ON i.invoice_id = p.invoice_id";
 
     // If the authenticated user is a Subscriber, filter to return only their own bookings
     if ($_SESSION['role'] === 'Subscriber') {

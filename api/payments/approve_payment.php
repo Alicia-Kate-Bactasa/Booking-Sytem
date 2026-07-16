@@ -200,6 +200,14 @@ try {
         $stmtInv->bindValue(':invoice_id', $invoice_id, PDO::PARAM_INT);
         $stmtInv->execute();
 
+        // Cancel the associated booking to free the slot
+        if ($invoice['invoice_type'] === 'Single Detailing') {
+            $updateBook = "UPDATE Booking SET booking_status = 'Cancelled' WHERE invoice_id = :invoice_id";
+            $stmtBook = $conn->prepare($updateBook);
+            $stmtBook->bindValue(':invoice_id', $invoice_id, PDO::PARAM_INT);
+            $stmtBook->execute();
+        }
+
         if ($invoice['invoice_type'] === 'Monthly Roster') {
             // Set Subscription to Expired (archived)
             $updateSub = "UPDATE Subscription SET plan_status = 'Expired' WHERE customer_id = :customer_id";
