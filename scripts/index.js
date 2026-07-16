@@ -687,6 +687,8 @@
 
                     alert(payload.message || 'Thank you for your feedback!');
                     form.reset();
+                    const serviceSelect = document.getElementById('feedbackService');
+                    if (serviceSelect) serviceSelect.disabled = false;
                     setFeedbackRating(5);
                     toggleModal('feedbackModal');
                 })
@@ -726,3 +728,47 @@
         }
 
         window.togglePasswordVisibility = togglePasswordVisibility;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const bookingIdInput = document.getElementById('feedbackBookingId');
+            const serviceSelect = document.getElementById('feedbackService');
+            if (bookingIdInput && serviceSelect) {
+                const handleBookingIdChange = async () => {
+                    const bookingId = bookingIdInput.value.trim();
+                    if (!bookingId) {
+                        serviceSelect.disabled = false;
+                        return;
+                    }
+                    try {
+                        const response = await fetch(`api/bookings/get_booking_service.php?booking_id=${encodeURIComponent(bookingId)}`);
+                        if (!response.ok) {
+                            throw new Error('Not found');
+                        }
+                        const result = await response.json();
+                        if (result.status === 'success' && result.data && result.data.service_name) {
+                            let matched = false;
+                            for (let i = 0; i < serviceSelect.options.length; i++) {
+                                if (serviceSelect.options[i].value === result.data.service_name) {
+                                    serviceSelect.selectedIndex = i;
+                                    matched = true;
+                                    break;
+                                }
+                            }
+                            if (!matched) {
+                                const opt = document.createElement('option');
+                                opt.value = result.data.service_name;
+                                opt.text = result.data.service_name;
+                                serviceSelect.add(opt);
+                                serviceSelect.value = result.data.service_name;
+                            }
+                            serviceSelect.disabled = true;
+                        }
+                    } catch (err) {
+                        serviceSelect.disabled = false;
+                    }
+                };
+
+                bookingIdInput.addEventListener('input', handleBookingIdChange);
+                bookingIdInput.addEventListener('change', handleBookingIdChange);
+            }
+        });

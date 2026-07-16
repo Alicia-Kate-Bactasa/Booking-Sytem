@@ -1055,6 +1055,8 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                 
                 // Reset and close
                 document.getElementById('feedbackForm').reset();
+                const serviceSelect = document.getElementById('feedbackService');
+                if (serviceSelect) serviceSelect.disabled = false;
                 const activeProfileName = localStorage.getItem('subscriber_name') || 'VIP Member';
                 document.getElementById('feedbackName').value = activeProfileName;
                 setFeedbackRating(5); // Reset to 5 stars default
@@ -1136,5 +1138,49 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
         window.submitCustomerFeedback = submitCustomerFeedback;
         window.toggleSidebar = toggleSidebar;
         window.updateRenewalButtonState = updateRenewalButtonState;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const bookingIdInput = document.getElementById('feedbackBookingId');
+            const serviceSelect = document.getElementById('feedbackService');
+            if (bookingIdInput && serviceSelect) {
+                const handleBookingIdChange = async () => {
+                    const bookingId = bookingIdInput.value.trim();
+                    if (!bookingId) {
+                        serviceSelect.disabled = false;
+                        return;
+                    }
+                    try {
+                        const response = await fetch(`bookings/get_booking_service.php?booking_id=${encodeURIComponent(bookingId)}`);
+                        if (!response.ok) {
+                            throw new Error('Not found');
+                        }
+                        const result = await response.json();
+                        if (result.status === 'success' && result.data && result.data.service_name) {
+                            let matched = false;
+                            for (let i = 0; i < serviceSelect.options.length; i++) {
+                                if (serviceSelect.options[i].value === result.data.service_name) {
+                                    serviceSelect.selectedIndex = i;
+                                    matched = true;
+                                    break;
+                                }
+                            }
+                            if (!matched) {
+                                const opt = document.createElement('option');
+                                opt.value = result.data.service_name;
+                                opt.text = result.data.service_name;
+                                serviceSelect.add(opt);
+                                serviceSelect.value = result.data.service_name;
+                            }
+                            serviceSelect.disabled = true;
+                        }
+                    } catch (err) {
+                        serviceSelect.disabled = false;
+                    }
+                };
+
+                bookingIdInput.addEventListener('input', handleBookingIdChange);
+                bookingIdInput.addEventListener('change', handleBookingIdChange);
+            }
+        });
 
 
