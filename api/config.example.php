@@ -66,6 +66,62 @@ function require_auth($allowedRoles) {
     }
 }
 
+/**
+ * Generates a secure CSRF token and stores it in the session.
+ */
+function get_csrf_token() {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['csrf_token'];
+}
+
+/**
+ * Validates a given CSRF token against the session token.
+ */
+function validate_csrf_token($token) {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
+}
+
+/**
+ * Helper function to retrieve all headers in any server environment.
+ */
+if (!function_exists('getallheaders')) {
+    function getallheaders() {
+        $headers = [];
+        foreach ($_SERVER as $name => $value) {
+            if (substr($name, 0, 5) == 'HTTP_') {
+                $headers[str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', substr($name, 5)))))] = $value;
+            }
+        }
+        return $headers;
+    }
+}
+
+/**
+ * Automatically validates the CSRF token on POST requests.
+ */
+function verify_csrf_request() {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $headers = array_change_key_case(getallheaders(), CASE_LOWER);
+        $token = isset($headers['x-csrf-token']) ? $headers['x-csrf-token'] : '';
+        if (!validate_csrf_token($token)) {
+            http_response_code(403);
+            echo json_encode([
+                "status" => "error",
+                "message" => "Invalid or missing CSRF token."
+            ]);
+            exit();
+        }
+    }
+}
+
 // =========================================================================
 // ENVIRONMENT DATABASE BOUNDARY SETTINGS (Fill locally; do not push)
 // =========================================================================
