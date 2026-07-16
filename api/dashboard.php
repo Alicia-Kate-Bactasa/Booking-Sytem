@@ -143,12 +143,13 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Subscriber') {
             </div>
 
             <div id="view-booking" class="hidden">
-                <div class="mb-8">
-                    <h3 class="text-3xl font-black uppercase tracking-tight text-dark">Schedule An Appointment Session</h3>
-                    <p class="text-base text-neutral-400 font-medium mt-1">Book directly into our active Banilad studio twin-bay configuration.</p>
-                </div>
+                <div id="booking-form-container">
+                    <div class="mb-8">
+                        <h3 class="text-3xl font-black uppercase tracking-tight text-dark">Schedule An Appointment Session</h3>
+                        <p class="text-base text-neutral-400 font-medium mt-1">Book directly into our active Banilad studio twin-bay configuration.</p>
+                    </div>
 
-                <form id="dashWizardForm" onsubmit="handleDashboardFormSubmission(event)">
+                    <form id="dashWizardForm" onsubmit="handleDashboardFormSubmission(event)">
                     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
                         <div class="lg:col-span-7 space-y-8 bg-white border border-neutral-200 p-8 rounded-[2rem] shadow-sm">
@@ -207,6 +208,20 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Subscriber') {
                         </div>
                     </div>
                 </form>
+                </div>
+                
+                <div id="booking-restricted-container" class="hidden">
+                    <div class="bg-white border border-neutral-200 p-12 rounded-[2rem] shadow-sm text-center max-w-xl mx-auto my-12">
+                        <div class="w-16 h-16 rounded-full bg-amber-50 flex items-center justify-center mx-auto text-amber-600 font-bold text-2xl mb-6">⚠️</div>
+                        <h3 class="text-2xl font-bold uppercase tracking-tight text-dark mb-4">Limited to Subscribers Only</h3>
+                        <p class="text-sm text-neutral-500 mb-8 leading-relaxed">
+                            Your subscription status is currently <strong id="restrictedStatusText" class="text-red-600 font-bold">Inactive</strong>. Detailing bookings on this dashboard are limited to active VIP subscribers only. If you want to book a detailing session, please proceed to the main website.
+                        </p>
+                        <a href="../index.html" class="inline-block bg-dark text-light text-xs font-bold tracking-widest uppercase px-8 py-4 rounded-full border border-dark hover:bg-neutral-800 transition-all shadow-sm">
+                            Go to Booking Page
+                        </a>
+                    </div>
+                </div>
             </div>
 
            <div id="view-subscription" class="hidden space-y-8">
@@ -483,6 +498,6 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Subscriber') {
     </div>
 
     <script src="../scripts/modals.js"></script>
-    <script src="../scripts/dashboard.js?v=1.0.9"></script>
+    <script src="../scripts/dashboard.js?v=1.1.0"></script>
 </body>
 </html>

@@ -63,6 +63,49 @@ try {
     // Log this transition in System_Logs
     log_system_event($conn, 'Subscription Cancellation Requested', "Customer ID {$customer_id} requested subscription cancellation. Plan status transitioned to Cancellation Pending. Expiry effective after next billing date: {$subscription['next_billing_date']}.");
 
+    // Fetch user info for email notification
+    $userQuery = "SELECT c.full_name, COALESCE(u.email, c.email) AS email 
+                  FROM Customer c 
+                  LEFT JOIN User u ON c.customer_id = u.customer_id 
+                  WHERE c.customer_id = :customer_id LIMIT 1";
+    $userStmt = $conn->prepare($userQuery);
+    $userStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+    $userStmt->execute();
+    $userInfo = $userStmt->fetch();
+
+    if ($userInfo && !empty($userInfo['email']) && filter_var($userInfo['email'], FILTER_VALIDATE_EMAIL)) {
+        require_once __DIR__ . '/../utils/mailer.php';
+        
+        $email = $userInfo['email'];
+        $name = $userInfo['full_name'] ?: 'VIP Member';
+        $expiryDate = $subscription['next_billing_date'];
+        
+        $subject = "VIP Subscription Cancellation Confirmation";
+        $html = Mailer::formatInvoice([
+            'title' => 'Subscription Cancelled',
+            'status_bg' => '#fdf2f2',
+            'status_border' => '#c0392b',
+            'status_color' => '#c0392b',
+            'status_label' => 'CANCELLATION PENDING',
+            'status_detail' => "Dear {$name}, your request to cancel your VIP Unlimited Wash subscription has been processed. Your benefits remain active until your next billing date: <strong>{$expiryDate}</strong>, after which your membership will expire.",
+            'invoice_no' => 'SUB-' . $subscription['subscription_id'],
+            'date' => date('Y-m-d'),
+            'client_name' => $name,
+            'client_email' => $email,
+            'item_name' => 'VIP Unlimited Wash Plan',
+            'item_subtext' => "Cancellation requested. Active until {$expiryDate}",
+            'item_price' => 0.00,
+            'subtotal' => 0.00,
+            'total_due' => 0.00
+        ]);
+        
+        try {
+            Mailer::send($email, $subject, $html);
+        } catch (Exception $mailEx) {
+            error_log("Failed to send subscription cancellation email: " . $mailEx->getMessage());
+        }
+    }
+
     $conn->commit();
 
     echo json_encode([

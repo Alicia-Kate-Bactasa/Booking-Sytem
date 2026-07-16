@@ -905,6 +905,25 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                         userProfileSession.customer_type = prof.plan_status === 'Active' ? 'Subscriber' : 'Inactive Member';
                         userProfileSession.next_billing_date = prof.next_billing_date || 'Awaiting Payment Approval';
 
+                        // Toggle booking container visibility based on active subscription plan
+                        const isSubActive = prof.plan_status === 'Active';
+                        const formContainer = document.getElementById('booking-form-container');
+                        const restrictedContainer = document.getElementById('booking-restricted-container');
+                        const statusTextEl = document.getElementById('restrictedStatusText');
+                        
+                        if (formContainer && restrictedContainer) {
+                            if (isSubActive) {
+                                formContainer.classList.remove('hidden');
+                                restrictedContainer.classList.add('hidden');
+                            } else {
+                                formContainer.classList.add('hidden');
+                                restrictedContainer.classList.remove('hidden');
+                                if (statusTextEl) {
+                                    statusTextEl.innerText = prof.plan_status || 'Inactive';
+                                }
+                            }
+                        }
+
                         document.getElementById('dashWelcomeName').innerText = prof.full_name;
                         document.getElementById('subParamName').innerText = prof.full_name;
                         document.getElementById('subParamNextBilling').innerText = userProfileSession.next_billing_date;

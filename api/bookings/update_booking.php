@@ -67,9 +67,12 @@ try {
     verify_csrf_request();
 
     // Check if the booking actually exists before updating and fetch details
-    $checkQuery = "SELECT b.booking_id, b.customer_id, b.invoice_id, c.customer_type, b.booking_status AS current_status 
+    $checkQuery = "SELECT b.booking_id, b.customer_id, b.invoice_id, c.customer_type, b.booking_status AS current_status,
+                          c.email AS customer_email, c.full_name AS customer_name,
+                          s.service_name, b.scheduled_date, b.time_slot
                    FROM Booking b
                    JOIN Customer c ON b.customer_id = c.customer_id
+                   JOIN Service s ON b.service_id = s.service_id
                    WHERE b.booking_id = :booking_id LIMIT 1";
     $checkStmt = $conn->prepare($checkQuery);
     $checkStmt->bindValue(':booking_id', $booking_id, PDO::PARAM_INT);
@@ -115,6 +118,63 @@ try {
     
     if ($stmt->execute()) {
         log_system_event($conn, 'Booking Updated', "Booking ID {$booking_id} status updated from {$bookingData['current_status']} to {$booking_status} by Admin.");
+        
+        // Send email notification on Completion or Cancellation
+        if (($booking_status === 'Completed' || $booking_status === 'Cancelled') && !empty($bookingData['customer_email']) && filter_var($bookingData['customer_email'], FILTER_VALIDATE_EMAIL)) {
+            require_once __DIR__ . '/../utils/mailer.php';
+            
+            $email = $bookingData['customer_email'];
+            $name = $bookingData['customer_name'] ?: 'Valued Client';
+            $service = $bookingData['service_name'];
+            $date = $bookingData['scheduled_date'];
+            $time = $bookingData['time_slot'];
+            $bookingRef = 'MTG-' . $booking_id;
+            
+            if ($booking_status === 'Completed') {
+                $subject = "Thank You for Visiting Montage Auto Studio - Booking Ref: " . $bookingRef;
+                $html = Mailer::formatInvoice([
+                    'title' => 'Service Completed',
+                    'status_bg' => '#f4fbf7',
+                    'status_border' => '#27ae60',
+                    'status_color' => '#27ae60',
+                    'status_label' => 'COMPLETED',
+                    'status_detail' => "Dear {$name}, thank you for choosing Montage Auto Studio! Your detailing session for <strong>{$service}</strong> is now completed. We hope you are thrilled with the results!",
+                    'invoice_no' => $bookingRef,
+                    'date' => date('Y-m-d'),
+                    'client_name' => $name,
+                    'client_email' => $email,
+                    'item_name' => $service,
+                    'item_subtext' => "Scheduled Date: {$date} | Time: {$time}",
+                    'item_price' => 0.00,
+                    'subtotal' => 0.00,
+                    'total_due' => 0.00
+                ]);
+            } else {
+                $subject = "Booking Cancellation Notice - Booking Ref: " . $bookingRef;
+                $html = Mailer::formatInvoice([
+                    'title' => 'Booking Cancelled',
+                    'status_bg' => '#fdf2f2',
+                    'status_border' => '#c0392b',
+                    'status_color' => '#c0392b',
+                    'status_label' => 'CANCELLED',
+                    'status_detail' => "Dear {$name}, your booking reference <strong>{$bookingRef}</strong> for <strong>{$service}</strong> scheduled on {$date} at {$time} has been cancelled successfully. If this was a mistake, please reach out to us.",
+                    'invoice_no' => $bookingRef,
+                    'date' => date('Y-m-d'),
+                    'client_name' => $name,
+                    'client_email' => $email,
+                    'item_name' => $service,
+                    'item_subtext' => "Original Schedule: {$date} at {$time}",
+                    'item_price' => 0.00,
+                    'subtotal' => 0.00,
+                    'total_due' => 0.00
+                ]);
+            }
+            try {
+                Mailer::send($email, $subject, $html);
+            } catch (Exception $mailEx) {
+                error_log("Failed to send booking update email: " . $mailEx->getMessage());
+            }
+        }
         // === SECTION: SUCCESS RESPONSE ===
         http_response_code(200);
         echo json_encode([

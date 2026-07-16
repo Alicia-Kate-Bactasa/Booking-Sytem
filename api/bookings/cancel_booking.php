@@ -49,7 +49,13 @@ try {
     verify_csrf_request();
 
     // 1. Verify the booking exists
-    $checkQuery = "SELECT booking_id, customer_id, booking_status FROM Booking WHERE booking_id = :booking_id LIMIT 1";
+    $checkQuery = "SELECT b.booking_id, b.customer_id, b.booking_status,
+                          c.email AS customer_email, c.full_name AS customer_name,
+                          s.service_name, b.scheduled_date, b.time_slot
+                   FROM Booking b
+                   JOIN Customer c ON b.customer_id = c.customer_id
+                   JOIN Service s ON b.service_id = s.service_id
+                   WHERE b.booking_id = :booking_id LIMIT 1";
     $checkStmt = $conn->prepare($checkQuery);
     $checkStmt->bindValue(':booking_id', $booking_id, PDO::PARAM_INT);
     $checkStmt->execute();
@@ -94,6 +100,43 @@ try {
     $updateStmt->execute();
 
     log_system_event($conn, 'Booking Cancelled', "Booking ID {$booking_id} status updated to Cancelled by Subscriber.");
+    
+    // Send email notification on Cancellation
+    if (!empty($booking['customer_email']) && filter_var($booking['customer_email'], FILTER_VALIDATE_EMAIL)) {
+        require_once __DIR__ . '/../utils/mailer.php';
+        
+        $email = $booking['customer_email'];
+        $name = $booking['customer_name'] ?: 'Valued Client';
+        $service = $booking['service_name'];
+        $date = $booking['scheduled_date'];
+        $time = $booking['time_slot'];
+        $bookingRef = 'MTG-' . $booking_id;
+        
+        $subject = "Booking Cancellation Notice - Booking Ref: " . $bookingRef;
+        $html = Mailer::formatInvoice([
+            'title' => 'Booking Cancelled',
+            'status_bg' => '#fdf2f2',
+            'status_border' => '#c0392b',
+            'status_color' => '#c0392b',
+            'status_label' => 'CANCELLED',
+            'status_detail' => "Dear {$name}, your booking reference <strong>{$bookingRef}</strong> for <strong>{$service}</strong> scheduled on {$date} at {$time} has been cancelled successfully.",
+            'invoice_no' => $bookingRef,
+            'date' => date('Y-m-d'),
+            'client_name' => $name,
+            'client_email' => $email,
+            'item_name' => $service,
+            'item_subtext' => "Original Schedule: {$date} at {$time}",
+            'item_price' => 0.00,
+            'subtotal' => 0.00,
+            'total_due' => 0.00
+        ]);
+        try {
+            Mailer::send($email, $subject, $html);
+        } catch (Exception $mailEx) {
+            error_log("Failed to send booking cancellation email: " . $mailEx->getMessage());
+        }
+    }
+    
     $conn->commit();
 
     http_response_code(200);
