@@ -31,10 +31,20 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
 }
 
 try {
-    $stmt = $conn->prepare("SELECT user_id FROM User WHERE email = :email LIMIT 1");
+    $stmt = $conn->prepare("SELECT u.user_id, u.role, s.plan_status 
+                            FROM User u 
+                            LEFT JOIN Subscription s ON u.customer_id = s.customer_id 
+                            WHERE u.email = :email LIMIT 1");
     $stmt->bindValue(':email', $email, PDO::PARAM_STR);
     $stmt->execute();
-    $exists = (bool)$stmt->fetch();
+    $user = $stmt->fetch();
+
+    $exists = false;
+    if ($user) {
+        if ($user['role'] === 'Admin' || in_array($user['plan_status'], ['Active', 'Payment Pending', 'Cancellation Pending'])) {
+            $exists = true;
+        }
+    }
 
     http_response_code(200);
     echo json_encode([
