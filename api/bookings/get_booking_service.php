@@ -35,7 +35,7 @@ if (!filter_var($booking_id_raw, FILTER_VALIDATE_INT)) {
 $booking_id = (int)$booking_id_raw;
 
 try {
-    $query = "SELECT s.service_name, b.scheduled_date, b.purchased_price 
+    $query = "SELECT s.service_name, b.scheduled_date, b.purchased_price, b.booking_status 
               FROM Booking b 
               JOIN Service s ON b.service_id = s.service_id 
               WHERE b.booking_id = :booking_id LIMIT 1";
@@ -47,6 +47,12 @@ try {
     if (!$booking) {
         http_response_code(404);
         echo json_encode(["status" => "error", "message" => "Booking ID not found."]);
+        exit();
+    }
+
+    if ($booking['booking_status'] !== 'Completed') {
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "Feedback is only allowed for completed appointments."]);
         exit();
     }
 
