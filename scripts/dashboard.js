@@ -902,11 +902,11 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                     if (data && data.status === 'success') {
                         const prof = data.data || data.profile;
                         userProfileSession.name = prof.full_name;
-                        userProfileSession.customer_type = prof.plan_status === 'Active' ? 'Subscriber' : 'Inactive Member';
+                        userProfileSession.customer_type = (prof.plan_status === 'Active' || prof.plan_status === 'Cancellation Pending') ? 'Subscriber' : 'Inactive Member';
                         userProfileSession.next_billing_date = prof.next_billing_date || 'Awaiting Payment Approval';
 
                         // Toggle booking container visibility based on active subscription plan
-                        const isSubActive = prof.plan_status === 'Active';
+                        const isSubActive = prof.plan_status === 'Active' || prof.plan_status === 'Cancellation Pending';
                         const formContainer = document.getElementById('booking-form-container');
                         const restrictedContainer = document.getElementById('booking-restricted-container');
                         const statusTextEl = document.getElementById('restrictedStatusText');

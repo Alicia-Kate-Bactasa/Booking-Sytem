@@ -201,7 +201,7 @@ try {
 
     if ($customer && $customer['customer_type'] === 'Subscriber') {
         // Fetch active subscription ID
-        $subIdQuery = "SELECT subscription_id FROM Subscription WHERE customer_id = :customer_id AND plan_status = 'Active' LIMIT 1";
+        $subIdQuery = "SELECT subscription_id FROM Subscription WHERE customer_id = :customer_id AND plan_status IN ('Active', 'Cancellation Pending') LIMIT 1";
         $subIdStmt = $conn->prepare($subIdQuery);
         $subIdStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
         $subIdStmt->execute();
