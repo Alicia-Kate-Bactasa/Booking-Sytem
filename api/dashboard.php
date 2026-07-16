@@ -295,7 +295,7 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Subscriber') {
                         <span class="text-[10px] font-bold uppercase tracking-widest text-neutral-400">GCash</span>
                     </div>
                     <div class="text-xs space-y-1.5">
-                        <div class="flex justify-between"><span class="text-neutral-400">Receiving Name:</span><span class="font-bold text-white">Montage Auto Studio Inc.</span></div>
+                        <div class="flex justify-between"><span class="text-neutral-400">Receiving Name:</span><span class="font-bold text-white">Alicia Kate Bactasa</span></div>
                         <div class="flex justify-between"><span class="text-neutral-400">Corporate Mobile Number:</span><span class="font-bold text-white font-mono">09671892659</span></div>
                         <div class="flex justify-between border-t border-neutral-800 pt-1.5 font-bold text-sm">
                             <span class="text-neutral-300">Renewal Fee Due:</span>
