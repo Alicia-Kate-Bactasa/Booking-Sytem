@@ -164,20 +164,6 @@ try {
                                 "message" => "Your subscriber account is pending admin approval. You will be able to access your account once your subscription and payment have been verified by an admin."
                             ]);
                             exit();
-                        } elseif ($plan_status === 'Expired') {
-                            http_response_code(403);
-                            echo json_encode([
-                                "status" => "error",
-                                "message" => "Your subscription registration has been rejected or has expired. Please contact support or resubmit registration."
-                            ]);
-                            exit();
-                        } elseif ($plan_status !== 'Active') {
-                            http_response_code(403);
-                            echo json_encode([
-                                "status" => "error",
-                                "message" => "Your subscription account is inactive. Please contact support."
-                            ]);
-                            exit();
                         }
                     }
                 }

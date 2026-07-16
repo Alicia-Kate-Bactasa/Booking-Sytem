@@ -121,14 +121,12 @@ try {
     $existingUser = $emailCheckStmt->fetch();
 
     if ($existingUser) {
-        if ($existingUser['role'] === 'Admin' || in_array($existingUser['plan_status'], ['Active', 'Payment Pending', 'Cancellation Pending'])) {
-            http_response_code(400);
-            echo json_encode([
-                "status" => "error",
-                "message" => "An account with this email address already exists."
-            ]);
-            exit();
-        }
+        http_response_code(400);
+        echo json_encode([
+            "status" => "error",
+            "message" => "An account with this email address already exists. Please log in to your dashboard to reactivate your subscription."
+        ]);
+        exit();
     }
 } catch (PDOException $e) {
     error_log("Email check failed: " . $e->getMessage());
