@@ -655,8 +655,8 @@
             const rating = parseInt(document.getElementById('feedbackRating').value, 10) || 5;
             const comments = document.getElementById('feedbackComments').value.trim();
 
-            if (!name || !service || !comments) {
-                alert('Please complete the required feedback fields before submitting.');
+            if (!name || !bookingId || !service || !comments) {
+                alert('Please complete all required feedback fields, including your Booking ID.');
                 return;
             }
 

@@ -146,8 +146,12 @@ try {
                 exit();
             }
         } else {
-            $booking_id = null;
-            $customer_id = null;
+            http_response_code(400);
+            echo json_encode([
+                "status" => "error",
+                "message" => "Booking ID is required to leave feedback."
+            ]);
+            exit();
         }
     } else {
         if (!filter_var($booking_id_raw, FILTER_VALIDATE_INT)) {
