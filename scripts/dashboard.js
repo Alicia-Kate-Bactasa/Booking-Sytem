@@ -1048,6 +1048,16 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                 return;
             }
 
+            if (!booking_id_raw) {
+                showErrorModal('Booking ID is required.');
+                return;
+            }
+
+            if (!service) {
+                showErrorModal('Please enter a valid, completed Booking ID to populate the service details.');
+                return;
+            }
+
             if (comments.length > 1000) {
                 showErrorModal('Comments must not exceed 1000 characters.');
                 return;

@@ -655,8 +655,18 @@
             const rating = parseInt(document.getElementById('feedbackRating').value, 10) || 5;
             const comments = document.getElementById('feedbackComments').value.trim();
 
-            if (!name || !bookingId || !service || !comments) {
-                showErrorModal('Please complete all required feedback fields, including your Booking ID.');
+            if (!name || !comments) {
+                showErrorModal('Please complete all required fields (Name and Comments).');
+                return;
+            }
+
+            if (!bookingId) {
+                showErrorModal('Booking ID is required.');
+                return;
+            }
+
+            if (!service) {
+                showErrorModal('Please enter a valid, completed Booking ID to populate the service details.');
                 return;
             }
 
