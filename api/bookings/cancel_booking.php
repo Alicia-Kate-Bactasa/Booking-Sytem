@@ -50,10 +50,11 @@ try {
 
     // 1. Verify the booking exists
     $checkQuery = "SELECT b.booking_id, b.customer_id, b.booking_status,
-                          c.email AS customer_email, c.full_name AS customer_name,
+                          COALESCE(u.email, c.email) AS customer_email, c.full_name AS customer_name,
                           s.service_name, b.scheduled_date, b.time_slot
                    FROM Booking b
                    JOIN Customer c ON b.customer_id = c.customer_id
+                   LEFT JOIN User u ON c.customer_id = u.customer_id
                    JOIN Service s ON b.service_id = s.service_id
                    WHERE b.booking_id = :booking_id LIMIT 1";
     $checkStmt = $conn->prepare($checkQuery);
