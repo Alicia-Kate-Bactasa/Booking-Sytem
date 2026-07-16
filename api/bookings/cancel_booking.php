@@ -121,6 +121,7 @@ try {
             'status_color' => '#c0392b',
             'status_label' => 'CANCELLED',
             'status_detail' => "Dear {$name}, your booking reference <strong>{$bookingRef}</strong> for <strong>{$service}</strong> scheduled on {$date} at {$time} has been cancelled successfully.",
+            'booking_id' => $booking_id,
             'invoice_no' => $bookingRef,
             'date' => date('Y-m-d'),
             'client_name' => $name,

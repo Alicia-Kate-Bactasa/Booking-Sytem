@@ -24,7 +24,7 @@ class Mailer {
         $statusBorder = htmlspecialchars($data['status_border']);
         $statusColor = htmlspecialchars($data['status_color']);
         $statusLabel = htmlspecialchars($data['status_label']);
-        $statusDetail = htmlspecialchars($data['status_detail']);
+        $statusDetail = $data['status_detail'];
         
         $itemName = htmlspecialchars($data['item_name']);
         $itemSubtext = htmlspecialchars($data['item_subtext']);
