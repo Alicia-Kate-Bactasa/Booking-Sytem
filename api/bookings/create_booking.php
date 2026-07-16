@@ -306,6 +306,7 @@ try {
             "status" => "success",
             "data" => [
                 "message" => "Booking successfully saved to database!",
+                "booking_id" => $booking_id,
                 "customer_id" => $customer_id,
                 "service_id" => $service_id,
                 "scheduled_date" => $scheduled_date,
