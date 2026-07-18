@@ -61,11 +61,18 @@ try {
             $img = '../' . $img;
         }
         
+        $status = 'pending';
+        if ($inv['payment_status'] === 'Paid' || $inv['status'] === 'Paid') {
+            $status = 'paid';
+        } elseif ($inv['payment_status'] === 'Rejected' || $inv['status'] === 'Void') {
+            $status = 'rejected';
+        }
+
         return [
             "id" => "INV-" . $inv['invoice_id'],
             "invoice_id" => (int)$inv['invoice_id'],
             "type" => $inv['type'] === 'Monthly Roster' ? 'subscriber' : 'regular',
-            "status" => strtolower($inv['status']),
+            "status" => $status,
             "client" => $inv['client'],
             "service" => $serviceName,
             "total" => (float)$inv['total'],

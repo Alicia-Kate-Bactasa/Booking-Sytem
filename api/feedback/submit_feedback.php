@@ -154,6 +154,15 @@ try {
             exit();
         }
 
+        if ($booking['booking_status'] === 'Cancelled') {
+            http_response_code(400);
+            echo json_encode([
+                "status" => "error",
+                "message" => "This booking has been cancelled or rejected. Feedback can only be submitted for successfully completed sessions."
+            ]);
+            exit();
+        }
+
         if ($booking['booking_status'] !== 'Completed') {
             http_response_code(400);
             echo json_encode([

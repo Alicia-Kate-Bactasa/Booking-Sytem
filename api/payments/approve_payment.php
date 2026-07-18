@@ -204,8 +204,8 @@ try {
         $stmtPay->bindValue(':pay_id', $payment['payment_id'], PDO::PARAM_INT);
         $stmtPay->execute();
 
-        // Keep Invoice pending or Void? Keep as Pending for retry
-        $updateInv = "UPDATE Invoice SET invoice_status = 'Pending' WHERE invoice_id = :invoice_id";
+        // Void the Invoice as the booking has been cancelled
+        $updateInv = "UPDATE Invoice SET invoice_status = 'Void' WHERE invoice_id = :invoice_id";
         $stmtInv = $conn->prepare($updateInv);
         $stmtInv->bindValue(':invoice_id', $invoice_id, PDO::PARAM_INT);
         $stmtInv->execute();
