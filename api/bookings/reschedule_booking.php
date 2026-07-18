@@ -82,7 +82,7 @@ try {
     verify_csrf_request();
 
     // 1. Verify the booking exists
-    $checkQuery = "SELECT b.booking_id, b.customer_id, b.service_id, b.booking_status, s.service_duration 
+    $checkQuery = "SELECT b.booking_id, b.customer_id, b.user_id, b.service_id, b.booking_status, s.service_duration 
                    FROM Booking b
                    JOIN Service s ON b.service_id = s.service_id
                    WHERE b.booking_id = :booking_id LIMIT 1";
@@ -101,7 +101,7 @@ try {
     }
 
     // 2. Enforce subscriber ownership check
-    if ($_SESSION['role'] === 'Subscriber' && (int)$booking['customer_id'] !== (int)$_SESSION['customer_id']) {
+    if ($_SESSION['role'] === 'Subscriber' && (int)$booking['user_id'] !== (int)$_SESSION['user_id']) {
         http_response_code(403);
         echo json_encode([
             "status" => "error",
@@ -159,10 +159,10 @@ try {
         $ebEnd = $ebStart + (int)$eb['service_duration'];
 
         if ($newStart < $ebEnd && $ebStart < $newEnd) {
-            if ($eb['bay_number'] === 'Bay 1') {
+            if ((int)$eb['bay_number'] === 1) {
                 $bay1Free = false;
             }
-            if ($eb['bay_number'] === 'Bay 2') {
+            if ((int)$eb['bay_number'] === 2) {
                 $bay2Free = false;
             }
         }
@@ -178,7 +178,7 @@ try {
         exit();
     }
 
-    $allocatedBay = $bay1Free ? 'Bay 1' : 'Bay 2';
+    $allocatedBay = $bay1Free ? 1 : 2;
 
     // 6. Update the Booking
     $updateQuery = "UPDATE Booking 
@@ -189,7 +189,7 @@ try {
     $updateStmt = $conn->prepare($updateQuery);
     $updateStmt->bindValue(':scheduled_date', $scheduled_date, PDO::PARAM_STR);
     $updateStmt->bindValue(':time_slot', $time_slot, PDO::PARAM_STR);
-    $updateStmt->bindValue(':bay_number', $allocatedBay, PDO::PARAM_STR);
+    $updateStmt->bindValue(':bay_number', $allocatedBay, PDO::PARAM_INT);
     $updateStmt->bindValue(':booking_id', $booking_id, PDO::PARAM_INT);
     $updateStmt->execute();
 

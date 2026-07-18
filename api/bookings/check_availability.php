@@ -35,6 +35,13 @@ $service_id = isset($inputData['service_id']) ? (int)$inputData['service_id'] : 
 $duration = isset($inputData['duration']) ? (int)$inputData['duration'] : null;
 $time_slot = isset($inputData['time_slot']) ? trim($inputData['time_slot']) : null;
 $bay_number = isset($inputData['bay_number']) ? trim($inputData['bay_number']) : (isset($inputData['bay']) ? trim($inputData['bay']) : null);
+if ($bay_number !== null) {
+    if (strpos($bay_number, 'Bay ') !== false) {
+        $bay_number = (int)str_replace('Bay ', '', $bay_number);
+    } else {
+        $bay_number = (int)$bay_number;
+    }
+}
 
 if (empty($scheduled_date)) {
     http_response_code(400);
@@ -118,7 +125,7 @@ try {
         
         $overlapStmt = $conn->prepare($overlapQuery);
         $overlapStmt->bindValue(':date', $scheduled_date, PDO::PARAM_STR);
-        $overlapStmt->bindValue(':bay', $bay_number, PDO::PARAM_STR);
+        $overlapStmt->bindValue(':bay', $bay_number, PDO::PARAM_INT);
         $overlapStmt->bindValue(':new_start', $new_start, PDO::PARAM_INT);
         $overlapStmt->bindValue(':new_end', $new_end, PDO::PARAM_INT);
         $overlapStmt->execute();
@@ -186,10 +193,10 @@ try {
 
             // Overlap check
             if ($newStart < $ebEnd && $ebStart < $newEnd) {
-                if ($eb['bay_number'] === 'Bay 1') {
+                if ((int)$eb['bay_number'] === 1) {
                     $bay1Free = false;
                 }
-                if ($eb['bay_number'] === 'Bay 2') {
+                if ((int)$eb['bay_number'] === 2) {
                     $bay2Free = false;
                 }
             }
@@ -199,7 +206,7 @@ try {
             $availableSlots[] = [
                 "time_slot" => $slotName,
                 "display_label" => $slotName . " - " . minutesToSlotString($newEnd),
-                "allocated_bay" => $bay1Free ? 'Bay 1' : 'Bay 2'
+                "allocated_bay" => $bay1Free ? 1 : 2
             ];
         }
     }

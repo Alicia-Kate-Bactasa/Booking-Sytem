@@ -36,8 +36,8 @@ try {
                      u.email,
                      p.proof_of_payment AS img
               FROM Subscription s
-              JOIN Customer c ON s.customer_id = c.customer_id
-              JOIN User u ON c.customer_id = u.customer_id
+              JOIN User u ON s.user_id = u.user_id
+              LEFT JOIN Customer c ON u.email = c.email
               LEFT JOIN (
                   SELECT i1.subscription_id, p1.proof_of_payment
                   FROM Invoice i1
@@ -73,7 +73,7 @@ try {
         return [
             "id" => "sub-" . $sub['subscription_id'],
             "subscriber_id" => (int)$sub['subscription_id'],
-            "name" => $sub['name'],
+            "name" => $sub['name'] ? $sub['name'] : 'Subscriber User',
             "email" => $sub['email'],
             "next_billing_date" => $sub['next_billing_date'] ? $sub['next_billing_date'] : '—',
             "status" => $status,

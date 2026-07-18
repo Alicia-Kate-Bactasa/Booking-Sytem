@@ -67,13 +67,14 @@ try {
     verify_csrf_request();
 
     // Check if the booking actually exists before updating and fetch details
-    $checkQuery = "SELECT b.booking_id, b.customer_id, b.invoice_id, c.customer_type, b.booking_status AS current_status,
+    $checkQuery = "SELECT b.booking_id, b.customer_id, i.invoice_id, c.customer_type, b.booking_status AS current_status,
                           COALESCE(u.email, c.email) AS customer_email, c.full_name AS customer_name,
                           s.service_name, b.scheduled_date, b.time_slot
                    FROM Booking b
                    JOIN Customer c ON b.customer_id = c.customer_id
-                   LEFT JOIN User u ON c.customer_id = u.customer_id
+                   LEFT JOIN User u ON c.email = u.email
                    JOIN Service s ON b.service_id = s.service_id
+                   LEFT JOIN Invoice i ON b.booking_id = i.booking_id
                    WHERE b.booking_id = :booking_id LIMIT 1";
     $checkStmt = $conn->prepare($checkQuery);
     $checkStmt->bindValue(':booking_id', $booking_id, PDO::PARAM_INT);

@@ -23,8 +23,17 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     exit();
 }
 
-// === SECTION: DATABASE QUERY & EXECUTION ===
 try {
+    $include_inactive = false;
+    if (isset($_GET['all']) && $_GET['all'] == '1') {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        if (isset($_SESSION['role']) && $_SESSION['role'] === 'Admin') {
+            $include_inactive = true;
+        }
+    }
+
     // Prepare and execute database query matching the specified schema fields
     $query = "SELECT service_id, 
                      service_name, 
@@ -36,9 +45,15 @@ try {
                      service_duration, 
                      service_description AS `desc`, 
                      service_description AS description,
-                     service_description 
-              FROM Service 
-              ORDER BY service_id ASC";
+                     service_description,
+                     is_active
+              FROM Service ";
+              
+    if (!$include_inactive) {
+        $query .= " WHERE is_active = 1 ";
+    }
+    
+    $query .= " ORDER BY service_id ASC";
               
     $stmt = $conn->prepare($query);
     $stmt->execute();

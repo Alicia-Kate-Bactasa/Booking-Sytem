@@ -766,7 +766,7 @@ const defaultServices = [
           */
         let masterCatalogServices = [];
         function loadServices() {
-            return fetch('services/get_services.php')
+            return fetch('services/get_services.php?all=1')
                 .then(res => {
                     if (res.status === 401 || res.status === 403) {
                         return [];
@@ -783,7 +783,8 @@ const defaultServices = [
                             desc: s.service_description || s.desc,
                             duration: s.service_duration || s.duration,
                             price: parseFloat(s.service_price || s.price),
-                            category: s.service_category || 'Detailing'
+                            category: s.service_category || 'Detailing',
+                            is_active: s.is_active !== undefined ? parseInt(s.is_active, 10) : 1
                         };
                     });
                     renderAdminServices();
@@ -797,7 +798,8 @@ const defaultServices = [
                             desc: s.desc,
                             duration: s.duration,
                             price: s.price,
-                            category: 'Detailing'
+                            category: 'Detailing',
+                            is_active: 1
                         };
                     });
                     renderAdminServices();
@@ -811,12 +813,13 @@ const defaultServices = [
             container.innerHTML = '';
 
             masterCatalogServices.forEach((service, index) => {
+                const isActive = service.is_active;
                 container.innerHTML += `
-                    <div class="bg-white border border-neutral-200 rounded-[2rem] p-6 flex flex-col justify-between space-y-6 shadow-sm hover:border-neutral-300 transition-all">
+                    <div class="bg-white border border-neutral-200 rounded-[2rem] p-6 flex flex-col justify-between space-y-6 shadow-sm hover:border-neutral-300 transition-all ${isActive ? '' : 'opacity-85 bg-neutral-50/50'}">
                         <div>
                             <div class="flex justify-between items-center mb-3">
                                 <span class="text-[9px] font-extrabold tracking-widest uppercase text-neutral-400 bg-neutral-50 border border-neutral-100 px-2 py-0.5 rounded-full">SERVICE ${index + 1}</span>
-                                <span class="text-[10px] font-mono font-bold text-neutral-500">Active Reference</span>
+                                <span class="text-[10px] font-mono font-bold ${isActive ? 'text-green-600 bg-green-50/50' : 'text-red-500 bg-red-50/50'} px-2 py-0.5 rounded-full">${isActive ? 'Active Reference' : 'Inactive / Discontinued'}</span>
                             </div>
                             <div class="mt-1">
                                 <label class="block text-[10px] uppercase font-bold tracking-wider text-neutral-400 mb-1">Name</label>
@@ -837,8 +840,8 @@ const defaultServices = [
                                 <input type="number" id="edit-price-${index}" value="${service.price}" class="w-24 font-bold text-sm bg-transparent border-b border-transparent hover:border-neutral-300 focus:border-black focus:outline-none transition-all">
                             </div>
                             <div class="flex items-center gap-2">
-                                <button onclick="deleteService(${index})" class="bg-white border border-neutral-200 hover:border-red-200 hover:bg-red-50 text-red-600 text-[10px] font-bold tracking-wider uppercase px-4 py-2 rounded-full transition-all focus:outline-none">
-                                    Delete
+                                <button onclick="toggleServiceActive(${index})" class="bg-white border border-neutral-200 hover:border-neutral-300 text-neutral-600 text-[10px] font-bold tracking-wider uppercase px-4 py-2 rounded-full transition-all focus:outline-none">
+                                    ${isActive ? 'Discontinue' : 'Activate'}
                                 </button>
                                 <button onclick="saveServiceModifications(${index})" class="bg-neutral-900 text-white text-[10px] font-bold tracking-wider uppercase px-4 py-2 rounded-full hover:bg-black transition-all shadow-sm focus:outline-none">
                                     Save
@@ -849,6 +852,56 @@ const defaultServices = [
                 `;
             });
         }
+
+        async function toggleServiceActive(index) {
+            const service = masterCatalogServices[index];
+            const serviceId = service.service_id;
+            const targetStatus = service.is_active ? 0 : 1;
+            const targetStatusLabel = targetStatus ? 'activate' : 'discontinue';
+            
+            if (await confirm(`Are you sure you want to ${targetStatusLabel} "${service.name}"?`)) {
+                try {
+                    const res = await fetch('services/update_service.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-Token': csrfToken
+                        },
+                        body: JSON.stringify({
+                            service_id: serviceId,
+                            name: service.name,
+                            desc: service.desc,
+                            duration: service.duration,
+                            price: service.price,
+                            category: service.category,
+                            is_active: targetStatus
+                        })
+                    });
+
+                    if (res.status === 401 || res.status === 403) {
+                        await showErrorModal('Session expired or unauthorized. Please log in.');
+                        window.location.href = '../index.html';
+                        return;
+                    }
+
+                    const data = await res.json();
+                    if (!res.ok) {
+                        throw new Error(data.message || `API request failed.`);
+                    }
+
+                    if (data.status === 'success') {
+                        await alert(`Service status updated successfully!`);
+                        loadServices();
+                    } else {
+                        await showErrorModal(data.message || 'Failed to update service status.');
+                    }
+                } catch (err) {
+                    console.error("Toggle service status error:", err);
+                    await showErrorModal(err.message || "An error occurred. Please verify your connection.");
+                }
+            }
+        }
+        window.toggleServiceActive = toggleServiceActive;
 
         async function saveServiceModifications(index) {
             const proposedDuration = parseInt(document.getElementById(`edit-duration-${index}`).value, 10);
@@ -909,7 +962,8 @@ const defaultServices = [
                         name: name,
                         desc: desc,
                         duration: proposedDuration,
-                        price: price
+                        price: price,
+                        is_active: masterCatalogServices[index].is_active
                     })
                 });
 

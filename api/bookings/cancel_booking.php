@@ -49,12 +49,12 @@ try {
     verify_csrf_request();
 
     // 1. Verify the booking exists
-    $checkQuery = "SELECT b.booking_id, b.customer_id, b.booking_status,
+    $checkQuery = "SELECT b.booking_id, b.customer_id, b.user_id, b.booking_status,
                           COALESCE(u.email, c.email) AS customer_email, c.full_name AS customer_name,
                           s.service_name, b.scheduled_date, b.time_slot
                    FROM Booking b
                    JOIN Customer c ON b.customer_id = c.customer_id
-                   LEFT JOIN User u ON c.customer_id = u.customer_id
+                   LEFT JOIN User u ON c.email = u.email
                    JOIN Service s ON b.service_id = s.service_id
                    WHERE b.booking_id = :booking_id LIMIT 1";
     $checkStmt = $conn->prepare($checkQuery);
@@ -66,13 +66,13 @@ try {
         http_response_code(404);
         echo json_encode([
             "status" => "error",
-            "message" => "Booking record not found."
+            "message" => "Booking record not found with Reference ID MTG-" . $booking_id
         ]);
         exit();
     }
 
     // 2. Enforce subscriber ownership check
-    if ($_SESSION['role'] === 'Subscriber' && (int)$booking['customer_id'] !== (int)$_SESSION['customer_id']) {
+    if ($_SESSION['role'] === 'Subscriber' && (int)$booking['user_id'] !== (int)$_SESSION['user_id']) {
         http_response_code(403);
         echo json_encode([
             "status" => "error",

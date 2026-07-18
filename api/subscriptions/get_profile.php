@@ -39,13 +39,8 @@ try {
     $subscriber_id = null;
     $whereClause = "";
     if ($_SESSION['role'] === 'Subscriber') {
-        if (isset($_SESSION['customer_id'])) {
-            $subscriber_id = (int)$_SESSION['customer_id'];
-            $whereClause = "s.customer_id = :subscriber_id";
-        } else {
-            $subscriber_id = (int)$_SESSION['user_id'];
-            $whereClause = "s.subscription_id = :subscriber_id";
-        }
+        $subscriber_id = (int)$_SESSION['user_id'];
+        $whereClause = "s.user_id = :subscriber_id";
     } elseif ($_SESSION['role'] === 'Admin' && isset($_GET['subscriber_id'])) {
         $subscriber_id = (int)$_GET['subscriber_id'];
         $whereClause = "s.subscription_id = :subscriber_id";
@@ -60,10 +55,10 @@ try {
         exit();
     }
 
-    $query = "SELECT s.subscription_id AS subscriber_id, s.customer_id, u.email, s.plan_tier, s.plan_status, s.last_billing_date, s.next_billing_date, s.created_at, c.full_name 
+    $query = "SELECT s.subscription_id AS subscriber_id, s.user_id, u.email, s.plan_tier, s.plan_status, s.last_billing_date, s.next_billing_date, s.created_at, c.full_name, c.customer_id 
               FROM Subscription s
-              JOIN Customer c ON s.customer_id = c.customer_id
-              JOIN User u ON c.customer_id = u.customer_id
+              JOIN User u ON s.user_id = u.user_id
+              LEFT JOIN Customer c ON u.email = c.email
               WHERE {$whereClause} 
               LIMIT 1";
               
@@ -82,20 +77,20 @@ try {
     }
 
     $subscription_id = (int)$profile['subscriber_id'];
-    $customer_id = (int)$profile['customer_id'];
+    $user_id = (int)$profile['user_id'];
     
     // Fetch last completed booking date
-    $lastVisitQuery = "SELECT MAX(scheduled_date) AS last_visit FROM Booking WHERE customer_id = :customer_id AND booking_status = 'Completed'";
+    $lastVisitQuery = "SELECT MAX(scheduled_date) AS last_visit FROM Booking WHERE user_id = :user_id AND booking_status = 'Completed'";
     $lastVisitStmt = $conn->prepare($lastVisitQuery);
-    $lastVisitStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+    $lastVisitStmt->bindValue(':user_id', $user_id, PDO::PARAM_INT);
     $lastVisitStmt->execute();
     $lastVisitRow = $lastVisitStmt->fetch();
     $last_visit = $lastVisitRow['last_visit'] ? date("F j, Y", strtotime($lastVisitRow['last_visit'])) : 'None yet';
 
     // Fetch completed sessions count
-    $completedCountQuery = "SELECT COUNT(*) AS completed_count FROM Booking WHERE customer_id = :customer_id AND booking_status = 'Completed'";
+    $completedCountQuery = "SELECT COUNT(*) AS completed_count FROM Booking WHERE user_id = :user_id AND booking_status = 'Completed'";
     $completedCountStmt = $conn->prepare($completedCountQuery);
-    $completedCountStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+    $completedCountStmt->bindValue(':user_id', $user_id, PDO::PARAM_INT);
     $completedCountStmt->execute();
     $completedCountRow = $completedCountStmt->fetch();
     $completed_sessions_count = (int)$completedCountRow['completed_count'];

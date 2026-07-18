@@ -40,6 +40,7 @@ try {
     $duration = isset($inputData['duration']) ? (int)$inputData['duration'] : null;
     $price = isset($inputData['price']) ? (float)$inputData['price'] : null;
     $category = isset($inputData['category']) ? trim($inputData['category']) : 'Detailing';
+    $is_active = isset($inputData['is_active']) ? (int)$inputData['is_active'] : null;
 
     if (empty($service_id) || empty($name) || empty($duration) || empty($price)) {
         http_response_code(400);
@@ -69,14 +70,22 @@ try {
     }
 
     $query = "UPDATE Service 
-              SET service_name = :name, service_description = :desc, service_duration = :duration, service_price = :price, service_category = :category 
+              SET service_name = :name, 
+                  service_description = :desc, 
+                  service_duration = :duration, 
+                  service_price = :price, 
+                  service_category = :category" . ($is_active !== null ? ", is_active = :is_active" : "") . " 
               WHERE service_id = :service_id";
+              
     $stmt = $conn->prepare($query);
     $stmt->bindValue(':name', $name, PDO::PARAM_STR);
     $stmt->bindValue(':desc', $desc, PDO::PARAM_STR);
     $stmt->bindValue(':duration', $duration, PDO::PARAM_INT);
     $stmt->bindValue(':price', $price, PDO::PARAM_STR);
     $stmt->bindValue(':category', $category, PDO::PARAM_STR);
+    if ($is_active !== null) {
+        $stmt->bindValue(':is_active', $is_active, PDO::PARAM_INT);
+    }
     $stmt->bindValue(':service_id', $service_id, PDO::PARAM_INT);
 
     if ($stmt->execute()) {

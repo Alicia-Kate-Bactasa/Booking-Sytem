@@ -59,23 +59,23 @@ try {
         exit();
     }
 
-    $query = "DELETE FROM Service WHERE service_id = :service_id";
+    $query = "UPDATE Service SET is_active = 0 WHERE service_id = :service_id";
     $stmt = $conn->prepare($query);
     $stmt->bindValue(':service_id', $service_id, PDO::PARAM_INT);
 
     if ($stmt->execute()) {
-        log_system_event($conn, 'Service Deleted', "Service ID {$service_id} deleted by Admin.");
+        log_system_event($conn, 'Service Deactivated', "Service ID {$service_id} deactivated (soft-deleted) by Admin.");
         
         http_response_code(200);
         echo json_encode([
             "status" => "success",
-            "message" => "Service deleted successfully!"
+            "message" => "Service deactivated successfully!"
         ]);
     } else {
         http_response_code(500);
         echo json_encode([
             "status" => "error",
-            "message" => "Failed to delete service from database."
+            "message" => "Failed to deactivate service in database."
         ]);
     }
 

@@ -91,7 +91,7 @@ try {
     // ------------------------------------------------------------------
     // STEP 1: Query User Table
     // ------------------------------------------------------------------
-    $userQuery = "SELECT user_id, customer_id, email, username, password, role 
+    $userQuery = "SELECT user_id, email, username, password, role 
                   FROM User 
                   WHERE username = :username_input OR email = :email_input 
                   LIMIT 1";
@@ -128,13 +128,13 @@ try {
                 ]);
                 exit();
             } else {
-                // Fetch associated Customer record
+                // Fetch associated Customer record via email
                 $customerQuery = "SELECT customer_id, full_name, phone_number, customer_type 
                                   FROM Customer 
-                                  WHERE customer_id = :customer_id 
+                                  WHERE email = :email 
                                   LIMIT 1";
                 $customerStmt = $conn->prepare($customerQuery);
-                $customerStmt->bindValue(':customer_id', $user['customer_id'], PDO::PARAM_INT);
+                $customerStmt->bindValue(':email', $user['email'], PDO::PARAM_STR);
                 $customerStmt->execute();
                 $customer = $customerStmt->fetch();
 
@@ -146,10 +146,10 @@ try {
                     $customer_id = (int)$customer['customer_id'];
                     $full_name = $customer['full_name'];
 
-                    // Fetch Subscription details
-                    $subQuery = "SELECT subscription_id, plan_status FROM Subscription WHERE customer_id = :customer_id LIMIT 1";
+                    // Fetch Subscription details via user_id
+                    $subQuery = "SELECT subscription_id, plan_status FROM Subscription WHERE user_id = :user_id LIMIT 1";
                     $subStmt = $conn->prepare($subQuery);
-                    $subStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+                    $subStmt->bindValue(':user_id', (int)$user['user_id'], PDO::PARAM_INT);
                     $subStmt->execute();
                     $subscription = $subStmt->fetch();
                     if ($subscription) {
@@ -168,8 +168,7 @@ try {
                     }
                 }
 
-                // If Subscription ID is not available, default to user_id for backward compatibility
-                $_SESSION['user_id'] = $subscription_id ? $subscription_id : (int)$user['user_id'];
+                $_SESSION['user_id'] = (int)$user['user_id'];
                 $_SESSION['role'] = 'Subscriber';
                 $_SESSION['customer_id'] = $customer_id;
                 $_SESSION['email'] = $user['email'];

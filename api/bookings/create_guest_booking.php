@@ -205,7 +205,7 @@ try {
                       FROM Booking b
                       JOIN Service s ON b.service_id = s.service_id
                       WHERE b.scheduled_date = :date 
-                        AND b.bay_number = 'Bay 1' 
+                        AND b.bay_number = 1 
                         AND b.booking_status NOT IN ('Cancelled', 'No-Show')
                         AND (
                           (TIME_TO_SEC(STR_TO_DATE(b.time_slot, '%h:%i %p')) / 60) < :new_end 
@@ -221,14 +221,14 @@ try {
 
     $bay_number = null;
     if (!$bay1Occupied) {
-        $bay_number = 'Bay 1';
+        $bay_number = 1;
     } else {
         // Check Bay 2
         $overlapQuery2 = "SELECT b.booking_id 
                           FROM Booking b
                           JOIN Service s ON b.service_id = s.service_id
                           WHERE b.scheduled_date = :date 
-                            AND b.bay_number = 'Bay 2' 
+                            AND b.bay_number = 2 
                             AND b.booking_status NOT IN ('Cancelled', 'No-Show')
                             AND (
                               (TIME_TO_SEC(STR_TO_DATE(b.time_slot, '%h:%i %p')) / 60) < :new_end 
@@ -243,7 +243,7 @@ try {
         $bay2Occupied = $overlapStmt2->fetch();
 
         if (!$bay2Occupied) {
-            $bay_number = 'Bay 2';
+            $bay_number = 2;
         } else {
             if (file_exists($destinationPath)) unlink($destinationPath);
             $conn->rollBack();
@@ -266,27 +266,27 @@ try {
     $custStmt->execute();
     $customer_id = (int)$conn->lastInsertId();
 
-    // 4. Create Invoice
-    $invoiceQuery = "INSERT INTO Invoice (subscription_id, total_amount, invoice_type, invoice_status) 
-                     VALUES (NULL, :total_amount, 'Single Detailing', 'Pending')";
-    $invoiceStmt = $conn->prepare($invoiceQuery);
-    $invoiceStmt->bindValue(':total_amount', $purchased_price, PDO::PARAM_STR);
-    $invoiceStmt->execute();
-    $invoice_id = (int)$conn->lastInsertId();
-
-    // 5. Create Booking
-    $bookingQuery = "INSERT INTO Booking (customer_id, service_id, invoice_id, scheduled_date, time_slot, bay_number, purchased_price, booking_status) 
-                     VALUES (:customer_id, :service_id, :invoice_id, :scheduled_date, :time_slot, :bay_number, :purchased_price, 'Pending Verification')";
+    // 4. Create Booking first (without invoice_id, but with user_id = NULL)
+    $bookingQuery = "INSERT INTO Booking (customer_id, user_id, service_id, scheduled_date, time_slot, bay_number, purchased_price, booking_status) 
+                     VALUES (:customer_id, NULL, :service_id, :scheduled_date, :time_slot, :bay_number, :purchased_price, 'Pending Verification')";
     $bookingStmt = $conn->prepare($bookingQuery);
     $bookingStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
     $bookingStmt->bindValue(':service_id', $service_id, PDO::PARAM_INT);
-    $bookingStmt->bindValue(':invoice_id', $invoice_id, PDO::PARAM_INT);
     $bookingStmt->bindValue(':scheduled_date', $scheduled_date, PDO::PARAM_STR);
     $bookingStmt->bindValue(':time_slot', $time_slot, PDO::PARAM_STR);
-    $bookingStmt->bindValue(':bay_number', $bay_number, PDO::PARAM_STR);
+    $bookingStmt->bindValue(':bay_number', $bay_number, PDO::PARAM_INT);
     $bookingStmt->bindValue(':purchased_price', $purchased_price, PDO::PARAM_STR);
     $bookingStmt->execute();
     $booking_id = (int)$conn->lastInsertId();
+
+    // 5. Create Invoice downstream
+    $invoiceQuery = "INSERT INTO Invoice (booking_id, subscription_id, total_amount, invoice_type, invoice_status) 
+                     VALUES (:booking_id, NULL, :total_amount, 'Single Detailing', 'Pending')";
+    $invoiceStmt = $conn->prepare($invoiceQuery);
+    $invoiceStmt->bindValue(':booking_id', $booking_id, PDO::PARAM_INT);
+    $invoiceStmt->bindValue(':total_amount', $purchased_price, PDO::PARAM_STR);
+    $invoiceStmt->execute();
+    $invoice_id = (int)$conn->lastInsertId();
 
     // 6. Create Payment Record
     $paymentQuery = "INSERT INTO Payment (invoice_id, amount, payment_method, proof_of_payment, payment_status) 

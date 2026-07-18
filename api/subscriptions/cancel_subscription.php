@@ -28,7 +28,7 @@ try {
     require_auth('Subscriber');
     verify_csrf_request();
 
-    $customer_id = $_SESSION['customer_id'];
+    $user_id = $_SESSION['user_id'];
 
     // Start database transaction
     $conn->beginTransaction();
@@ -36,11 +36,11 @@ try {
     // Retrieve active subscription details
     $subQuery = "SELECT subscription_id, plan_status, next_billing_date 
                  FROM Subscription 
-                 WHERE customer_id = :customer_id 
+                 WHERE user_id = :user_id 
                    AND plan_status = 'Active' 
                  LIMIT 1";
     $subStmt = $conn->prepare($subQuery);
-    $subStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+    $subStmt->bindValue(':user_id', $user_id, PDO::PARAM_INT);
     $subStmt->execute();
     $subscription = $subStmt->fetch();
 
@@ -61,15 +61,15 @@ try {
     $updateStmt->execute();
 
     // Log this transition in System_Logs
-    log_system_event($conn, 'Subscription Cancellation Requested', "Customer ID {$customer_id} requested subscription cancellation. Plan status transitioned to Cancellation Pending. Expiry effective after next billing date: {$subscription['next_billing_date']}.");
+    log_system_event($conn, 'Subscription Cancellation Requested', "User ID {$user_id} requested subscription cancellation. Plan status transitioned to Cancellation Pending. Expiry effective after next billing date: {$subscription['next_billing_date']}.");
 
     // Fetch user info for email notification
-    $userQuery = "SELECT c.full_name, COALESCE(u.email, c.email) AS email 
-                  FROM Customer c 
-                  LEFT JOIN User u ON c.customer_id = u.customer_id 
-                  WHERE c.customer_id = :customer_id LIMIT 1";
+    $userQuery = "SELECT c.full_name, u.email 
+                  FROM User u 
+                  LEFT JOIN Customer c ON u.email = c.email 
+                  WHERE u.user_id = :user_id LIMIT 1";
     $userStmt = $conn->prepare($userQuery);
-    $userStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+    $userStmt->bindValue(':user_id', $user_id, PDO::PARAM_INT);
     $userStmt->execute();
     $userInfo = $userStmt->fetch();
 

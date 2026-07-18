@@ -67,10 +67,11 @@ try {
     verify_csrf_request();
 
     // Retrieve the subscription and customer information
-    $subQuery = "SELECT s.subscription_id, s.customer_id, s.plan_status, u.email, c.full_name 
+    // Retrieve the subscription and customer information
+    $subQuery = "SELECT s.subscription_id, s.user_id, s.plan_status, u.email, c.full_name, c.customer_id 
                  FROM Subscription s
-                 JOIN Customer c ON s.customer_id = c.customer_id
-                 JOIN User u ON c.customer_id = u.customer_id
+                 JOIN User u ON s.user_id = u.user_id
+                 LEFT JOIN Customer c ON u.email = c.email
                  WHERE u.email = :email LIMIT 1";
     $subStmt = $conn->prepare($subQuery);
     $subStmt->bindValue(':email', $email, PDO::PARAM_STR);
@@ -86,11 +87,12 @@ try {
         exit();
     }
 
-    $customer_id = (int)$subscriber['customer_id'];
+    $customer_id = $subscriber['customer_id'] ? (int)$subscriber['customer_id'] : 0;
+    $user_id = (int)$subscriber['user_id'];
 
     // Double-Approval Prevention (Idempotency check)
     if ($subscriber['plan_status'] === 'Active' && $status === 'Approved') {
-        log_system_event($conn, 'Redundant Subscription Approval Ignored', "Idempotency filter triggered: Subscription for Customer ID {$customer_id} is already Active. Approval request ignored.");
+        log_system_event($conn, 'Redundant Subscription Approval Ignored', "Idempotency filter triggered: Subscription for User ID {$user_id} is already Active. Approval request ignored.");
         echo json_encode([
             "status" => "success",
             "message" => "Subscription is already Active. Action ignored to prevent duplicate processing."
@@ -103,9 +105,9 @@ try {
 
     if ($status === 'Approved') {
         // Fetch current subscription dates
-        $dateFetchQuery = "SELECT next_billing_date, plan_status FROM Subscription WHERE customer_id = :customer_id LIMIT 1";
+        $dateFetchQuery = "SELECT next_billing_date, plan_status FROM Subscription WHERE user_id = :user_id LIMIT 1";
         $dateFetchStmt = $conn->prepare($dateFetchQuery);
-        $dateFetchStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+        $dateFetchStmt->bindValue(':user_id', $user_id, PDO::PARAM_INT);
         $dateFetchStmt->execute();
         $subDates = $dateFetchStmt->fetch();
 
@@ -124,11 +126,11 @@ try {
                       SET plan_status = 'Active', 
                           last_billing_date = :last_billing, 
                           next_billing_date = :next_billing 
-                      WHERE customer_id = :customer_id";
+                      WHERE user_id = :user_id";
         $stmtSub = $conn->prepare($updateSub);
         $stmtSub->bindValue(':last_billing', $lastBillingDate, PDO::PARAM_STR);
         $stmtSub->bindValue(':next_billing', $nextBillingDate, PDO::PARAM_STR);
-        $stmtSub->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+        $stmtSub->bindValue(':user_id', $user_id, PDO::PARAM_INT);
         $stmtSub->execute();
 
         // Update Payment status to 'Paid'
@@ -136,55 +138,59 @@ try {
                       JOIN Invoice i ON p.invoice_id = i.invoice_id
                       JOIN Subscription s ON i.subscription_id = s.subscription_id
                       SET p.payment_status = 'Paid'
-                      WHERE s.customer_id = :customer_id
+                      WHERE s.user_id = :user_id
                         AND i.invoice_type = 'Monthly Roster'
                         AND p.payment_status = 'Pending Approval'";
         $stmtPay = $conn->prepare($updatePay);
-        $stmtPay->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+        $stmtPay->bindValue(':user_id', $user_id, PDO::PARAM_INT);
         $stmtPay->execute();
 
         // Update Invoice status to 'Paid'
         $updateInv = "UPDATE Invoice i
                       JOIN Subscription s ON i.subscription_id = s.subscription_id
                       SET i.invoice_status = 'Paid' 
-                      WHERE s.customer_id = :customer_id 
+                      WHERE s.user_id = :user_id 
                         AND i.invoice_type = 'Monthly Roster'
                         AND i.invoice_status = 'Pending'";
         $stmtInv = $conn->prepare($updateInv);
-        $stmtInv->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+        $stmtInv->bindValue(':user_id', $user_id, PDO::PARAM_INT);
         $stmtInv->execute();
 
         // Also update Customer type to Subscriber
-        $updateCustType = "UPDATE Customer SET customer_type = 'Subscriber' WHERE customer_id = :customer_id";
-        $stmtCustType = $conn->prepare($updateCustType);
-        $stmtCustType->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
-        $stmtCustType->execute();
+        if ($customer_id) {
+            $updateCustType = "UPDATE Customer SET customer_type = 'Subscriber' WHERE customer_id = :customer_id";
+            $stmtCustType = $conn->prepare($updateCustType);
+            $stmtCustType->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+            $stmtCustType->execute();
+        }
 
-        log_system_event($conn, 'Subscription Approved', "Subscription for Customer ID {$customer_id} approved as Active by Admin. Next billing date: {$nextBillingDate}.");
+        log_system_event($conn, 'Subscription Approved', "Subscription for User ID {$user_id} approved as Active by Admin. Next billing date: {$nextBillingDate}.");
 
     } elseif ($status === 'Inactive') {
         // Deactivate subscription
         $updateSub = "UPDATE Subscription 
                       SET plan_status = 'Expired' 
-                      WHERE customer_id = :customer_id";
+                      WHERE user_id = :user_id";
         $stmtSub = $conn->prepare($updateSub);
-        $stmtSub->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+        $stmtSub->bindValue(':user_id', $user_id, PDO::PARAM_INT);
         $stmtSub->execute();
 
         // Revert Customer type to Regular
-        $updateCust = "UPDATE Customer SET customer_type = 'Regular' WHERE customer_id = :customer_id";
-        $stmtCust = $conn->prepare($updateCust);
-        $stmtCust->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
-        $stmtCust->execute();
+        if ($customer_id) {
+            $updateCust = "UPDATE Customer SET customer_type = 'Regular' WHERE customer_id = :customer_id";
+            $stmtCust = $conn->prepare($updateCust);
+            $stmtCust->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+            $stmtCust->execute();
+        }
 
-        log_system_event($conn, 'Subscription Downgraded', "Subscription for Customer ID {$customer_id} manually set to Expired by Admin.");
+        log_system_event($conn, 'Subscription Downgraded', "Subscription for User ID {$user_id} manually set to Expired by Admin.");
 
     } else {
         // Reject subscription request or renewal
         // Fetch current subscription plan status and next billing date
-        $checkQuery = "SELECT plan_status, next_billing_date FROM Subscription WHERE customer_id = :customer_id LIMIT 1";
+        $checkQuery = "SELECT plan_status, next_billing_date FROM Subscription WHERE user_id = :user_id LIMIT 1";
         $checkStmt = $conn->prepare($checkQuery);
-        $checkStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+        $checkStmt->bindValue(':user_id', $user_id, PDO::PARAM_INT);
         $checkStmt->execute();
         $subInfo = $checkStmt->fetch();
 
@@ -192,23 +198,25 @@ try {
         if ($subInfo && $subInfo['plan_status'] === 'Active' && !empty($subInfo['next_billing_date']) && $subInfo['next_billing_date'] >= $today) {
             // Early renewal rejection: Keep current subscription Active because they're already paid up for their current cycle.
             // We just reject the payment upload, allowing them to try again.
-            log_system_event($conn, 'Renewal Payment Rejected', "Subscription renewal payment for Customer ID {$customer_id} rejected by Admin. Subscription remains Active for current cycle.");
+            log_system_event($conn, 'Renewal Payment Rejected', "Subscription renewal payment for User ID {$user_id} rejected by Admin. Subscription remains Active for current cycle.");
         } else {
             // Rejection of new signup or expired renewal: set subscription status to 'Expired'
             $updateSub = "UPDATE Subscription 
                           SET plan_status = 'Expired' 
-                          WHERE customer_id = :customer_id";
+                          WHERE user_id = :user_id";
             $stmtSub = $conn->prepare($updateSub);
-            $stmtSub->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+            $stmtSub->bindValue(':user_id', $user_id, PDO::PARAM_INT);
             $stmtSub->execute();
             
             // Revert Customer type to Regular
-            $updateCust = "UPDATE Customer SET customer_type = 'Regular' WHERE customer_id = :customer_id";
-            $stmtCust = $conn->prepare($updateCust);
-            $stmtCust->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
-            $stmtCust->execute();
+            if ($customer_id) {
+                $updateCust = "UPDATE Customer SET customer_type = 'Regular' WHERE customer_id = :customer_id";
+                $stmtCust = $conn->prepare($updateCust);
+                $stmtCust->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+                $stmtCust->execute();
+            }
 
-            log_system_event($conn, 'Subscription Registration Rejected', "Subscription signup request for Customer ID {$customer_id} rejected by Admin. plan_status set to Expired.");
+            log_system_event($conn, 'Subscription Registration Rejected', "Subscription signup request for User ID {$user_id} rejected by Admin. plan_status set to Expired.");
         }
 
         // Update Payment status to 'Rejected'
@@ -216,11 +224,11 @@ try {
                       JOIN Invoice i ON p.invoice_id = i.invoice_id
                       JOIN Subscription s ON i.subscription_id = s.subscription_id
                       SET p.payment_status = 'Rejected'
-                      WHERE s.customer_id = :customer_id
+                      WHERE s.user_id = :user_id
                         AND i.invoice_type = 'Monthly Roster'
                         AND p.payment_status = 'Pending Approval'";
         $stmtPay = $conn->prepare($updatePay);
-        $stmtPay->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+        $stmtPay->bindValue(':user_id', $user_id, PDO::PARAM_INT);
         $stmtPay->execute();
     }
 

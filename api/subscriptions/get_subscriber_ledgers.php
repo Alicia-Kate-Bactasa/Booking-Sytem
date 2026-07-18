@@ -15,7 +15,7 @@ try {
 
     // 1. Fetch Monthly Roster invoices (subscriber payments)
     $rosterQuery = "SELECT i.invoice_id, 
-                           s.customer_id,
+                           s.user_id,
                            i.total_amount AS total, 
                            i.invoice_status AS status, 
                            i.issued_at AS date,
@@ -25,7 +25,8 @@ try {
                            p.proof_of_payment AS img
                     FROM Invoice i
                     JOIN Subscription s ON i.subscription_id = s.subscription_id
-                    JOIN Customer c ON s.customer_id = c.customer_id
+                    JOIN User u ON s.user_id = u.user_id
+                    LEFT JOIN Customer c ON u.email = c.email
                     LEFT JOIN Payment p ON i.invoice_id = p.invoice_id
                     WHERE i.invoice_type = 'Monthly Roster'
                     ORDER BY i.issued_at DESC";
@@ -38,11 +39,11 @@ try {
     // We can count how many Monthly Roster invoices exist for that customer before this one.
     $formattedRosters = [];
     foreach ($rosters as $r) {
-        $cid = (int)$r['customer_id'];
-        // Check if there are older Monthly Roster invoices for this customer
-        $countQuery = "SELECT COUNT(*) FROM Invoice i JOIN Subscription s ON i.subscription_id = s.subscription_id WHERE s.customer_id = :customer_id AND i.invoice_type = 'Monthly Roster' AND i.invoice_id < :invoice_id";
+        $uid = (int)$r['user_id'];
+        // Check if there are older Monthly Roster invoices for this user
+        $countQuery = "SELECT COUNT(*) FROM Invoice i JOIN Subscription s ON i.subscription_id = s.subscription_id WHERE s.user_id = :user_id AND i.invoice_type = 'Monthly Roster' AND i.invoice_id < :invoice_id";
         $countStmt = $conn->prepare($countQuery);
-        $countStmt->bindValue(':customer_id', $cid, PDO::PARAM_INT);
+        $countStmt->bindValue(':user_id', $uid, PDO::PARAM_INT);
         $countStmt->bindValue(':invoice_id', (int)$r['invoice_id'], PDO::PARAM_INT);
         $countStmt->execute();
         $olderCount = (int)$countStmt->fetchColumn();
@@ -57,7 +58,7 @@ try {
         $formattedRosters[] = [
             "id" => "INV-" . $r['invoice_id'],
             "invoice_id" => (int)$r['invoice_id'],
-            "client" => $r['client'],
+            "client" => $r['client'] ? $r['client'] : 'Subscriber User',
             "total" => (float)$r['total'],
             "label" => $payment_label,
             "status" => strtolower($r['status']),
@@ -73,7 +74,7 @@ try {
                          c.full_name AS client,
                          s.service_name
                   FROM Invoice i
-                  JOIN Booking b ON i.invoice_id = b.invoice_id
+                  JOIN Booking b ON i.booking_id = b.booking_id
                   JOIN Customer c ON b.customer_id = c.customer_id
                   JOIN Service s ON b.service_id = s.service_id
                   WHERE i.invoice_type = 'Single Detailing' 

@@ -100,53 +100,12 @@ try {
     $booking_id = null;
     $customer_id = null;
 
-    $ensureFeedbackSchema = function ($conn) {
-        // Create table if it doesn't exist
-        $tableCheck = $conn->query("SHOW TABLES LIKE 'Feedback'");
-        if (!$tableCheck->fetch()) {
-            $conn->exec("CREATE TABLE Feedback (
-                feedback_id INT AUTO_INCREMENT PRIMARY KEY,
-                booking_id INT UNIQUE NULL,
-                customer_id INT NULL,
-                rating INT CHECK (rating >= 1 AND rating <= 5),
-                comments TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (booking_id) REFERENCES Booking(booking_id) ON DELETE CASCADE,
-                FOREIGN KEY (customer_id) REFERENCES Customer(customer_id) ON DELETE CASCADE
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-        }
-
-        $requiredColumns = [
-            'client_name' => "VARCHAR(255) NULL",
-            'service_name' => "VARCHAR(255) NULL",
-            'feedback_type' => "VARCHAR(20) NOT NULL DEFAULT 'subscriber'"
-        ];
-
-        foreach ($requiredColumns as $columnName => $definition) {
-            $columnCheckStmt = $conn->query("SHOW COLUMNS FROM Feedback LIKE " . $conn->quote($columnName));
-            if (!$columnCheckStmt->fetch()) {
-                $conn->exec("ALTER TABLE Feedback ADD COLUMN {$columnName} {$definition}");
-            }
-        }
-
-        $nullableColumns = ['booking_id', 'customer_id'];
-        foreach ($nullableColumns as $columnName) {
-            $columnStmt = $conn->query("SHOW COLUMNS FROM Feedback LIKE " . $conn->quote($columnName));
-            $columnInfo = $columnStmt->fetch(PDO::FETCH_ASSOC);
-            if ($columnInfo && strtoupper($columnInfo['Null']) === 'NO') {
-                $conn->exec("ALTER TABLE Feedback MODIFY COLUMN {$columnName} {$columnInfo['Type']} NULL");
-            }
-        }
-    };
-
-    $ensureFeedbackSchema($conn);
-
     if (empty($booking_id_raw)) {
-        if (isset($_SESSION['role']) && $_SESSION['role'] === 'Subscriber' && isset($_SESSION['customer_id'])) {
+        if (isset($_SESSION['role']) && $_SESSION['role'] === 'Subscriber' && isset($_SESSION['user_id'])) {
             // Find the latest completed booking for this customer to automatically associate the feedback
-            $findBookingQuery = "SELECT booking_id, customer_id FROM Booking WHERE customer_id = :customer_id AND booking_status = 'Completed' ORDER BY scheduled_date DESC, time_slot DESC LIMIT 1";
+            $findBookingQuery = "SELECT booking_id, customer_id FROM Booking WHERE user_id = :user_id AND booking_status = 'Completed' ORDER BY scheduled_date DESC, time_slot DESC LIMIT 1";
             $findBookingStmt = $conn->prepare($findBookingQuery);
-            $findBookingStmt->bindValue(':customer_id', $_SESSION['customer_id'], PDO::PARAM_INT);
+            $findBookingStmt->bindValue(':user_id', $_SESSION['user_id'], PDO::PARAM_INT);
             $findBookingStmt->execute();
             $booking = $findBookingStmt->fetch();
             if ($booking) {
@@ -180,7 +139,7 @@ try {
         $booking_id = (int)$booking_id_raw;
 
         // Verify that the booking exists, is completed, and get customer_id
-        $bookingCheckQuery = "SELECT customer_id, booking_status FROM Booking WHERE booking_id = :booking_id LIMIT 1";
+        $bookingCheckQuery = "SELECT customer_id, user_id, booking_status FROM Booking WHERE booking_id = :booking_id LIMIT 1";
         $bookingCheckStmt = $conn->prepare($bookingCheckQuery);
         $bookingCheckStmt->bindValue(':booking_id', $booking_id, PDO::PARAM_INT);
         $bookingCheckStmt->execute();
@@ -207,7 +166,7 @@ try {
         $customer_id = (int)$booking['customer_id'];
 
         // If Subscriber, ensure the booking belongs to them
-        if (isset($_SESSION['role']) && $_SESSION['role'] === 'Subscriber' && isset($_SESSION['customer_id']) && (int)$_SESSION['customer_id'] !== $customer_id) {
+        if (isset($_SESSION['role']) && $_SESSION['role'] === 'Subscriber' && isset($_SESSION['user_id']) && (int)$_SESSION['user_id'] !== (int)$booking['user_id']) {
             http_response_code(403);
             echo json_encode([
                 "status" => "error",
@@ -234,14 +193,10 @@ try {
     }
 
     // Insert feedback into Feedback table
-    $insertQuery = "INSERT INTO Feedback (booking_id, customer_id, client_name, service_name, feedback_type, rating, comments) 
-                    VALUES (:booking_id, :customer_id, :client_name, :service_name, :feedback_type, :rating, :comments)";
+    $insertQuery = "INSERT INTO Feedback (booking_id, rating, comments) 
+                    VALUES (:booking_id, :rating, :comments)";
     $insertStmt = $conn->prepare($insertQuery);
     $insertStmt->bindValue(':booking_id', $booking_id, $booking_id === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
-    $insertStmt->bindValue(':customer_id', $customer_id, $customer_id === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
-    $insertStmt->bindValue(':client_name', $client_name, PDO::PARAM_STR);
-    $insertStmt->bindValue(':service_name', $service_name, PDO::PARAM_STR);
-    $insertStmt->bindValue(':feedback_type', empty($booking_id_raw) ? 'public' : 'subscriber', PDO::PARAM_STR);
     $insertStmt->bindValue(':rating', $rating, PDO::PARAM_INT);
     $insertStmt->bindValue(':comments', $comments, PDO::PARAM_STR);
     $insertStmt->execute();

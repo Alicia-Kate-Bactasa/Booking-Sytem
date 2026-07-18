@@ -36,7 +36,7 @@ try {
                     FROM Booking b
                     JOIN Service s ON b.service_id = s.service_id
                     JOIN Customer c ON b.customer_id = c.customer_id
-                    JOIN Invoice i ON b.invoice_id = i.invoice_id
+                    JOIN Invoice i ON b.booking_id = i.booking_id
                     JOIN Payment p ON i.invoice_id = p.invoice_id
                     WHERE p.payment_status = 'Pending Approval' 
                       AND b.booking_status = 'Pending Verification'
@@ -52,8 +52,8 @@ try {
                         i.invoice_id, i.total_amount,
                         p.payment_id, p.payment_method, p.payment_status, p.proof_of_payment
                  FROM Subscription s
-                 JOIN Customer c ON s.customer_id = c.customer_id
-                 JOIN User u ON c.customer_id = u.customer_id
+                 JOIN User u ON s.user_id = u.user_id
+                 JOIN Customer c ON u.email = c.email
                  JOIN Invoice i ON s.subscription_id = i.subscription_id
                  JOIN Payment p ON i.invoice_id = p.invoice_id
                  WHERE p.payment_status = 'Pending Approval'
@@ -65,11 +65,11 @@ try {
     $pending_registrations = $regStmt->fetchAll();
 
     // 3. Fetch billing_alerts (Overdue subscribers next_billing_date < CURRENT_DATE)
-    $alertQuery = "SELECT s.subscription_id, s.customer_id, s.plan_tier, s.plan_status, s.next_billing_date,
+    $alertQuery = "SELECT s.subscription_id, c.customer_id, s.plan_tier, s.plan_status, s.next_billing_date,
                           c.full_name, u.email
                    FROM Subscription s
-                   JOIN Customer c ON s.customer_id = c.customer_id
-                   JOIN User u ON c.customer_id = u.customer_id
+                   JOIN User u ON s.user_id = u.user_id
+                   JOIN Customer c ON u.email = c.email
                    WHERE s.plan_status = 'Active'
                      AND s.next_billing_date < CURRENT_DATE()";
     $alertStmt = $conn->prepare($alertQuery);

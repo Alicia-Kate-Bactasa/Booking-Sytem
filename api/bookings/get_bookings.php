@@ -34,12 +34,12 @@ try {
               FROM Booking b 
               JOIN Service s ON b.service_id = s.service_id 
               JOIN Customer c ON b.customer_id = c.customer_id
-              LEFT JOIN Invoice i ON b.invoice_id = i.invoice_id
+              LEFT JOIN Invoice i ON b.booking_id = i.booking_id
               LEFT JOIN Payment p ON i.invoice_id = p.invoice_id";
 
     // If the authenticated user is a Subscriber, filter to return only their own bookings
     if ($_SESSION['role'] === 'Subscriber') {
-        $query .= " WHERE c.customer_id = :customer_id";
+        $query .= " WHERE b.user_id = :user_id";
     }
 
     $query .= " ORDER BY b.scheduled_date DESC, b.time_slot ASC";
@@ -47,7 +47,7 @@ try {
     $stmt = $conn->prepare($query);
 
     if ($_SESSION['role'] === 'Subscriber') {
-        $stmt->bindValue(':customer_id', $_SESSION['customer_id'], PDO::PARAM_INT);
+        $stmt->bindValue(':user_id', $_SESSION['user_id'], PDO::PARAM_INT);
     }
 
     $stmt->execute();

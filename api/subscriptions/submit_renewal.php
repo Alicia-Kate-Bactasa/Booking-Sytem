@@ -29,7 +29,7 @@ try {
     // Require Subscriber authentication
     require_auth('Subscriber');
     
-    $customer_id = (int)$_SESSION['customer_id'];
+    $user_id = (int)$_SESSION['user_id'];
 
     // 1. Guard against duplicate proof submissions:
     // Check if there is already a payment proof submitted that is pending admin approval
@@ -37,12 +37,12 @@ try {
                             FROM Payment p
                             JOIN Invoice i ON p.invoice_id = i.invoice_id
                             JOIN Subscription s ON i.subscription_id = s.subscription_id
-                            WHERE s.customer_id = :customer_id
+                            WHERE s.user_id = :user_id
                               AND i.invoice_type = 'Monthly Roster'
                               AND p.payment_status = 'Pending Approval'
                             LIMIT 1";
     $pendingPaymentStmt = $conn->prepare($pendingPaymentQuery);
-    $pendingPaymentStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+    $pendingPaymentStmt->bindValue(':user_id', $user_id, PDO::PARAM_INT);
     $pendingPaymentStmt->execute();
     if ($pendingPaymentStmt->fetch()) {
         http_response_code(400);
@@ -55,13 +55,13 @@ try {
 
     // 2. Guard against double payment within the active billing cycle:
     // Check if the subscription is already prepaid (last_billing_date is in the future)
-    $subQuery = "SELECT s.subscription_id, s.last_billing_date, s.plan_status, c.full_name, COALESCE(u.email, c.email) AS email
+    $subQuery = "SELECT s.subscription_id, s.last_billing_date, s.plan_status, c.full_name, u.email
                  FROM Subscription s
-                 JOIN Customer c ON s.customer_id = c.customer_id
-                 LEFT JOIN User u ON c.customer_id = u.customer_id
-                 WHERE s.customer_id = :customer_id LIMIT 1";
+                 JOIN User u ON s.user_id = u.user_id
+                 LEFT JOIN Customer c ON u.email = c.email
+                 WHERE s.user_id = :user_id LIMIT 1";
     $subStmt = $conn->prepare($subQuery);
-    $subStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+    $subStmt->bindValue(':user_id', $user_id, PDO::PARAM_INT);
     $subStmt->execute();
     $sub = $subStmt->fetch();
 
@@ -192,9 +192,9 @@ try {
     $paymentStmt->execute();
 
     // 6. Set plan_status to 'Payment Pending' (awaiting approval)
-    $subQuery = "UPDATE Subscription SET plan_status = 'Payment Pending' WHERE customer_id = :customer_id";
+    $subQuery = "UPDATE Subscription SET plan_status = 'Payment Pending' WHERE user_id = :user_id";
     $subStmt = $conn->prepare($subQuery);
-    $subStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+    $subStmt->bindValue(':user_id', $user_id, PDO::PARAM_INT);
     $subStmt->execute();
 
     $conn->commit();

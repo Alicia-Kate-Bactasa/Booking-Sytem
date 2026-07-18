@@ -88,14 +88,18 @@ try {
     $conn->beginTransaction();
 
     // 2. Fetch Invoice details
-    $invQuery = "SELECT COALESCE(s.customer_id, b.customer_id) AS customer_id, 
-                        i.total_amount, 
+    $invQuery = "SELECT i.total_amount, 
                         i.invoice_type,
                         ser.service_name,
-                        b.booking_id
+                        i.booking_id,
+                        s.user_id AS subscription_user_id,
+                        b.customer_id AS booking_customer_id,
+                        c.customer_id AS subscription_customer_id
                  FROM Invoice i
                  LEFT JOIN Subscription s ON i.subscription_id = s.subscription_id
-                 LEFT JOIN Booking b ON i.invoice_id = b.invoice_id
+                 LEFT JOIN User u ON s.user_id = u.user_id
+                 LEFT JOIN Customer c ON u.email = c.email
+                 LEFT JOIN Booking b ON i.booking_id = b.booking_id
                  LEFT JOIN Service ser ON b.service_id = ser.service_id
                  WHERE i.invoice_id = :invoice_id LIMIT 1";
     $invStmt = $conn->prepare($invQuery);
@@ -113,13 +117,18 @@ try {
         exit();
     }
 
-    $customer_id = (int)$invoice['customer_id'];
+    $customer_id = 0;
+    if ($invoice['invoice_type'] === 'Monthly Roster') {
+        $customer_id = (int)$invoice['subscription_customer_id'];
+    } else {
+        $customer_id = (int)$invoice['booking_customer_id'];
+    }
+    $subscription_user_id = $invoice['subscription_user_id'] ? (int)$invoice['subscription_user_id'] : 0;
 
-    // Fetch customer email and name (from User if subscriber, or directly from Customer if regular guest)
-    $emailQuery = "SELECT COALESCE(u.email, c.email) AS email, c.full_name 
-                   FROM Customer c
-                   LEFT JOIN User u ON c.customer_id = u.customer_id
-                   WHERE c.customer_id = :customer_id LIMIT 1";
+    // Fetch customer email and name (directly from Customer)
+    $emailQuery = "SELECT email, full_name 
+                   FROM Customer 
+                   WHERE customer_id = :customer_id LIMIT 1";
     $emailStmt = $conn->prepare($emailQuery);
     $emailStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
     $emailStmt->execute();
@@ -141,18 +150,20 @@ try {
         $stmtInv->bindValue(':invoice_id', $invoice_id, PDO::PARAM_INT);
         $stmtInv->execute();
 
-        // Also update associated Booking status to Confirmed for walk-ins (complying with updated ENUM value)
-        $updateBook = "UPDATE Booking SET booking_status = 'Confirmed' WHERE invoice_id = :invoice_id AND booking_status = 'Pending Verification'";
-        $stmtBook = $conn->prepare($updateBook);
-        $stmtBook->bindValue(':invoice_id', $invoice_id, PDO::PARAM_INT);
-        $stmtBook->execute();
+        // Also update associated Booking status to Confirmed for walk-ins
+        if (!empty($invoice['booking_id'])) {
+            $updateBook = "UPDATE Booking SET booking_status = 'Confirmed' WHERE booking_id = :booking_id AND booking_status = 'Pending Verification'";
+            $stmtBook = $conn->prepare($updateBook);
+            $stmtBook->bindValue(':booking_id', (int)$invoice['booking_id'], PDO::PARAM_INT);
+            $stmtBook->execute();
+        }
 
         // If Subscription renewal payment, activate membership
         if ($invoice['invoice_type'] === 'Monthly Roster') {
             // Fetch current subscription dates
-            $dateFetchQuery = "SELECT next_billing_date, plan_status FROM Subscription WHERE customer_id = :customer_id LIMIT 1";
+            $dateFetchQuery = "SELECT next_billing_date, plan_status FROM Subscription WHERE user_id = :user_id LIMIT 1";
             $dateFetchStmt = $conn->prepare($dateFetchQuery);
-            $dateFetchStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+            $dateFetchStmt->bindValue(':user_id', $subscription_user_id, PDO::PARAM_INT);
             $dateFetchStmt->execute();
             $subDates = $dateFetchStmt->fetch();
 
@@ -168,25 +179,27 @@ try {
             }
 
             // Set Customer to Subscriber
-            $updateCust = "UPDATE Customer SET customer_type = 'Subscriber' WHERE customer_id = :customer_id";
-            $stmtCust = $conn->prepare($updateCust);
-            $stmtCust->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
-            $stmtCust->execute();
+            if ($customer_id) {
+                $updateCust = "UPDATE Customer SET customer_type = 'Subscriber' WHERE customer_id = :customer_id";
+                $stmtCust = $conn->prepare($updateCust);
+                $stmtCust->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+                $stmtCust->execute();
+            }
 
             // Set Subscription to Active
             $updateSub = "UPDATE Subscription 
                           SET plan_status = 'Active', 
                               last_billing_date = :last_billing, 
                               next_billing_date = :next_billing 
-                          WHERE customer_id = :customer_id";
+                          WHERE user_id = :user_id";
             $stmtSub = $conn->prepare($updateSub);
             $stmtSub->bindValue(':last_billing', $lastBillingDate, PDO::PARAM_STR);
             $stmtSub->bindValue(':next_billing', $nextBillingDate, PDO::PARAM_STR);
-            $stmtSub->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+            $stmtSub->bindValue(':user_id', $subscription_user_id, PDO::PARAM_INT);
             $stmtSub->execute();
         }
 
-        log_system_event($conn, 'Payment Approved', "Invoice ID {$invoice_id} (Customer ID {$customer_id}) marked as Paid. Amount: ₱{$payment['amount']}. Type: {$invoice['invoice_type']}.");
+        log_system_event($conn, 'Payment Approved', "Invoice ID {$invoice_id} marked as Paid. Amount: ₱{$payment['amount']}. Type: {$invoice['invoice_type']}.");
     } else {
         // Update Payment status to Rejected
         $updatePay = "UPDATE Payment SET payment_status = 'Rejected' WHERE payment_id = :pay_id";
@@ -201,22 +214,22 @@ try {
         $stmtInv->execute();
 
         // Cancel the associated booking to free the slot
-        if ($invoice['invoice_type'] === 'Single Detailing') {
-            $updateBook = "UPDATE Booking SET booking_status = 'Cancelled' WHERE invoice_id = :invoice_id";
+        if ($invoice['invoice_type'] === 'Single Detailing' && !empty($invoice['booking_id'])) {
+            $updateBook = "UPDATE Booking SET booking_status = 'Cancelled' WHERE booking_id = :booking_id";
             $stmtBook = $conn->prepare($updateBook);
-            $stmtBook->bindValue(':invoice_id', $invoice_id, PDO::PARAM_INT);
+            $stmtBook->bindValue(':booking_id', (int)$invoice['booking_id'], PDO::PARAM_INT);
             $stmtBook->execute();
         }
 
         if ($invoice['invoice_type'] === 'Monthly Roster') {
             // Set Subscription to Expired (archived)
-            $updateSub = "UPDATE Subscription SET plan_status = 'Expired' WHERE customer_id = :customer_id";
+            $updateSub = "UPDATE Subscription SET plan_status = 'Expired' WHERE user_id = :user_id";
             $stmtSub = $conn->prepare($updateSub);
-            $stmtSub->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+            $stmtSub->bindValue(':user_id', $subscription_user_id, PDO::PARAM_INT);
             $stmtSub->execute();
         }
 
-        log_system_event($conn, 'Payment Rejected', "Invoice ID {$invoice_id} (Customer ID {$customer_id}) rejected. Status set to Rejected. Amount: ₱{$payment['amount']}. Type: {$invoice['invoice_type']}.");
+        log_system_event($conn, 'Payment Rejected', "Invoice ID {$invoice_id} rejected. Status set to Rejected. Amount: ₱{$payment['amount']}. Type: {$invoice['invoice_type']}.");
     }
 
     $conn->commit();

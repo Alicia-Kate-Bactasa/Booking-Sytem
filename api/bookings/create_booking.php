@@ -133,7 +133,7 @@ try {
                       FROM Booking b
                       JOIN Service s ON b.service_id = s.service_id
                       WHERE b.scheduled_date = :date 
-                        AND b.bay_number = 'Bay 1' 
+                        AND b.bay_number = 1 
                         AND b.booking_status NOT IN ('Cancelled', 'No-Show')
                         AND (
                           (TIME_TO_SEC(STR_TO_DATE(b.time_slot, '%h:%i %p')) / 60) < :new_end 
@@ -149,14 +149,14 @@ try {
 
     $bay_number = null;
     if (!$bay1Occupied) {
-        $bay_number = 'Bay 1';
+        $bay_number = 1;
     } else {
         // Check Bay 2
         $overlapQuery2 = "SELECT b.booking_id 
                           FROM Booking b
                           JOIN Service s ON b.service_id = s.service_id
                           WHERE b.scheduled_date = :date 
-                            AND b.bay_number = 'Bay 2' 
+                            AND b.bay_number = 2 
                             AND b.booking_status NOT IN ('Cancelled', 'No-Show')
                             AND (
                               (TIME_TO_SEC(STR_TO_DATE(b.time_slot, '%h:%i %p')) / 60) < :new_end 
@@ -171,7 +171,7 @@ try {
         $bay2Occupied = $overlapStmt2->fetch();
 
         if (!$bay2Occupied) {
-            $bay_number = 'Bay 2';
+            $bay_number = 2;
         } else {
             if ($conn->inTransaction()) {
                 $conn->rollBack();
@@ -185,10 +185,23 @@ try {
         }
     }
 
+    // Resolve user_id
+    $user_id = null;
+    if ($_SESSION['role'] === 'Subscriber') {
+        $user_id = $_SESSION['user_id'];
+    } else {
+        // Admin
+        $userCheckStmt = $conn->prepare("SELECT user_id FROM User WHERE email = (SELECT email FROM Customer WHERE customer_id = :customer_id)");
+        $userCheckStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+        $userCheckStmt->execute();
+        $userData = $userCheckStmt->fetch();
+        $user_id = $userData ? (int)$userData['user_id'] : null;
+    }
+
     // 3. Check customer type and details to see if they are a subscriber or regular guest
     $custQuery = "SELECT c.customer_type, c.full_name, COALESCE(u.email, c.email) AS email
                   FROM Customer c
-                  LEFT JOIN User u ON c.customer_id = u.customer_id
+                  LEFT JOIN User u ON c.email = u.email
                   WHERE c.customer_id = :customer_id LIMIT 1";
     $custStmt = $conn->prepare($custQuery);
     $custStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
@@ -196,57 +209,56 @@ try {
     $customerInfo = $custStmt->fetch();
     $customer = $customerInfo;
 
-    $invoice_id = null;
-    $booking_status = 'Pending';
+    $booking_status = ($customer && $customer['customer_type'] === 'Subscriber') ? 'Pending' : 'Pending Verification';
 
-    if ($customer && $customer['customer_type'] === 'Subscriber') {
-        // Fetch active subscription ID
-        $subIdQuery = "SELECT subscription_id FROM Subscription WHERE customer_id = :customer_id AND plan_status IN ('Active', 'Cancellation Pending') LIMIT 1";
-        $subIdStmt = $conn->prepare($subIdQuery);
-        $subIdStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
-        $subIdStmt->execute();
-        $subData = $subIdStmt->fetch();
-        $subscription_id = $subData ? (int)$subData['subscription_id'] : null;
-
-        // Zero-Value Invoices: To maintain a complete activity ledger, every booking generates an Invoice row
-        // For subscribers: total_amount is 0.00; invoice_status is marked 'Paid'
-        $invoiceQuery = "INSERT INTO Invoice (subscription_id, total_amount, invoice_type, invoice_status) 
-                         VALUES (:subscription_id, 0.00, 'Single Detailing', 'Paid')";
-        $invoiceStmt = $conn->prepare($invoiceQuery);
-        $invoiceStmt->bindValue(':subscription_id', $subscription_id, $subscription_id === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
-        $invoiceStmt->execute();
-        $invoice_id = (int)$conn->lastInsertId();
-        
-        $booking_status = 'Pending'; // Straight to Pending
-    } else {
-        // Create a standard Pending Invoice for walk-in/regular customer
-        $invoiceQuery = "INSERT INTO Invoice (subscription_id, total_amount, invoice_type, invoice_status) 
-                         VALUES (NULL, :total_amount, 'Single Detailing', 'Pending')";
-        $invoiceStmt = $conn->prepare($invoiceQuery);
-        $invoiceStmt->bindValue(':total_amount', $purchased_price, PDO::PARAM_STR);
-        $invoiceStmt->execute();
-        $invoice_id = (int)$conn->lastInsertId();
-        
-        $booking_status = 'Pending Verification';
-    }
-
-    // 4. Insert booking with bay_number, purchased_price, and invoice_id
-    $query = "INSERT INTO Booking (customer_id, service_id, invoice_id, scheduled_date, time_slot, bay_number, purchased_price, booking_status) 
-              VALUES (:customer_id, :service_id, :invoice_id, :scheduled_date, :time_slot, :bay_number, :purchased_price, :booking_status)";
+    // 4. Insert booking first (without invoice_id, but with user_id)
+    $query = "INSERT INTO Booking (customer_id, user_id, service_id, scheduled_date, time_slot, bay_number, purchased_price, booking_status) 
+              VALUES (:customer_id, :user_id, :service_id, :scheduled_date, :time_slot, :bay_number, :purchased_price, :booking_status)";
               
     $stmt = $conn->prepare($query);
     
     $stmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+    $stmt->bindValue(':user_id', $user_id, $user_id === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
     $stmt->bindValue(':service_id', $service_id, PDO::PARAM_INT);
-    $stmt->bindValue(':invoice_id', $invoice_id, $invoice_id === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
     $stmt->bindValue(':scheduled_date', $scheduled_date, PDO::PARAM_STR);
     $stmt->bindValue(':time_slot', $time_slot, PDO::PARAM_STR);
-    $stmt->bindValue(':bay_number', $bay_number, PDO::PARAM_STR);
+    $stmt->bindValue(':bay_number', $bay_number, PDO::PARAM_INT);
     $stmt->bindValue(':purchased_price', $purchased_price, PDO::PARAM_STR);
     $stmt->bindValue(':booking_status', $booking_status, PDO::PARAM_STR);
     
     if ($stmt->execute()) {
         $booking_id = (int)$conn->lastInsertId();
+        
+        // 5. Downstream Invoice Generation
+        $invoice_id = null;
+        if ($customer && $customer['customer_type'] === 'Subscriber') {
+            // Fetch active subscription ID via user_id
+            $subIdQuery = "SELECT subscription_id FROM Subscription WHERE user_id = :user_id AND plan_status IN ('Active', 'Cancellation Pending') LIMIT 1";
+            $subIdStmt = $conn->prepare($subIdQuery);
+            $subIdStmt->bindValue(':user_id', $user_id, PDO::PARAM_INT);
+            $subIdStmt->execute();
+            $subData = $subIdStmt->fetch();
+            $subscription_id = $subData ? (int)$subData['subscription_id'] : null;
+
+            // Zero-Value Invoices: To maintain a complete activity ledger, every booking generates an Invoice row
+            $invoiceQuery = "INSERT INTO Invoice (booking_id, subscription_id, total_amount, invoice_type, invoice_status) 
+                             VALUES (:booking_id, :subscription_id, 0.00, 'Single Detailing', 'Paid')";
+            $invoiceStmt = $conn->prepare($invoiceQuery);
+            $invoiceStmt->bindValue(':booking_id', $booking_id, PDO::PARAM_INT);
+            $invoiceStmt->bindValue(':subscription_id', $subscription_id, $subscription_id === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
+            $invoiceStmt->execute();
+            $invoice_id = (int)$conn->lastInsertId();
+        } else {
+            // Create a standard Pending Invoice for walk-in/regular customer
+            $invoiceQuery = "INSERT INTO Invoice (booking_id, subscription_id, total_amount, invoice_type, invoice_status) 
+                             VALUES (:booking_id, NULL, :total_amount, 'Single Detailing', 'Pending')";
+            $invoiceStmt = $conn->prepare($invoiceQuery);
+            $invoiceStmt->bindValue(':booking_id', $booking_id, PDO::PARAM_INT);
+            $invoiceStmt->bindValue(':total_amount', $purchased_price, PDO::PARAM_STR);
+            $invoiceStmt->execute();
+            $invoice_id = (int)$conn->lastInsertId();
+        }
+
         // Log transaction in System_Logs
         log_system_event($conn, 'Booking Created', "Booking ID {$booking_id} created for Customer ID {$customer_id}. Status: {$booking_status}. Linked Invoice ID: {$invoice_id}.");
         $conn->commit();
@@ -272,7 +284,7 @@ try {
                 'client_name' => $fullName,
                 'client_email' => $clientEmail,
                 'item_name' => $service['service_name'],
-                'item_subtext' => "Scheduled for {$bay_number} on {$scheduled_date} at {$time_slot}",
+                'item_subtext' => "Scheduled for Bay {$bay_number} on {$scheduled_date} at {$time_slot}",
                 'item_price' => $subtotal,
                 'subtotal' => $subtotal,
                 'discount' => $discount,
