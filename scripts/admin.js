@@ -1553,14 +1553,53 @@ const defaultServices = [
             handleOnsiteDateChange();
         }
 
+        function toggleAdminCustomDropdown(menuId) {
+            const targetedMenu = document.getElementById(menuId);
+            if (targetedMenu) targetedMenu.classList.toggle('hidden');
+        }
+        window.toggleAdminCustomDropdown = toggleAdminCustomDropdown;
+
+        function selectOnsiteTime(slot, displayLabel, allocatedBay) {
+            const valInput = document.getElementById('onsiteTimeSlotVal');
+            if (valInput) {
+                valInput.value = slot;
+                valInput.setAttribute('data-bay', allocatedBay);
+            }
+            const displaySpan = document.getElementById('customOnsiteTimeDisplay');
+            if (displaySpan) {
+                displaySpan.innerText = displayLabel;
+            }
+            const menu = document.getElementById('onsiteTimeDropdownMenu');
+            if (menu) {
+                menu.classList.add('hidden');
+            }
+        }
+        window.selectOnsiteTime = selectOnsiteTime;
+
         async function handleOnsiteDateChange() {
             const dateInput = document.getElementById('onsiteBookingDate').value;
             const serviceSelect = document.getElementById('onsiteServiceSelect');
-            const timeSelect = document.getElementById('onsiteTimeSlotSelect');
-            if (!timeSelect) return;
+            const timeContainer = document.getElementById('onsiteTimeDropdownMenu');
+            const warningElement = document.getElementById('onsiteCapacityWarning');
+            if (!timeContainer) return;
+            
+            // Toggle Saturday warning
+            if (warningElement) {
+                if (dateInput && new Date(dateInput).getUTCDay() === 6) {
+                    warningElement.classList.remove('hidden');
+                } else {
+                    warningElement.classList.add('hidden');
+                }
+            }
+            
+            // Clear current selections
+            const valInput = document.getElementById('onsiteTimeSlotVal');
+            if (valInput) valInput.value = '';
+            const displaySpan = document.getElementById('customOnsiteTimeDisplay');
+            if (displaySpan) displaySpan.innerText = 'Choose a time...';
             
             if (!dateInput || !serviceSelect.value) {
-                timeSelect.innerHTML = '<option value="">Select date and service first</option>';
+                timeContainer.innerHTML = '<p class="p-3 text-[10px] text-neutral-400 font-semibold text-center">Select date and service first</p>';
                 return;
             }
             
@@ -1568,25 +1607,30 @@ const defaultServices = [
             const duration = selectedOption.getAttribute('data-duration') || 30;
             
             try {
-                timeSelect.innerHTML = '<option value="">Loading slots...</option>';
+                timeContainer.innerHTML = '<p class="p-3 text-[10px] text-neutral-400 font-semibold text-center">Loading slots...</p>';
                 const response = await fetch(`bookings/check_availability.php?scheduled_date=${dateInput}&duration=${duration}`);
                 const result = await response.json();
                 
                 if (response.ok && result && result.status === 'success' && Array.isArray(result.data)) {
-                    timeSelect.innerHTML = '<option value="">Choose a time...</option>';
+                    timeContainer.innerHTML = '';
                     if (result.data.length === 0) {
-                        timeSelect.innerHTML = '<option value="">Fully Booked for this date</option>';
+                        timeContainer.innerHTML = '<p class="p-3 text-[10px] text-red-500 font-semibold text-center">Fully Booked for this date</p>';
                     } else {
                         result.data.forEach(slot => {
-                            timeSelect.innerHTML += `<option value="${slot.time_slot}" data-bay="${slot.allocated_bay}">${slot.display_label}</option>`;
+                            const btn = document.createElement('button');
+                            btn.type = 'button';
+                            btn.className = "w-full text-left px-5 py-2.5 text-[10px] font-bold text-neutral-700 hover:bg-neutral-50 transition-colors uppercase tracking-wider block";
+                            btn.innerText = slot.display_label;
+                            btn.onclick = () => selectOnsiteTime(slot.time_slot, slot.display_label, slot.allocated_bay);
+                            timeContainer.appendChild(btn);
                         });
                     }
                 } else {
-                    timeSelect.innerHTML = '<option value="">Failed to load slots</option>';
+                    timeContainer.innerHTML = '<p class="p-3 text-[10px] text-red-500 font-semibold text-center">Failed to load slots</p>';
                 }
             } catch (err) {
                 console.error(err);
-                timeSelect.innerHTML = '<option value="">Error loading slots</option>';
+                timeContainer.innerHTML = '<p class="p-3 text-[10px] text-red-500 font-semibold text-center">Error loading slots</p>';
             }
         }
 
@@ -1598,7 +1642,7 @@ const defaultServices = [
             const email = document.getElementById('onsiteEmail').value.trim();
             const serviceId = document.getElementById('onsiteServiceSelect').value;
             const date = document.getElementById('onsiteBookingDate').value;
-            const timeSlot = document.getElementById('onsiteTimeSlotSelect').value;
+            const timeSlot = document.getElementById('onsiteTimeSlotVal').value;
             const amount = document.getElementById('onsiteAmountPaid').value;
             const proofFile = document.getElementById('onsiteProofOfPayment').files[0];
             const status = document.getElementById('onsiteBookingStatus').value;
@@ -1661,7 +1705,16 @@ const defaultServices = [
                     toggleModal('onsiteBookingModal');
                     document.getElementById('onsiteBookingForm').reset();
                     document.getElementById('onsiteUploadLabel').innerText = 'Click to select picture (JPEG, PNG, WEBP max 8MB)';
-                    document.getElementById('onsiteTimeSlotSelect').innerHTML = '<option value="">Select date and service first</option>';
+                    const valInput = document.getElementById('onsiteTimeSlotVal');
+                    if (valInput) valInput.value = '';
+                    const displaySpan = document.getElementById('customOnsiteTimeDisplay');
+                    if (displaySpan) displaySpan.innerText = 'Choose a time...';
+                    const timeContainer = document.getElementById('onsiteTimeDropdownMenu');
+                    if (timeContainer) {
+                        timeContainer.innerHTML = '<p class="p-3 text-[10px] text-neutral-400 font-semibold text-center">Select date and service first</p>';
+                    }
+                    const warningElement = document.getElementById('onsiteCapacityWarning');
+                    if (warningElement) warningElement.classList.add('hidden');
                     
                     // Immediately refresh live lists/grids and analytics metrics
                     await loadAppointments();

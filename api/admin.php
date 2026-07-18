@@ -505,11 +505,20 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Admin') {
                     </div>
                     <div>
                         <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1.5">Time Slot</label>
-                        <select id="onsiteTimeSlotSelect" required class="w-full bg-neutral-50 border border-neutral-200 p-3 rounded-full text-xs font-bold text-black focus:outline-none focus:border-black px-4 cursor-pointer">
-                            <option value="">Select date and service first</option>
-                        </select>
+                        <div class="relative">
+                            <button type="button" onclick="toggleAdminCustomDropdown('onsiteTimeDropdownMenu')" class="w-full bg-neutral-50 border border-neutral-200 p-3 rounded-full text-xs font-semibold text-black text-left flex justify-between items-center focus:outline-none focus:border-black px-4 cursor-pointer">
+                                <span id="customOnsiteTimeDisplay">Choose a time...</span>
+                                <span class="text-neutral-400 text-[10px]">▼</span>
+                            </button>
+                            <div id="onsiteTimeDropdownMenu" class="absolute left-0 right-0 mt-2 bg-white border border-neutral-200 rounded-[1.5rem] shadow-xl overflow-hidden hidden z-50 divide-y divide-neutral-100 max-h-[180px] overflow-y-auto">
+                                <p class="p-3 text-[10px] text-neutral-400 font-semibold text-center">Select date and service first</p>
+                            </div>
+                            <input type="hidden" id="onsiteTimeSlotVal" required>
+                        </div>
                     </div>
                 </div>
+                <!-- Saturday Capacity Alert -->
+                <p id="onsiteCapacityWarning" class="text-[10px] text-neutral-500 bg-neutral-50 border border-neutral-200/60 rounded-full px-4 py-1.5 inline-block font-medium mt-2 hidden">ℹ️ Saturday bookings are limited to 16 cars.</p>
 
                 <!-- Financial Override & Booking Status -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
