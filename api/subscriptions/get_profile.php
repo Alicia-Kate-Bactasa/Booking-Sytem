@@ -79,6 +79,17 @@ try {
     $user_id = (int)$profile['user_id'];
     $customer_id = 0;
     
+    $today = date('Y-m-d');
+
+    // If plan is 'Cancellation Pending' and next_billing_date has passed, automatically expire it
+    if ($profile['plan_status'] === 'Cancellation Pending' && !empty($profile['next_billing_date']) && $today > $profile['next_billing_date']) {
+        $updateExpiredQuery = "UPDATE Subscription SET plan_status = 'Expired' WHERE subscription_id = :sub_id";
+        $updateExpiredStmt = $conn->prepare($updateExpiredQuery);
+        $updateExpiredStmt->bindValue(':sub_id', $subscription_id, PDO::PARAM_INT);
+        $updateExpiredStmt->execute();
+        $profile['plan_status'] = 'Expired';
+    }
+    
     // Fetch last completed booking date
     $lastVisitQuery = "SELECT MAX(scheduled_date) AS last_visit FROM Booking WHERE user_id = :user_id AND booking_status = 'Completed'";
     $lastVisitStmt = $conn->prepare($lastVisitQuery);

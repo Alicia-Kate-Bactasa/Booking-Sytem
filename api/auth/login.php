@@ -171,7 +171,7 @@ try {
                 exit();
             } else {
                 // Fetch Subscription details via user_id
-                $subQuery = "SELECT subscription_id, plan_status FROM Subscription WHERE user_id = :user_id LIMIT 1";
+                $subQuery = "SELECT subscription_id, plan_status, next_billing_date FROM Subscription WHERE user_id = :user_id LIMIT 1";
                 $subStmt = $conn->prepare($subQuery);
                 $subStmt->bindValue(':user_id', (int)$user['user_id'], PDO::PARAM_INT);
                 $subStmt->execute();
@@ -181,6 +181,16 @@ try {
                 if ($subscription) {
                     $subscription_id = (int)$subscription['subscription_id'];
                     $plan_status = $subscription['plan_status'];
+                    $next_billing_date = $subscription['next_billing_date'];
+
+                    $today = date('Y-m-d');
+                    if ($plan_status === 'Cancellation Pending' && !empty($next_billing_date) && $today > $next_billing_date) {
+                        $updateExpired = "UPDATE Subscription SET plan_status = 'Expired' WHERE subscription_id = :sub_id";
+                        $stmtExp = $conn->prepare($updateExpired);
+                        $stmtExp->bindValue(':sub_id', $subscription_id, PDO::PARAM_INT);
+                        $stmtExp->execute();
+                        $plan_status = 'Expired';
+                    }
 
                     // Enforce: User should not be able to log in / open an account that hasn't been approved yet
                     if ($plan_status === 'Payment Pending') {
