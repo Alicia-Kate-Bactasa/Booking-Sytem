@@ -192,15 +192,6 @@ try {
                         $plan_status = 'Expired';
                     }
 
-                    // Enforce: User should not be able to log in / open an account that hasn't been approved yet
-                    if ($plan_status === 'Payment Pending') {
-                        http_response_code(403);
-                        echo json_encode([
-                            "status" => "error",
-                            "message" => "Your subscriber account is pending admin approval. You will be able to access your account once your subscription and payment have been verified by an admin."
-                        ]);
-                        exit();
-                    }
                 }
 
                 // Under the new model, subscribers are NOT in the Customer table.

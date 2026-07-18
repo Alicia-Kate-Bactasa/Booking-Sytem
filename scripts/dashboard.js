@@ -924,6 +924,15 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                                 }
                             } else {
                                 restrictedNotice.classList.remove('hidden');
+                                const noticeTitle = restrictedNotice.querySelector('h5');
+                                const noticeDesc = restrictedNotice.querySelector('p');
+                                if (prof.plan_status === 'Payment Pending') {
+                                    if (noticeTitle) noticeTitle.innerText = "Subscription Pending Verification";
+                                    if (noticeDesc) noticeDesc.innerText = "Your subscription registration, renewal, or reactivation payment proof is currently pending administrator verification. Once verified, your account will be fully activated and booking privileges will be enabled.";
+                                } else {
+                                    if (noticeTitle) noticeTitle.innerText = "Booking Privileges Disabled";
+                                    if (noticeDesc) noticeDesc.innerText = "Detailing bookings on this dashboard are only available for active VIP Subscribers. If your subscription has expired or is cancelled, please reactivate your subscription in the Subscription tab to re-enable booking privileges.";
+                                }
                                 if (dateInput) dateInput.disabled = true;
                                 if (submitBtn) {
                                     submitBtn.disabled = true;
