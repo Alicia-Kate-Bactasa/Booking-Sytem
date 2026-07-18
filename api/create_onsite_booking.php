@@ -23,21 +23,17 @@ $service_id = isset($_POST['service_id']) ? (int)$_POST['service_id'] : null;
 $scheduled_date = isset($_POST['date']) ? trim($_POST['date']) : null;
 $time_slot = isset($_POST['time']) ? trim($_POST['time']) : null;
 $bay_number = isset($_POST['bay']) ? (int)$_POST['bay'] : 1;
-$amount_paid = isset($_POST['amount']) ? (float)$_POST['amount'] : null;
-$booking_status = isset($_POST['booking_status']) ? trim($_POST['booking_status']) : 'Scheduled';
+
+$booking_status = 'Scheduled';
 
 // === SECTION: INPUT VALIDATION ===
-if (empty($client_name) || empty($client_phone) || empty($service_id) || empty($scheduled_date) || empty($time_slot) || $amount_paid === null) {
+if (empty($client_name) || empty($client_phone) || empty($service_id) || empty($scheduled_date) || empty($time_slot)) {
     http_response_code(400);
     echo json_encode([
         "status" => "error",
-        "message" => "Incomplete request. Name, phone, service, date, time slot, and amount paid are required."
+        "message" => "Incomplete request. Name, phone, service, date, and time slot are required."
     ]);
     exit();
-}
-
-if (!in_array($booking_status, ['Scheduled', 'Completed'], true)) {
-    $booking_status = 'Scheduled';
 }
 
 if (!empty($client_email)) {
@@ -150,6 +146,7 @@ try {
 
     $service_name = $service['service_name'];
     $service_price = $service['service_price'];
+    $amount_paid = (float)$service_price;
 
     // Start Transaction
     $conn->beginTransaction();
@@ -216,6 +213,38 @@ try {
     log_system_event($conn, 'Booking Created', "Onsite Walk-In booking ID {$booking_id} created for Customer ID {$customer_id} by Admin. Linked Invoice ID: {$invoice_id}. Status: {$booking_status}. Payment Method: Cash.");
 
     $conn->commit();
+
+    // Send invoice email notification to client if email is provided
+    if ($client_email && filter_var($client_email, FILTER_VALIDATE_EMAIL)) {
+        require_once __DIR__ . '/utils/mailer.php';
+        $subject = "Payment Receipt & Booking Confirmation - Montage Auto Studio";
+
+        $invoiceData = [
+            'title' => 'Booking Invoice',
+            'invoice_no' => 'INV-' . $invoice_id,
+            'date' => date('Y-m-d'),
+            'client_name' => $client_name,
+            'client_email' => $client_email,
+            'item_name' => $service_name,
+            'item_subtext' => "Scheduled for bay {$bay_number} on {$scheduled_date} at {$time_slot}",
+            'item_price' => (float)$service_price,
+            'subtotal' => (float)$service_price,
+            'total_due' => (float)$service_price,
+            'status_bg' => '#eafaf1',
+            'status_border' => '#2ecc71',
+            'status_color' => '#27ae60',
+            'status_label' => 'PAID & CONFIRMED',
+            'status_detail' => 'This invoice has been marked as fully paid via Cash. Your onsite/walk-in booking has been successfully logged.',
+            'booking_id' => $booking_id
+        ];
+
+        try {
+            $htmlContent = Mailer::formatInvoice($invoiceData);
+            Mailer::send($client_email, $subject, $htmlContent);
+        } catch (Exception $mailEx) {
+            error_log("Failed to send walk-in invoice email: " . $mailEx->getMessage());
+        }
+    }
 
     // Sanitize and return success JSON response
     echo json_encode([

@@ -525,20 +525,7 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Admin') {
                 <!-- Saturday Capacity Alert -->
                 <p id="onsiteCapacityWarning" class="text-[10px] text-neutral-500 bg-neutral-50 border border-neutral-200/60 rounded-full px-4 py-1.5 inline-block font-medium mt-2 hidden">ℹ️ Saturday bookings are limited to 16 cars.</p>
 
-                <!-- Financial Override & Booking Status -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1.5">Amount Paid (PHP Cash)</label>
-                        <input type="number" id="onsiteAmountPaid" required step="0.01" placeholder="e.g. 500" class="w-full bg-neutral-50 border border-neutral-200 p-3 rounded-full text-xs font-bold text-black focus:outline-none focus:border-black px-4">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1.5">Initial Booking Status</label>
-                        <select id="onsiteBookingStatus" required class="w-full bg-neutral-50 border border-neutral-200 p-3 rounded-full text-xs font-bold text-black focus:outline-none focus:border-black px-4 cursor-pointer">
-                            <option value="Scheduled">Scheduled</option>
-                            <option value="Completed">Completed (Post-Wash)</option>
-                        </select>
-                    </div>
-                </div>
+
 
                 <!-- Proof of Identity or Receipt Upload -->
                 <div>

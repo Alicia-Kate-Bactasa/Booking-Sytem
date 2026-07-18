@@ -1662,11 +1662,9 @@ const defaultServices = [
             const serviceId = document.getElementById('onsiteServiceVal').value;
             const date = document.getElementById('onsiteBookingDate').value;
             const timeSlot = document.getElementById('onsiteTimeSlotVal').value;
-            const amount = document.getElementById('onsiteAmountPaid').value;
             const proofFile = document.getElementById('onsiteProofOfPayment').files[0];
-            const status = document.getElementById('onsiteBookingStatus').value;
             
-            if (!fullName || !phone || !serviceId || !date || !timeSlot || !amount || !proofFile) {
+            if (!fullName || !phone || !serviceId || !date || !timeSlot || !proofFile) {
                 alert('All fields including the identification/receipt picture are required.');
                 return;
             }
@@ -1701,8 +1699,6 @@ const defaultServices = [
                 formData.append('date', date);
                 formData.append('time', timeSlot);
                 formData.append('bay', allocatedBay);
-                formData.append('amount', amount);
-                formData.append('booking_status', status);
                 formData.append('proof_of_payment', proofFile);
                 
                 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
