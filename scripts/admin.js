@@ -74,7 +74,11 @@ const defaultServices = [
                 });
                 appointmentsRegistry = approvedData.map(app => {
                     let type = 'cancelled';
-                    if (app.booking_status === 'Pending Verification' || app.booking_status === 'Confirmed' || app.booking_status === 'Pending' || app.booking_status === 'Paid') {
+                    if (app.booking_status === 'Pending Verification' || 
+                        app.booking_status === 'Confirmed' || 
+                        app.booking_status === 'Pending' || 
+                        app.booking_status === 'Paid' ||
+                        app.booking_status === 'Scheduled') {
                         type = 'pending';
                     } else if (app.booking_status === 'Completed') {
                         type = 'completed';

@@ -115,7 +115,6 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Admin') {
                         <p class="text-neutral-500 text-sm mt-2">Manage customer bookings and track the studio schedule.</p>
                     </div>
                     <div class="flex flex-wrap gap-3 self-end sm:self-auto items-center">
-                        <button onclick="toggleModal('onsiteBookingModal')" class="bg-black text-white px-5 py-2.5 rounded-full text-xs font-bold tracking-wider uppercase hover:bg-neutral-800 transition-all focus:outline-none shadow-sm">+ Onsite Booking</button>
                         <div class="bg-neutral-200/80 p-1 rounded-full flex gap-1">
                             <button onclick="switchBookingSlide('pending')" id="slideBtn-pending" class="text-xs font-bold uppercase tracking-wider px-4 py-2 rounded-full bg-white text-black shadow-sm transition-all">Pending</button>
                             <button onclick="switchBookingSlide('completed')" id="slideBtn-completed" class="text-xs font-semibold uppercase tracking-wider px-4 py-2 rounded-full text-neutral-500 hover:text-black transition-all">Completed</button>
