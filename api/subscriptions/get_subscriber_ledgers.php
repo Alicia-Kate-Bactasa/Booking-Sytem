@@ -13,7 +13,7 @@ require_once '../config.php';
 try {
     require_auth('Admin');
 
-    // 1. Fetch Monthly Roster / Reactivation invoices (subscriber payments)
+    // 1. Fetch Monthly Roster invoices (subscriber payments)
     $rosterQuery = "SELECT i.invoice_id, 
                            i.total_amount AS total,
                            i.invoice_type,
@@ -23,12 +23,13 @@ try {
                            u.username AS client,
                            p.payment_id, 
                            p.payment_status, 
+                           p.payment_method,
                            p.proof_of_payment AS img
                     FROM Invoice i
                     JOIN Subscription s ON i.subscription_id = s.subscription_id
                     JOIN User u ON s.user_id = u.user_id
                     LEFT JOIN Payment p ON i.invoice_id = p.invoice_id
-                    WHERE i.invoice_type IN ('Monthly Roster', 'Account Reactivation')
+                    WHERE i.invoice_type = 'Monthly Roster'
                       AND p.payment_status IN ('Paid', 'Rejected')
                     ORDER BY i.issued_at DESC";
     $rosterStmt = $conn->prepare($rosterQuery);
@@ -41,14 +42,14 @@ try {
     foreach ($rosters as $r) {
         $uid = (int)$r['user_id'];
         // Check if there are older invoices for this user
-        $countQuery = "SELECT COUNT(*) FROM Invoice i JOIN Subscription s ON i.subscription_id = s.subscription_id WHERE s.user_id = :user_id AND i.invoice_type IN ('Monthly Roster', 'Account Reactivation') AND i.invoice_id < :invoice_id";
+        $countQuery = "SELECT COUNT(*) FROM Invoice i JOIN Subscription s ON i.subscription_id = s.subscription_id WHERE s.user_id = :user_id AND i.invoice_type = 'Monthly Roster' AND i.invoice_id < :invoice_id";
         $countStmt = $conn->prepare($countQuery);
         $countStmt->bindValue(':user_id', $uid, PDO::PARAM_INT);
         $countStmt->bindValue(':invoice_id', (int)$r['invoice_id'], PDO::PARAM_INT);
         $countStmt->execute();
         $olderCount = (int)$countStmt->fetchColumn();
 
-        $payment_label = ($r['invoice_type'] === 'Account Reactivation') ? "Account Reactivation" : (($olderCount === 0) ? "First Month (Registration)" : "Monthly Renewal");
+        $payment_label = ($r['payment_method'] === 'GCash (Reactivation)') ? "Account Reactivation" : (($olderCount === 0) ? "First Month (Registration)" : "Monthly Renewal");
 
         $img = $r['img'];
         if ($img && !preg_match('/^(http|data:|..\/)/', $img)) {

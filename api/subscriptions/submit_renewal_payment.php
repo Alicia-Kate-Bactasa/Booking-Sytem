@@ -160,39 +160,39 @@ try {
     $conn->beginTransaction();
 
     $subscription_id = $sub ? (int)$sub['subscription_id'] : null;
-    $invoice_type = $is_reactivation ? 'Account Reactivation' : 'Monthly Roster';
 
-    // Determine if we reuse an existing outstanding Pending invoice of the matching type
+    // Determine if we reuse an existing outstanding Pending invoice
     $pendingInvQuery = "SELECT invoice_id FROM Invoice 
                         WHERE subscription_id = :subscription_id 
-                          AND invoice_type = :invoice_type
+                          AND invoice_type = 'Monthly Roster'
                           AND invoice_status = 'Pending'
                         ORDER BY issued_at ASC
                         LIMIT 1";
     $pendingInvStmt = $conn->prepare($pendingInvQuery);
     $pendingInvStmt->bindValue(':subscription_id', $subscription_id, PDO::PARAM_INT);
-    $pendingInvStmt->bindValue(':invoice_type', $invoice_type, PDO::PARAM_STR);
     $pendingInvStmt->execute();
     $pendingInvoice = $pendingInvStmt->fetch();
 
     if ($pendingInvoice) {
         $invoice_id = (int)$pendingInvoice['invoice_id'];
     } else {
-        // Create a new Invoice of the matching type
+        // Create a new Invoice of type 'Monthly Roster'
         $invoiceQuery = "INSERT INTO Invoice (subscription_id, total_amount, invoice_type, invoice_status) 
-                         VALUES (:subscription_id, 1500.00, :invoice_type, 'Pending')";
+                         VALUES (:subscription_id, 1500.00, 'Monthly Roster', 'Pending')";
         $invoiceStmt = $conn->prepare($invoiceQuery);
         $invoiceStmt->bindValue(':subscription_id', $subscription_id, $subscription_id === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
-        $invoiceStmt->bindValue(':invoice_type', $invoice_type, PDO::PARAM_STR);
         $invoiceStmt->execute();
         $invoice_id = (int)$conn->lastInsertId();
     }
 
+    $payment_method = $is_reactivation ? 'GCash (Reactivation)' : 'GCash';
+
     // Create Payment of status 'Pending Approval' linked to the invoice
     $paymentQuery = "INSERT INTO Payment (invoice_id, amount, payment_method, proof_of_payment, payment_status) 
-                     VALUES (:invoice_id, 1500.00, 'GCash', :proof_of_payment, 'Pending Approval')";
+                     VALUES (:invoice_id, 1500.00, :payment_method, :proof_of_payment, 'Pending Approval')";
     $paymentStmt = $conn->prepare($paymentQuery);
     $paymentStmt->bindValue(':invoice_id', $invoice_id, PDO::PARAM_INT);
+    $paymentStmt->bindValue(':payment_method', $payment_method, PDO::PARAM_STR);
     $paymentStmt->bindValue(':proof_of_payment', $databaseSavedPath, PDO::PARAM_STR);
     $paymentStmt->execute();
 

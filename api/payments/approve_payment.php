@@ -87,7 +87,6 @@ try {
     // Start transaction
     $conn->beginTransaction();
 
-    // 2. Fetch Invoice details
     // 2. Fetch Invoice details and resolve client information dynamically
     $invQuery = "SELECT i.total_amount, 
                         i.invoice_type,
@@ -104,7 +103,8 @@ try {
                             WHEN s.user_id IS NOT NULL THEN u1.username 
                             WHEN b.user_id IS NOT NULL THEN u2.username 
                             ELSE c.full_name 
-                        END AS client_name
+                        END AS client_name,
+                        p.payment_method
                  FROM Invoice i
                  LEFT JOIN Subscription s ON i.subscription_id = s.subscription_id
                  LEFT JOIN User u1 ON s.user_id = u1.user_id
@@ -112,6 +112,7 @@ try {
                  LEFT JOIN User u2 ON b.user_id = u2.user_id
                  LEFT JOIN Customer c ON b.customer_id = c.customer_id
                  LEFT JOIN Service ser ON b.service_id = ser.service_id
+                 LEFT JOIN Payment p ON i.invoice_id = p.invoice_id
                  WHERE i.invoice_id = :invoice_id LIMIT 1";
     $invStmt = $conn->prepare($invQuery);
     $invStmt->bindValue(':invoice_id', $invoice_id, PDO::PARAM_INT);
@@ -156,7 +157,7 @@ try {
         }
 
         // If Subscription renewal or reactivation payment, activate membership
-        if ($invoice['invoice_type'] === 'Monthly Roster' || $invoice['invoice_type'] === 'Account Reactivation') {
+        if ($invoice['invoice_type'] === 'Monthly Roster') {
             // Fetch current subscription dates
             $dateFetchQuery = "SELECT next_billing_date, plan_status FROM Subscription WHERE user_id = :user_id LIMIT 1";
             $dateFetchStmt = $conn->prepare($dateFetchQuery);
@@ -210,7 +211,7 @@ try {
             $stmtBook->execute();
         }
 
-        if ($invoice['invoice_type'] === 'Monthly Roster' || $invoice['invoice_type'] === 'Account Reactivation') {
+        if ($invoice['invoice_type'] === 'Monthly Roster') {
             // Set Subscription to Expired (archived)
             $updateSub = "UPDATE Subscription SET plan_status = 'Expired' WHERE user_id = :user_id";
             $stmtSub = $conn->prepare($updateSub);
@@ -227,8 +228,10 @@ try {
     if ($email && filter_var($email, FILTER_VALIDATE_EMAIL)) {
         require_once __DIR__ . '/../utils/mailer.php';
 
-        $itemName = ($invoice['invoice_type'] === 'Monthly Roster' || $invoice['invoice_type'] === 'Account Reactivation') ? 'VIP Unlimited Plan' : ($invoice['service_name'] ?: 'Detailing Session');
-        $itemSubtext = ($invoice['invoice_type'] === 'Monthly Roster') ? 'Monthly VIP membership access.' : (($invoice['invoice_type'] === 'Account Reactivation') ? 'VIP Membership Reactivation.' : 'Professional vehicle detailing service.');
+        $isReactivation = ($invoice['invoice_type'] === 'Monthly Roster' && $invoice['payment_method'] === 'GCash (Reactivation)');
+
+        $itemName = ($invoice['invoice_type'] === 'Monthly Roster') ? ($isReactivation ? 'VIP Unlimited Plan (Reactivation)' : 'VIP Unlimited Plan') : ($invoice['service_name'] ?: 'Detailing Session');
+        $itemSubtext = ($invoice['invoice_type'] === 'Monthly Roster') ? ($isReactivation ? 'VIP Membership Reactivation.' : 'Monthly VIP membership access.') : 'Professional vehicle detailing service.';
 
         $invoiceData = [
             'invoice_no' => 'INV-' . $invoice_id,
@@ -250,8 +253,8 @@ try {
             $invoiceData['status_border'] = '#27ae60';
             $invoiceData['status_color'] = '#27ae60';
             $invoiceData['status_label'] = 'PAID';
-            $invoiceData['status_detail'] = ($invoice['invoice_type'] === 'Monthly Roster' || $invoice['invoice_type'] === 'Account Reactivation')
-                ? 'Your payment has been successfully approved! Your VIP Unlimited Plan is now ACTIVE.'
+            $invoiceData['status_detail'] = ($invoice['invoice_type'] === 'Monthly Roster')
+                ? ($isReactivation ? 'Your payment has been successfully approved! Your VIP Unlimited Plan is now REACTIVATED and ACTIVE.' : 'Your payment has been successfully approved! Your VIP Unlimited Plan is now ACTIVE.')
                 : 'Your booking payment has been successfully approved and confirmed. We look forward to servicing your vehicle!';
         } else {
             $subject = "Payment Proof Rejected - Invoice ID: INV-" . $invoice_id;
@@ -260,7 +263,7 @@ try {
             $invoiceData['status_border'] = '#c0392b';
             $invoiceData['status_color'] = '#c0392b';
             $invoiceData['status_label'] = 'PAYMENT REJECTED';
-            $invoiceData['status_detail'] = ($invoice['invoice_type'] === 'Monthly Roster' || $invoice['invoice_type'] === 'Account Reactivation')
+            $invoiceData['status_detail'] = ($invoice['invoice_type'] === 'Monthly Roster')
                 ? 'Unfortunately, your payment proof was rejected. Please review your GCash receipt details and resubmit.'
                 : 'Unfortunately, your booking payment proof was rejected. Please resubmit your booking with a valid payment screenshot.';
         }
