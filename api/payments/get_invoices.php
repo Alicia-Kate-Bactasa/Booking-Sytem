@@ -35,13 +35,15 @@ try {
                      i.invoice_status AS status, 
                      i.issued_at AS date,
                      c.full_name AS client,
+                     ser.service_name,
                      p.payment_id, 
                      p.payment_method, 
                      p.payment_status, 
                      p.proof_of_payment AS img
               FROM Invoice i
-              JOIN Booking b ON i.invoice_id = b.invoice_id
+              JOIN Booking b ON i.booking_id = b.booking_id
               JOIN Customer c ON b.customer_id = c.customer_id
+              JOIN Service ser ON b.service_id = ser.service_id
               LEFT JOIN Payment p ON i.invoice_id = p.invoice_id
               WHERE i.invoice_type = 'Single Detailing' AND i.total_amount > 0.00
               ORDER BY i.issued_at DESC";
@@ -49,25 +51,10 @@ try {
     $stmt = $conn->prepare($query);
     $stmt->execute();
     $invoices = $stmt->fetchAll();
-
+ 
     // Map properties for UI compatibility
     $formattedInvoices = array_map(function($inv) {
-        // Find associated service name from Booking
-        global $conn;
-        $serviceName = 'VIP Unlimited Plan';
-        if ($inv['type'] !== 'Monthly Roster') {
-            $sQuery = "SELECT s.service_name 
-                       FROM Booking b 
-                       JOIN Service s ON b.service_id = s.service_id 
-                       WHERE b.invoice_id = :invoice_id LIMIT 1";
-            $sStmt = $conn->prepare($sQuery);
-            $sStmt->bindValue(':invoice_id', $inv['invoice_id'], PDO::PARAM_INT);
-            $sStmt->execute();
-            $service = $sStmt->fetch();
-            if ($service) {
-                $serviceName = $service['service_name'];
-            }
-        }
+        $serviceName = $inv['service_name'];
         
         $img = $inv['img'];
         if ($img && !preg_match('/^(http|data:|..\/)/', $img)) {
