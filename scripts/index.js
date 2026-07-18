@@ -569,38 +569,19 @@
                 }
 
                 if (menuCardsContainer) {
-                    const isPremiumVariant = service.price >= 600;
-                    let cardHTML = '';
-
-                    if (isPremiumVariant) {
-                        cardHTML = `
-                            <div class="border border-dark bg-dark text-light p-8 rounded-3xl flex flex-col justify-between hover:bg-black transition-all hover:shadow-xl">
-                                <div>
-                                    <div class="flex justify-between items-start mb-4">
-                                        <h3 class="text-lg font-bold uppercase tracking-tight">${service.name}</h3>
-                                        <span class="text-sm font-bold text-neutral-200">₱${service.price}</span>
-                                    </div>
-                                    <div class="text-[11px] font-semibold tracking-wider text-neutral-500 uppercase mb-4 bg-neutral-800 px-2.5 py-1 rounded-full inline-block">Duration: ${service.duration}</div>
-                                    <p class="text-neutral-400 text-xs font-light leading-relaxed mb-6">${service.desc}</p>
+                    let cardHTML = `
+                        <div class="border border-neutral-200/80 bg-white p-8 rounded-3xl flex flex-col justify-between hover:border-dark transition-all hover:shadow-lg">
+                            <div>
+                                <div class="flex justify-between items-start mb-4">
+                                    <h3 class="text-lg font-bold uppercase tracking-tight text-dark">${service.name}</h3>
+                                    <span class="text-sm font-bold text-neutral-800">₱${service.price}</span>
                                 </div>
-                                <button type="button" onclick="selectServiceDirectly('${service.name}', ${service.price}, '${service.duration}', '${service.name} — ₱${service.price}')" class="w-full text-center text-xs font-bold tracking-widest uppercase bg-light text-dark py-3.5 rounded-full hover:bg-neutral-200 transition-all block shadow-sm">Select Service</button>
+                                <div class="text-[11px] font-semibold tracking-wider text-neutral-400 uppercase mb-4 bg-neutral-50 px-2.5 py-1 rounded-full inline-block">Duration: ${service.duration}</div>
+                                <p class="text-neutral-500 text-xs font-normal leading-relaxed mb-6">${service.desc || service.description || 'Professional detailing package.'}</p>
                             </div>
-                        `;
-                    } else {
-                        cardHTML = `
-                            <div class="border border-neutral-200/80 bg-white p-8 rounded-3xl flex flex-col justify-between hover:border-dark transition-all hover:shadow-lg">
-                                <div>
-                                    <div class="flex justify-between items-start mb-4">
-                                        <h3 class="text-lg font-bold uppercase tracking-tight">${service.name}</h3>
-                                        <span class="text-sm font-bold text-neutral-800">₱${service.price}</span>
-                                    </div>
-                                    <div class="text-[11px] font-semibold tracking-wider text-neutral-400 uppercase mb-4 bg-neutral-50 px-2.5 py-1 rounded-full inline-block">Duration: ${service.duration}</div>
-                                    <p class="text-neutral-500 text-xs font-normal leading-relaxed mb-6">${service.desc}</p>
-                                </div>
-                                <button type="button" onclick="selectServiceDirectly('${service.name}', ${service.price}, '${service.duration}', '${service.name} — ₱${service.price}')" class="w-full text-center text-xs font-bold tracking-widest uppercase border border-dark py-3.5 rounded-full hover:bg-dark hover:text-light transition-all block">Select Service</button>
-                            </div>
-                        `;
-                    }
+                            <button type="button" onclick="selectServiceDirectly('${service.name}', ${service.price}, '${service.duration}', '${service.name} — ₱${service.price}')" class="w-full text-center text-xs font-bold tracking-widest uppercase border border-dark py-3.5 rounded-full hover:bg-dark hover:text-light transition-all block">Select Service</button>
+                        </div>
+                    `;
                     menuCardsContainer.innerHTML += cardHTML;
                 }
 

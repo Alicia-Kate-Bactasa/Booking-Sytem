@@ -47,7 +47,7 @@ class Mailer {
         if (isset($data['booking_id']) && !empty($data['booking_id'])) {
             $rawBookingId = $data['booking_id'];
             if (is_numeric($rawBookingId)) {
-                $bookingRef = 'MTG-' . str_pad($rawBookingId, 3, '0', STR_PAD_LEFT);
+                $bookingRef = 'MTG-' . (int)$rawBookingId;
             } else {
                 if (stripos($rawBookingId, 'MTG-') === 0) {
                     $bookingRef = $rawBookingId;
@@ -55,6 +55,8 @@ class Mailer {
                     $bookingRef = 'MTG-' . $rawBookingId;
                 }
             }
+            // Strip any leading zeros after the dash (e.g. MTG-007 -> MTG-7)
+            $bookingRef = preg_replace('/^MTG-0+([1-9][0-9]*)$/i', 'MTG-$1', $bookingRef);
             $bookingIdHtml = htmlspecialchars($bookingRef);
             $bookingIdHighlight = "
             <!-- Booking ID Highlight Card -->

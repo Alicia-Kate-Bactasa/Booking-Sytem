@@ -144,9 +144,22 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Subscriber') {
 
             <div id="view-booking" class="hidden">
                 <div id="booking-form-container">
-                    <div class="mb-8">
-                        <h3 class="text-3xl font-black uppercase tracking-tight text-dark">Schedule An Appointment Session</h3>
-                        <p class="text-base text-neutral-400 font-medium mt-1">Book directly into our active Banilad studio twin-bay configuration.</p>
+                    <div class="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-neutral-100 pb-6">
+                        <div>
+                            <h3 class="text-3xl font-black uppercase tracking-tight text-dark">Schedule An Appointment Session</h3>
+                            <p class="text-sm text-neutral-400 font-medium mt-1">Book directly into our active Banilad studio twin-bay configuration.</p>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Service Catalog Menu Cards (same as index.html) -->
+                    <div class="mb-12">
+                        <div class="mb-6">
+                            <span class="text-xs font-bold tracking-widest uppercase text-neutral-400 block mb-1">Service Selection Menu</span>
+                            <h4 class="text-lg font-bold uppercase tracking-tight text-dark">Available Detail Treatments</h4>
+                        </div>
+                        <div id="dashboard-services-container" class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                            <!-- Populated dynamically via dashboard.js -->
+                        </div>
                     </div>
 
                     <form id="dashWizardForm" onsubmit="handleDashboardFormSubmission(event)">
