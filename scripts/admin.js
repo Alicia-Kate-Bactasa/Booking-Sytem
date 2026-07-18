@@ -830,8 +830,17 @@ const defaultServices = [
                                 <textarea id="edit-desc-${index}" class="w-full text-xs text-neutral-600 bg-transparent border border-transparent hover:border-neutral-300 focus:border-black rounded p-1 h-16 resize-none focus:outline-none transition-all">${service.desc || ''}</textarea>
                             </div>
                             <div class="mt-4">
-                                <label class="block text-[10px] uppercase font-bold tracking-wider text-neutral-400 mb-1">Duration (Mins)</label>
-                                <input type="text" id="edit-duration-${index}" value="${service.duration}" class="w-full font-semibold text-neutral-700 bg-transparent border-b border-transparent hover:border-neutral-300 focus:border-black py-1 focus:outline-none text-xs transition-all">
+                                <label class="block text-[10px] uppercase font-bold tracking-wider text-neutral-400 mb-1">Duration</label>
+                                <div class="flex items-center space-x-3 mt-1">
+                                    <div class="flex items-center space-x-1">
+                                        <input type="number" id="edit-hours-${index}" value="${Math.floor(service.duration / 60)}" min="0" class="w-12 text-center font-semibold text-neutral-700 bg-transparent border-b border-neutral-200 hover:border-neutral-300 focus:border-black py-0.5 focus:outline-none text-xs transition-all">
+                                        <span class="text-[10px] text-neutral-400 font-bold uppercase">hrs</span>
+                                    </div>
+                                    <div class="flex items-center space-x-1">
+                                        <input type="number" id="edit-mins-${index}" value="${service.duration % 60}" min="0" max="59" class="w-12 text-center font-semibold text-neutral-700 bg-transparent border-b border-neutral-200 hover:border-neutral-300 focus:border-black py-0.5 focus:outline-none text-xs transition-all">
+                                        <span class="text-[10px] text-neutral-400 font-bold uppercase">mins</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div class="border-t border-neutral-100 pt-4 flex justify-between items-center">
@@ -904,7 +913,9 @@ const defaultServices = [
         window.toggleServiceActive = toggleServiceActive;
 
         async function saveServiceModifications(index) {
-            const proposedDuration = parseInt(document.getElementById(`edit-duration-${index}`).value, 10);
+            const hoursVal = parseInt(document.getElementById(`edit-hours-${index}`).value, 10) || 0;
+            const minsVal = parseInt(document.getElementById(`edit-mins-${index}`).value, 10) || 0;
+            const proposedDuration = (hoursVal * 60) + minsVal;
             const originalDuration = parseInt(masterCatalogServices[index].duration, 10);
             const targetServiceName = masterCatalogServices[index].name;
             const serviceId = masterCatalogServices[index].service_id;
@@ -916,7 +927,8 @@ const defaultServices = [
                     if (result && result.status === 'success' && result.has_bookings) {
                         const confirmChange = await confirm(`Warning: There are ${result.booking_count} active future bookings scheduled for this service. Changing the duration from ${originalDuration} mins to ${proposedDuration} mins may corrupt scheduling. Are you sure you want to proceed?`);
                         if (!confirmChange) {
-                            document.getElementById(`edit-duration-${index}`).value = originalDuration;
+                            document.getElementById(`edit-hours-${index}`).value = Math.floor(originalDuration / 60);
+                            document.getElementById(`edit-mins-${index}`).value = originalDuration % 60;
                             return;
                         }
                     }
@@ -925,7 +937,8 @@ const defaultServices = [
                     const isReferencedInActiveCalendar = appointmentsRegistry.some(app => app.service === targetServiceName && app.type === 'pending');
                     if (isReferencedInActiveCalendar) {
                         await alert("Duration changes are locked while this service is already booked.");
-                        document.getElementById(`edit-duration-${index}`).value = originalDuration;
+                        document.getElementById(`edit-hours-${index}`).value = Math.floor(originalDuration / 60);
+                        document.getElementById(`edit-mins-${index}`).value = originalDuration % 60;
                         return;
                     }
                 }
@@ -1044,7 +1057,9 @@ const defaultServices = [
             event.preventDefault();
             const name = document.getElementById('serviceNameInput').value.trim();
             const desc = document.getElementById('serviceDescInput').value.trim();
-            const duration = document.getElementById('serviceDurationInput').value.trim();
+            const hoursVal = parseInt(document.getElementById('serviceHoursInput').value, 10) || 0;
+            const minsVal = parseInt(document.getElementById('serviceMinsInput').value, 10) || 0;
+            const parsedDuration = (hoursVal * 60) + minsVal;
             const price = parseFloat(document.getElementById('servicePriceInput').value);
 
             if (!name || name.length < 3) {
@@ -1052,8 +1067,7 @@ const defaultServices = [
                 return;
             }
 
-            const parsedDuration = parseInt(duration, 10);
-            if (isNaN(parsedDuration) || parsedDuration < 1) {
+            if (parsedDuration < 1) {
                 await showErrorModal('Service duration must be at least 1 minute.');
                 return;
             }
