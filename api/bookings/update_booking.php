@@ -72,7 +72,7 @@ try {
                           b.booking_status AS current_status,
                           CASE WHEN b.user_id IS NOT NULL THEN u.email ELSE c.email END AS customer_email, 
                           CASE WHEN b.user_id IS NOT NULL THEN u.username ELSE c.full_name END AS customer_name,
-                          s.service_name, b.scheduled_date, b.time_slot
+                          s.service_name, b.scheduled_date, b.time_slot, b.purchased_price
                    FROM Booking b
                    LEFT JOIN Customer c ON b.customer_id = c.customer_id
                    LEFT JOIN User u ON b.user_id = u.user_id
@@ -135,6 +135,9 @@ try {
             $time = $bookingData['time_slot'];
             $bookingRef = 'MTG-' . $booking_id;
             
+            // Calculate invoice pricing: 0.00 for subscribers, else use the booking purchased_price
+            $price = ($bookingData['customer_type'] === 'Subscriber') ? 0.00 : (float)$bookingData['purchased_price'];
+
             if ($booking_status === 'Completed') {
                 $subject = "Thank You for Visiting Montage Auto Studio - Booking Ref: " . $bookingRef;
                 $html = Mailer::formatInvoice([
@@ -151,9 +154,9 @@ try {
                     'client_email' => $email,
                     'item_name' => $service,
                     'item_subtext' => "Scheduled Date: {$date} | Time: {$time}",
-                    'item_price' => 0.00,
-                    'subtotal' => 0.00,
-                    'total_due' => 0.00
+                    'item_price' => $price,
+                    'subtotal' => $price,
+                    'total_due' => $price
                 ]);
             } else {
                 $subject = "Booking Cancellation Notice - Booking Ref: " . $bookingRef;
@@ -171,9 +174,9 @@ try {
                     'client_email' => $email,
                     'item_name' => $service,
                     'item_subtext' => "Original Schedule: {$date} at {$time}",
-                    'item_price' => 0.00,
-                    'subtotal' => 0.00,
-                    'total_due' => 0.00
+                    'item_price' => $price,
+                    'subtotal' => $price,
+                    'total_due' => $price
                 ]);
             }
             try {
