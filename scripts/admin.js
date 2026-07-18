@@ -160,6 +160,7 @@ const defaultServices = [
                     if (responseObj && responseObj.status === 'success' && responseObj.data) {
                         const regs = responseObj.data.pending_registrations || [];
                         pendingRequests = regs.map(reg => {
+                            const isRenewal = reg.last_billing_date && reg.last_billing_date !== '0000-00-00';
                             return {
                                 id: `SUB-${reg.subscription_id}`,
                                 subscription_id: parseInt(reg.subscription_id, 10),
@@ -167,7 +168,8 @@ const defaultServices = [
                                 email: reg.email,
                                 phone: reg.phone_number,
                                 proof_image: '../' + reg.proof_of_payment,
-                                created_at: reg.created_at
+                                created_at: reg.created_at,
+                                payment_type: isRenewal ? 'Monthly Renewal' : 'First Month (Registration)'
                             };
                         });
                         renderPendingSubscriptions();
@@ -305,7 +307,7 @@ const defaultServices = [
                         <td class="p-5 font-bold font-mono text-black">${req.id}</td>
                         <td class="p-5 text-black font-semibold">${req.name}</td>
                         <td class="p-5">${req.email}</td>
-                        <td class="p-5 font-medium text-neutral-500">First Month (Registration)</td>
+                        <td class="p-5 font-medium text-neutral-500">${req.payment_type || 'First Month (Registration)'}</td>
                         <td class="p-5 text-center">
                             <div onclick="launchProofLightbox('${req.proof_image}')" class="w-12 h-16 bg-neutral-100 border border-neutral-200 rounded-lg overflow-hidden mx-auto cursor-pointer group hover:border-black transition-all relative">
                                 <img src="${req.proof_image}" alt="Proof" class="w-full h-full object-cover">

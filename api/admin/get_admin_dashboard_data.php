@@ -49,7 +49,7 @@ try {
     $pending_verifications = $verifyStmt->fetchAll();
 
     // 2. Fetch pending_registrations (Subscriptions/accounts waiting for activation)
-    $regQuery = "SELECT s.subscription_id, s.plan_tier, s.plan_status, s.created_at,
+    $regQuery = "SELECT s.subscription_id, s.plan_tier, s.plan_status, s.created_at, s.last_billing_date,
                         NULL AS customer_id, u.username AS full_name, 'N/A' AS phone_number,
                         u.email, u.username,
                         i.invoice_id, i.total_amount,

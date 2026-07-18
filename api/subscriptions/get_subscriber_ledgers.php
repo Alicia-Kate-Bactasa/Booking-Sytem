@@ -28,6 +28,7 @@ try {
                     JOIN User u ON s.user_id = u.user_id
                     LEFT JOIN Payment p ON i.invoice_id = p.invoice_id
                     WHERE i.invoice_type = 'Monthly Roster'
+                      AND p.payment_status IN ('Paid', 'Rejected')
                     ORDER BY i.issued_at DESC";
     $rosterStmt = $conn->prepare($rosterQuery);
     $rosterStmt->execute();
