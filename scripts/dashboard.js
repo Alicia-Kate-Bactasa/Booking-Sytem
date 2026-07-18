@@ -895,21 +895,48 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                         userProfileSession.customer_type = (prof.plan_status === 'Active' || prof.plan_status === 'Cancellation Pending') ? 'Subscriber' : 'Inactive Member';
                         userProfileSession.next_billing_date = prof.next_billing_date || 'Awaiting Payment Approval';
 
-                        // Toggle booking container visibility based on active subscription plan
+                        // Enforce active subscription rules on the booking form
                         const isSubActive = prof.plan_status === 'Active' || prof.plan_status === 'Cancellation Pending';
-                        const formContainer = document.getElementById('booking-form-container');
-                        const restrictedContainer = document.getElementById('booking-restricted-container');
-                        const statusTextEl = document.getElementById('restrictedStatusText');
+                        const restrictedNotice = document.getElementById('bookingRestrictedNotice');
+                        const bookingForm = document.getElementById('dashWizardForm');
                         
-                        if (formContainer && restrictedContainer) {
+                        if (restrictedNotice && bookingForm) {
+                            const dateInput = document.getElementById('bookingDate');
+                            const submitBtn = bookingForm.querySelector('button[type="submit"]');
+                            const dropdownBtns = bookingForm.querySelectorAll('button[type="button"]');
+                            const serviceCards = document.getElementById('dashboard-services-container');
+
                             if (isSubActive) {
-                                formContainer.classList.remove('hidden');
-                                restrictedContainer.classList.add('hidden');
+                                restrictedNotice.classList.add('hidden');
+                                if (dateInput) dateInput.disabled = false;
+                                if (submitBtn) {
+                                    submitBtn.disabled = false;
+                                    submitBtn.innerText = "Authorize Session Reservation";
+                                    submitBtn.className = "w-full bg-dark text-light text-sm font-bold tracking-widest uppercase py-4 rounded-full border border-dark hover:bg-neutral-800 transition-all shadow-sm cursor-pointer";
+                                }
+                                dropdownBtns.forEach(btn => {
+                                    btn.style.pointerEvents = 'auto';
+                                    btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                                });
+                                if (serviceCards) {
+                                    serviceCards.style.pointerEvents = 'auto';
+                                    serviceCards.style.opacity = '1';
+                                }
                             } else {
-                                formContainer.classList.add('hidden');
-                                restrictedContainer.classList.remove('hidden');
-                                if (statusTextEl) {
-                                    statusTextEl.innerText = prof.plan_status || 'Inactive';
+                                restrictedNotice.classList.remove('hidden');
+                                if (dateInput) dateInput.disabled = true;
+                                if (submitBtn) {
+                                    submitBtn.disabled = true;
+                                    submitBtn.innerText = "Subscriber Booking Only";
+                                    submitBtn.className = "w-full bg-neutral-200 text-neutral-400 text-sm font-bold py-4 rounded-full transition-all text-center cursor-not-allowed border border-neutral-300 focus:outline-none";
+                                }
+                                dropdownBtns.forEach(btn => {
+                                    btn.style.pointerEvents = 'none';
+                                    btn.classList.add('opacity-50', 'cursor-not-allowed');
+                                });
+                                if (serviceCards) {
+                                    serviceCards.style.pointerEvents = 'none';
+                                    serviceCards.style.opacity = '0.5';
                                 }
                             }
                         }

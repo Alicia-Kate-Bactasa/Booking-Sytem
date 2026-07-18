@@ -151,6 +151,16 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Subscriber') {
                         </div>
                     </div>
 
+                    <div id="bookingRestrictedNotice" class="hidden mb-8 p-5 bg-amber-50 border border-amber-200 rounded-[1.5rem] flex items-start gap-3.5 shadow-sm">
+                        <span class="text-amber-600 text-lg">⚠️</span>
+                        <div>
+                            <h5 class="text-xs font-bold uppercase tracking-wider text-amber-800">Booking Privileges Disabled</h5>
+                            <p class="text-xs text-amber-700 font-medium mt-1 leading-relaxed">
+                                Detailing bookings on this dashboard are only available for active VIP Subscribers. If your subscription has expired or is cancelled, please reactivate your subscription in the **Subscription** tab to re-enable booking privileges.
+                            </p>
+                        </div>
+                    </div>
+
                     <!-- Dynamic Service Catalog Menu Cards (same as index.html) -->
                     <div class="mb-12">
                         <div class="mb-6">
@@ -223,18 +233,7 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Subscriber') {
                 </form>
                 </div>
                 
-                <div id="booking-restricted-container" class="hidden">
-                    <div class="bg-white border border-neutral-200 p-12 rounded-[2rem] shadow-sm text-center max-w-xl mx-auto my-12">
-                        <div class="w-16 h-16 rounded-full bg-amber-50 flex items-center justify-center mx-auto text-amber-600 font-bold text-2xl mb-6">⚠️</div>
-                        <h3 class="text-2xl font-bold uppercase tracking-tight text-dark mb-4">Limited to Subscribers Only</h3>
-                        <p class="text-sm text-neutral-500 mb-8 leading-relaxed">
-                            Your subscription status is currently <strong id="restrictedStatusText" class="text-red-600 font-bold">Inactive</strong>. Detailing bookings on this dashboard are limited to active VIP subscribers only. If you want to book a detailing session, please proceed to the main website.
-                        </p>
-                        <a href="../index.html" class="inline-block bg-dark text-light text-xs font-bold tracking-widest uppercase px-8 py-4 rounded-full border border-dark hover:bg-neutral-800 transition-all shadow-sm">
-                            Go to Booking Page
-                        </a>
-                    </div>
-                </div>
+
             </div>
 
            <div id="view-subscription" class="hidden space-y-8">
