@@ -89,6 +89,41 @@ if (strpos($login_input, '@') !== false && !filter_var($login_input, FILTER_VALI
 // === SECTION: DATABASE QUERY & AUTHENTICATION ===
 try {
     // ------------------------------------------------------------------
+    // STEP 0: Check Failed Login Attempts (Brute Force Protection)
+    // ------------------------------------------------------------------
+    $conn->exec("CREATE TABLE IF NOT EXISTS LoginAttempts (
+        attempt_id INT AUTO_INCREMENT PRIMARY KEY,
+        ip_address VARCHAR(45) NOT NULL,
+        username_input VARCHAR(100) NOT NULL,
+        attempted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    $ip_address = $_SERVER['REMOTE_ADDR'];
+    $blockTimeMinutes = 15;
+    $maxAttempts = 5;
+    $timeLimit = date('Y-m-d H:i:s', strtotime("-{$blockTimeMinutes} minutes"));
+
+    // Check failed attempts count for this IP OR username in the last 15 minutes
+    $checkAttemptsQuery = "SELECT COUNT(*) FROM LoginAttempts 
+                           WHERE (ip_address = :ip OR username_input = :username) 
+                             AND attempted_at > :time_limit";
+    $checkAttemptsStmt = $conn->prepare($checkAttemptsQuery);
+    $checkAttemptsStmt->bindValue(':ip', $ip_address, PDO::PARAM_STR);
+    $checkAttemptsStmt->bindValue(':username', $login_input, PDO::PARAM_STR);
+    $checkAttemptsStmt->bindValue(':time_limit', $timeLimit, PDO::PARAM_STR);
+    $checkAttemptsStmt->execute();
+    $failedCount = (int)$checkAttemptsStmt->fetchColumn();
+
+    if ($failedCount >= $maxAttempts) {
+        http_response_code(429); // Too Many Requests
+        echo json_encode([
+            "status" => "error",
+            "message" => "Too many failed login attempts. You have been temporarily locked out. Please try again after {$blockTimeMinutes} minutes."
+        ]);
+        exit();
+    }
+
+    // ------------------------------------------------------------------
     // STEP 1: Query User Table
     // ------------------------------------------------------------------
     $userQuery = "SELECT user_id, email, username, password, role 
@@ -105,6 +140,13 @@ try {
     if ($user) {
         // Support both password_verify and plaintext password fallback (for seeded testing credentials)
         if (password_verify($password, $user['password']) || $password === $user['password']) {
+            // Clear failed attempts upon successful login
+            $clearAttemptsQuery = "DELETE FROM LoginAttempts WHERE ip_address = :ip OR username_input = :username";
+            $clearAttemptsStmt = $conn->prepare($clearAttemptsQuery);
+            $clearAttemptsStmt->bindValue(':ip', $ip_address, PDO::PARAM_STR);
+            $clearAttemptsStmt->bindValue(':username', $login_input, PDO::PARAM_STR);
+            $clearAttemptsStmt->execute();
+
             if (session_status() === PHP_SESSION_NONE) {
                 session_start();
             }
@@ -190,6 +232,19 @@ try {
             }
         }
     }
+
+    // Log failed attempt (for brute force rate-limiting)
+    $logAttemptQuery = "INSERT INTO LoginAttempts (ip_address, username_input) VALUES (:ip, :username)";
+    $logAttemptStmt = $conn->prepare($logAttemptQuery);
+    $logAttemptStmt->bindValue(':ip', $ip_address, PDO::PARAM_STR);
+    $logAttemptStmt->bindValue(':username', $login_input, PDO::PARAM_STR);
+    $logAttemptStmt->execute();
+
+    // Purge expired records (older than 24 hours) to keep table size optimized
+    $purgeLimit = date('Y-m-d H:i:s', strtotime('-24 hours'));
+    $purgeStmt = $conn->prepare("DELETE FROM LoginAttempts WHERE attempted_at < :purge_limit");
+    $purgeStmt->bindValue(':purge_limit', $purgeLimit, PDO::PARAM_STR);
+    $purgeStmt->execute();
 
     // If no credentials match
     http_response_code(401);
