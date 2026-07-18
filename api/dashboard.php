@@ -195,7 +195,7 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Subscriber') {
                                         </div>
                                     </div>
                                 </div>
-                                <p id="capacityWarning" class="text-xs text-red-500 font-semibold mt-3 ml-4 hidden">Saturday bookings are limited to 16 cars.</p>
+                                <p id="capacityWarning" class="text-[10px] text-neutral-500 bg-neutral-50 border border-neutral-200/60 rounded-full px-4 py-1.5 inline-block font-medium mt-3 ml-4 hidden">ℹ️ Saturday bookings are limited to 16 cars.</p>
                             </div>
                         </div>
 
@@ -389,7 +389,7 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Subscriber') {
                         </div>
                         <input type="hidden" id="reschTime" required>
                     </div>
-                    <p id="reschCapacityWarning" class="text-[11px] text-red-500 font-semibold mt-2 ml-4 hidden">Saturday bookings are limited to 16 cars.</p>
+                    <p id="reschCapacityWarning" class="text-[10px] text-neutral-500 bg-neutral-50 border border-neutral-200/60 rounded-full px-4 py-1.5 inline-block font-medium mt-2 ml-4 hidden">ℹ️ Saturday bookings are limited to 16 cars.</p>
                 </div>
 
                 <div class="pt-2">

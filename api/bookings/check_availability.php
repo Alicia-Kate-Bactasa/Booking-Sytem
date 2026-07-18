@@ -171,7 +171,17 @@ try {
 
     $availableSlots = [];
 
+    // Set local timezone to Philippines for accurate current time comparison
+    date_default_timezone_set('Asia/Manila');
+    $currentDate = date('Y-m-d');
+    $currentTimeMinutes = (int)date('H') * 60 + (int)date('i');
+
     foreach ($allSlots as $slotName => $newStart) {
+        // Skip past slots if booking for today
+        if ($scheduled_date === $currentDate && $newStart < $currentTimeMinutes) {
+            continue;
+        }
+
         $newEnd = $newStart + $duration;
 
         // Operational timeline limits constraint verification

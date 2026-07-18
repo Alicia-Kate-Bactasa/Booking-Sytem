@@ -98,7 +98,7 @@
 
             if (warningElement) {
                 if (dateInput && new Date(dateInput).getUTCDay() === 6) {
-                    warningElement.innerText = "Saturday bookings are limited to 16 cars.";
+                    warningElement.innerText = "ℹ️ Saturday bookings are limited to 16 cars.";
                     warningElement.classList.remove('hidden');
                 } else {
                     warningElement.classList.add('hidden');
