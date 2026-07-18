@@ -300,7 +300,7 @@ try {
 
         // 2. Insert into Customer table
         $customerQuery = "INSERT INTO Customer (full_name, phone_number, email, customer_type) 
-                          VALUES (:full_name, :phone_number, :email, 'Regular')";
+                          VALUES (:full_name, :phone_number, :email, :customer_type)";
         $customerStmt = $conn->prepare($customerQuery);
         $customerStmt->bindValue(':full_name', $name, PDO::PARAM_STR);
         $customerStmt->bindValue(':phone_number', 'N/A', PDO::PARAM_STR);
