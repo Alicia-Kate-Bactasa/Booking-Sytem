@@ -366,9 +366,14 @@ try {
 } catch (PDOException $e) {
     error_log("Failed to create booking: " . $e->getMessage());
     http_response_code(500);
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
     echo json_encode([
         "status" => "error",
-        "message" => "An error occurred while attempting to write booking to the database."
+        "message" => "An error occurred while attempting to write booking to the database.",
+        "debug_error" => $e->getMessage(),
+        "migration_error" => isset($_SESSION['migration_error']) ? $_SESSION['migration_error'] : 'None'
     ]);
 }
 ?>
