@@ -35,9 +35,12 @@ if (!filter_var($booking_id_raw, FILTER_VALIDATE_INT)) {
 $booking_id = (int)$booking_id_raw;
 
 try {
-    $query = "SELECT s.service_name, b.scheduled_date, b.purchased_price, b.booking_status 
+    $query = "SELECT s.service_name, b.scheduled_date, b.purchased_price, b.booking_status,
+                     CASE WHEN b.user_id IS NOT NULL THEN u.username ELSE c.full_name END AS full_name
               FROM Booking b 
               JOIN Service s ON b.service_id = s.service_id 
+              LEFT JOIN Customer c ON b.customer_id = c.customer_id
+              LEFT JOIN User u ON b.user_id = u.user_id
               WHERE b.booking_id = :booking_id LIMIT 1";
     $stmt = $conn->prepare($query);
     $stmt->bindValue(':booking_id', $booking_id, PDO::PARAM_INT);
@@ -62,7 +65,8 @@ try {
         "data" => [
             "service_name" => $booking['service_name'],
             "scheduled_date" => $booking['scheduled_date'],
-            "purchased_price" => $booking['purchased_price']
+            "purchased_price" => $booking['purchased_price'],
+            "full_name" => $booking['full_name']
         ]
     ]);
 } catch (PDOException $e) {

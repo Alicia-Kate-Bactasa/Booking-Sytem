@@ -642,8 +642,13 @@
             const rating = parseInt(document.getElementById('feedbackRating').value, 10) || 5;
             const comments = document.getElementById('feedbackComments').value.trim();
 
-            if (!name || !comments) {
-                showErrorModal('Please complete all required fields (Name and Comments).');
+            if (!name) {
+                showErrorModal('Please enter a valid completed Booking ID to resolve your details first.');
+                return;
+            }
+
+            if (!comments) {
+                showErrorModal('Please complete all required fields (Comments).');
                 return;
             }
 
@@ -734,12 +739,15 @@
             const bookingDateSpan = document.getElementById('feedbackBookingDate');
             const bookingPriceSpan = document.getElementById('feedbackBookingPrice');
 
+            const nameInput = document.getElementById('feedbackName');
+
             if (bookingIdInput && serviceInput && serviceDisplay) {
                 const handleBookingIdChange = async () => {
                     const bookingId = bookingIdInput.value.trim();
                     if (!bookingId) {
                         serviceInput.value = '';
                         serviceDisplay.value = '';
+                        if (nameInput) nameInput.value = '';
                         if (detailsContainer) detailsContainer.classList.add('hidden');
                         return;
                     }
@@ -752,6 +760,7 @@
                         if (result.status === 'success' && result.data) {
                             serviceInput.value = result.data.service_name || '';
                             serviceDisplay.value = result.data.service_name || '';
+                            if (nameInput) nameInput.value = result.data.full_name || '';
                             if (bookingDateSpan) bookingDateSpan.textContent = result.data.scheduled_date || '-';
                             if (bookingPriceSpan) bookingPriceSpan.textContent = result.data.purchased_price ? `₱${result.data.purchased_price}` : '-';
                             if (detailsContainer) detailsContainer.classList.remove('hidden');
@@ -759,6 +768,7 @@
                     } catch (err) {
                         serviceInput.value = '';
                         serviceDisplay.value = '';
+                        if (nameInput) nameInput.value = '';
                         if (detailsContainer) detailsContainer.classList.add('hidden');
                     }
                 };

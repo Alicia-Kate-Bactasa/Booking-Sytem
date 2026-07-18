@@ -999,6 +999,7 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
         }
 
         function openFeedbackForBooking(bookingId, serviceName, date, price) {
+            const nameInput = document.getElementById('feedbackName');
             const bookingInput = document.getElementById('feedbackBookingId');
             const serviceInput = document.getElementById('feedbackService');
             const serviceDisplay = document.getElementById('feedbackServiceDisplay');
@@ -1006,6 +1007,7 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
             const bookingDateSpan = document.getElementById('feedbackBookingDate');
             const bookingPriceSpan = document.getElementById('feedbackBookingPrice');
 
+            if (nameInput) nameInput.value = userProfileSession.name || '';
             if (bookingInput) bookingInput.value = bookingId;
             if (serviceInput) serviceInput.value = serviceName;
             if (serviceDisplay) serviceDisplay.value = serviceName;
@@ -1175,17 +1177,20 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
             const bookingDateSpan = document.getElementById('feedbackBookingDate');
             const bookingPriceSpan = document.getElementById('feedbackBookingPrice');
 
+            const nameInput = document.getElementById('feedbackName');
+
             if (bookingIdInput && serviceInput && serviceDisplay) {
                 const handleBookingIdChange = async () => {
                     const bookingId = bookingIdInput.value.trim();
                     if (!bookingId) {
                         serviceInput.value = '';
                         serviceDisplay.value = '';
+                        if (nameInput) nameInput.value = userProfileSession.name || '';
                         if (detailsContainer) detailsContainer.classList.add('hidden');
                         return;
                     }
                     try {
-                        const response = await fetch(`bookings/get_booking_service.php?booking_id=${encodeURIComponent(bookingId)}`);
+                        const response = await fetch('bookings/get_booking_service.php?booking_id=' + encodeURIComponent(bookingId));
                         if (!response.ok) {
                             throw new Error('Not found');
                         }
@@ -1193,6 +1198,7 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                         if (result.status === 'success' && result.data) {
                             serviceInput.value = result.data.service_name || '';
                             serviceDisplay.value = result.data.service_name || '';
+                            if (nameInput) nameInput.value = result.data.full_name || userProfileSession.name || '';
                             if (bookingDateSpan) bookingDateSpan.textContent = result.data.scheduled_date || '-';
                             if (bookingPriceSpan) bookingPriceSpan.textContent = result.data.purchased_price ? `₱${result.data.purchased_price}` : '-';
                             if (detailsContainer) detailsContainer.classList.remove('hidden');
@@ -1200,6 +1206,7 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                     } catch (err) {
                         serviceInput.value = '';
                         serviceDisplay.value = '';
+                        if (nameInput) nameInput.value = userProfileSession.name || '';
                         if (detailsContainer) detailsContainer.classList.add('hidden');
                     }
                 };
