@@ -32,13 +32,15 @@ try {
     
     $user_id = (int)$_SESSION['user_id'];
 
+    $is_reactivation = isset($_POST['is_reactivation']) && $_POST['is_reactivation'] === '1';
+
     // 1. Guard against duplicate proof submissions / spam:
-    // Check if there is already a Pending Monthly Roster invoice for this customer that has a payment awaiting approval
+    // Check if there is already a Pending subscription invoice for this customer that has a payment awaiting approval
     $pendingInvoiceQuery = "SELECT i.invoice_id FROM Invoice i
                             JOIN Subscription s ON i.subscription_id = s.subscription_id
                             JOIN Payment p ON i.invoice_id = p.invoice_id
                             WHERE s.user_id = :user_id 
-                              AND i.invoice_type = 'Monthly Roster'
+                              AND i.invoice_type IN ('Monthly Roster', 'Account Reactivation')
                               AND i.invoice_status = 'Pending'
                               AND p.payment_status = 'Pending Approval'
                             LIMIT 1";
@@ -65,9 +67,9 @@ try {
     $sub = $subStmt->fetch();
 
     // 3. Guard against early prepayment (Temporal Eligibility Lock)
-    // Ensure CURRENT_DATE > last_billing_date
+    // Ensure CURRENT_DATE > last_billing_date (unless it is a reactivation request)
     $today = date('Y-m-d');
-    if ($sub && !empty($sub['last_billing_date'])) {
+    if (!$is_reactivation && $sub && !empty($sub['last_billing_date'])) {
         if ($today <= $sub['last_billing_date']) {
             http_response_code(400);
             echo json_encode([
@@ -158,27 +160,30 @@ try {
     $conn->beginTransaction();
 
     $subscription_id = $sub ? (int)$sub['subscription_id'] : null;
+    $invoice_type = $is_reactivation ? 'Account Reactivation' : 'Monthly Roster';
 
-    // Determine if we reuse an existing outstanding Pending invoice
+    // Determine if we reuse an existing outstanding Pending invoice of the matching type
     $pendingInvQuery = "SELECT invoice_id FROM Invoice 
                         WHERE subscription_id = :subscription_id 
-                          AND invoice_type = 'Monthly Roster'
+                          AND invoice_type = :invoice_type
                           AND invoice_status = 'Pending'
                         ORDER BY issued_at ASC
                         LIMIT 1";
     $pendingInvStmt = $conn->prepare($pendingInvQuery);
     $pendingInvStmt->bindValue(':subscription_id', $subscription_id, PDO::PARAM_INT);
+    $pendingInvStmt->bindValue(':invoice_type', $invoice_type, PDO::PARAM_STR);
     $pendingInvStmt->execute();
     $pendingInvoice = $pendingInvStmt->fetch();
 
     if ($pendingInvoice) {
         $invoice_id = (int)$pendingInvoice['invoice_id'];
     } else {
-        // Create a new Invoice of type 'Monthly Roster'
+        // Create a new Invoice of the matching type
         $invoiceQuery = "INSERT INTO Invoice (subscription_id, total_amount, invoice_type, invoice_status) 
-                         VALUES (:subscription_id, 1500.00, 'Monthly Roster', 'Pending')";
+                         VALUES (:subscription_id, 1500.00, :invoice_type, 'Pending')";
         $invoiceStmt = $conn->prepare($invoiceQuery);
         $invoiceStmt->bindValue(':subscription_id', $subscription_id, $subscription_id === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
+        $invoiceStmt->bindValue(':invoice_type', $invoice_type, PDO::PARAM_STR);
         $invoiceStmt->execute();
         $invoice_id = (int)$conn->lastInsertId();
     }
@@ -201,10 +206,19 @@ try {
 
     $conn->commit();
 
-    // Send subscription renewal pending confirmation email
+    // Send subscription renewal or reactivation pending confirmation email
     if ($sub && !empty($sub['email']) && filter_var($sub['email'], FILTER_VALIDATE_EMAIL)) {
         require_once __DIR__ . '/../utils/mailer.php';
-        $subject = "Subscription Renewal Pending Verification - Montage Auto Studio";
+        
+        $subject = $is_reactivation 
+            ? "Subscription Reactivation Pending Verification - Montage Auto Studio"
+            : "Subscription Renewal Pending Verification - Montage Auto Studio";
+
+        $itemName = $is_reactivation ? 'VIP Unlimited Plan (Reactivation)' : 'VIP Unlimited Plan (Renewal)';
+        $itemSubtext = $is_reactivation ? 'Subscription plan reactivation fee.' : 'Monthly subscription plan with priority scheduling.';
+        $statusDetail = $is_reactivation
+            ? 'We have received your GCash reactivation payment screenshot. Please allow 24-48 hours for administrative verification.'
+            : 'We have received your GCash renewal payment screenshot. Please allow 24-48 hours for administrative verification.';
 
         $invoiceData = [
             'title' => 'Pro-forma Invoice',
@@ -212,8 +226,8 @@ try {
             'date' => date('Y-m-d'),
             'client_name' => $sub['full_name'],
             'client_email' => $sub['email'],
-            'item_name' => 'VIP Unlimited Plan (Renewal)',
-            'item_subtext' => 'Monthly subscription plan with priority scheduling.',
+            'item_name' => $itemName,
+            'item_subtext' => $itemSubtext,
             'item_price' => 1500.00,
             'subtotal' => 1500.00,
             'total_due' => 1500.00,
@@ -221,7 +235,7 @@ try {
             'status_border' => '#f39c12',
             'status_color' => '#d35400',
             'status_label' => 'PENDING VERIFICATION',
-            'status_detail' => 'We have received your GCash renewal payment screenshot. Please allow 24-48 hours for administrative verification.'
+            'status_detail' => $statusDetail
         ];
 
         $htmlContent = Mailer::formatInvoice($invoiceData);
@@ -231,7 +245,9 @@ try {
     http_response_code(201);
     echo json_encode([
         "status" => "success",
-        "message" => "Monthly subscription payment submitted successfully! Awaiting verification.",
+        "message" => $is_reactivation
+            ? "Account reactivation payment submitted successfully! Awaiting verification."
+            : "Monthly subscription payment submitted successfully! Awaiting verification.",
         "data" => [
             "invoice_id" => $invoice_id,
             "proof_path" => $databaseSavedPath

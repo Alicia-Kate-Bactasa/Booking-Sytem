@@ -155,8 +155,8 @@ try {
             $stmtBook->execute();
         }
 
-        // If Subscription renewal payment, activate membership
-        if ($invoice['invoice_type'] === 'Monthly Roster') {
+        // If Subscription renewal or reactivation payment, activate membership
+        if ($invoice['invoice_type'] === 'Monthly Roster' || $invoice['invoice_type'] === 'Account Reactivation') {
             // Fetch current subscription dates
             $dateFetchQuery = "SELECT next_billing_date, plan_status FROM Subscription WHERE user_id = :user_id LIMIT 1";
             $dateFetchStmt = $conn->prepare($dateFetchQuery);
@@ -165,12 +165,12 @@ try {
             $subDates = $dateFetchStmt->fetch();
 
             $today = date('Y-m-d');
-            if ($subDates && $subDates['plan_status'] === 'Active' && !empty($subDates['next_billing_date']) && $subDates['next_billing_date'] >= $today) {
-                // Early renewal: extend from the current next billing date
+            if ($subDates && ($subDates['plan_status'] === 'Active' || $subDates['plan_status'] === 'Cancellation Pending') && !empty($subDates['next_billing_date']) && $subDates['next_billing_date'] >= $today) {
+                // Early renewal or reactivation: extend from the current next billing date
                 $nextBillingDate = date('Y-m-d', strtotime($subDates['next_billing_date'] . ' + 30 days'));
                 $lastBillingDate = $subDates['next_billing_date'];
             } else {
-                // Standard/first-time/expired renewal: extend from today
+                // Standard/first-time/expired renewal or reactivation: extend from today
                 $nextBillingDate = date('Y-m-d', strtotime('+30 days'));
                 $lastBillingDate = $today;
             }
@@ -210,7 +210,7 @@ try {
             $stmtBook->execute();
         }
 
-        if ($invoice['invoice_type'] === 'Monthly Roster') {
+        if ($invoice['invoice_type'] === 'Monthly Roster' || $invoice['invoice_type'] === 'Account Reactivation') {
             // Set Subscription to Expired (archived)
             $updateSub = "UPDATE Subscription SET plan_status = 'Expired' WHERE user_id = :user_id";
             $stmtSub = $conn->prepare($updateSub);
@@ -227,8 +227,8 @@ try {
     if ($email && filter_var($email, FILTER_VALIDATE_EMAIL)) {
         require_once __DIR__ . '/../utils/mailer.php';
 
-        $itemName = ($invoice['invoice_type'] === 'Monthly Roster') ? 'VIP Unlimited Plan' : ($invoice['service_name'] ?: 'Detailing Session');
-        $itemSubtext = ($invoice['invoice_type'] === 'Monthly Roster') ? 'Monthly VIP membership access.' : 'Professional vehicle detailing service.';
+        $itemName = ($invoice['invoice_type'] === 'Monthly Roster' || $invoice['invoice_type'] === 'Account Reactivation') ? 'VIP Unlimited Plan' : ($invoice['service_name'] ?: 'Detailing Session');
+        $itemSubtext = ($invoice['invoice_type'] === 'Monthly Roster') ? 'Monthly VIP membership access.' : (($invoice['invoice_type'] === 'Account Reactivation') ? 'VIP Membership Reactivation.' : 'Professional vehicle detailing service.');
 
         $invoiceData = [
             'invoice_no' => 'INV-' . $invoice_id,
@@ -250,7 +250,7 @@ try {
             $invoiceData['status_border'] = '#27ae60';
             $invoiceData['status_color'] = '#27ae60';
             $invoiceData['status_label'] = 'PAID';
-            $invoiceData['status_detail'] = ($invoice['invoice_type'] === 'Monthly Roster')
+            $invoiceData['status_detail'] = ($invoice['invoice_type'] === 'Monthly Roster' || $invoice['invoice_type'] === 'Account Reactivation')
                 ? 'Your payment has been successfully approved! Your VIP Unlimited Plan is now ACTIVE.'
                 : 'Your booking payment has been successfully approved and confirmed. We look forward to servicing your vehicle!';
         } else {
@@ -260,8 +260,8 @@ try {
             $invoiceData['status_border'] = '#c0392b';
             $invoiceData['status_color'] = '#c0392b';
             $invoiceData['status_label'] = 'PAYMENT REJECTED';
-            $invoiceData['status_detail'] = ($invoice['invoice_type'] === 'Monthly Roster')
-                ? 'Unfortunately, your registration payment proof was rejected. Please review your GCash receipt details and resubmit registration.'
+            $invoiceData['status_detail'] = ($invoice['invoice_type'] === 'Monthly Roster' || $invoice['invoice_type'] === 'Account Reactivation')
+                ? 'Unfortunately, your payment proof was rejected. Please review your GCash receipt details and resubmit.'
                 : 'Unfortunately, your booking payment proof was rejected. Please resubmit your booking with a valid payment screenshot.';
         }
 

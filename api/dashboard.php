@@ -313,8 +313,8 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Subscriber') {
         <div class="bg-white border border-neutral-200 p-8 w-full max-w-md relative rounded-[2rem] shadow-2xl mx-4">
             <button onclick="toggleModal('renewalHubModal')" class="absolute top-5 right-5 text-neutral-400 hover:text-dark text-xs font-bold">✕</button>
             <div class="mb-6">
-                <h3 class="text-xl font-bold uppercase tracking-tight text-dark">Membership Fee Check-In</h3>
-                <p class="text-xs text-neutral-400 font-medium mt-1">Submit your monthly renewal payment to extend access rules.</p>
+                <h3 id="renewalModalTitle" class="text-xl font-bold uppercase tracking-tight text-dark">Membership Fee Check-In</h3>
+                <p id="renewalModalSubtitle" class="text-xs text-neutral-400 font-medium mt-1">Submit your monthly renewal payment to extend access rules.</p>
             </div>
 
             <form onsubmit="handleRenewalSubmission(event)" class="space-y-5">

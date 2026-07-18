@@ -71,6 +71,7 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
         let activeDashServiceState = "";
         let activeDashServiceDuration = "";
         let activeDashTimeState = "";
+        let isReactivation = false;
 
           /* ===================== DASHBOARD PROFILE STATE =====================
               Feature: Current member identity, account class, and next billing date display values.
@@ -594,7 +595,7 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
             event.preventDefault();
             const fileCtrl = document.getElementById('renewalProofFile');
             if(!fileCtrl || fileCtrl.files.length === 0) {
-                showErrorModal('Please upload your GCash renewal proof of payment.');
+                showErrorModal(isReactivation ? 'Please upload your GCash reactivation proof of payment.' : 'Please upload your GCash renewal proof of payment.');
                 return;
             }
 
@@ -631,6 +632,9 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
 
             const formData = new FormData();
             formData.append('proof_of_payment', file);
+            if (isReactivation) {
+                formData.append('is_reactivation', '1');
+            }
 
             try {
                 const response = await fetch('subscriptions/submit_renewal_payment.php', {
@@ -643,9 +647,13 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                 const result = await response.json();
 
                 if (response.ok && result.status === 'success') {
-                    showErrorModal("GCash renewal proof submitted! Your payment is pending admin approval.", true);
+                    const successMsg = isReactivation 
+                        ? "GCash reactivation proof submitted! Your payment is pending admin approval."
+                        : "GCash renewal proof submitted! Your payment is pending admin approval.";
+                    showErrorModal(successMsg, true);
                     toggleModal('renewalHubModal');
                     fileCtrl.value = '';
+                    isReactivation = false;
                     syncProfileWithDatabase();
                 } else {
                     await showErrorModal(result.message || 'Failed to submit renewal payment.');
@@ -1120,6 +1128,44 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
             const payBtn = document.getElementById('payRenewalBtn');
             if (!payBtn) return;
 
+            // Define clean reset callback for the monthly renewal flow
+            const payBtnClick = () => {
+                isReactivation = false;
+                const titleEl = document.getElementById('renewalModalTitle');
+                const subtitleEl = document.getElementById('renewalModalSubtitle');
+                if (titleEl) titleEl.innerText = "Membership Fee Check-In";
+                if (subtitleEl) subtitleEl.innerText = "Submit your monthly renewal payment to extend access rules.";
+                toggleModal('renewalHubModal');
+            };
+
+            const cancelBtn = document.getElementById('cancelPlanToggleBtn');
+            if (cancelBtn) {
+                if (prof.plan_status === 'Cancellation Pending') {
+                    cancelBtn.innerText = "Reactivate Subscription";
+                    cancelBtn.className = "w-full bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-600 hover:border-emerald-700 text-xs font-bold tracking-widest uppercase py-4 rounded-full transition-all text-center focus:outline-none cursor-pointer";
+                    cancelBtn.onclick = () => {
+                        isReactivation = true;
+                        const titleEl = document.getElementById('renewalModalTitle');
+                        const subtitleEl = document.getElementById('renewalModalSubtitle');
+                        if (titleEl) titleEl.innerText = "Membership Reactivation Portal";
+                        if (subtitleEl) subtitleEl.innerText = "Submit your GCash payment receipt to reactivate your VIP Unlimited plan.";
+                        toggleModal('renewalHubModal');
+                    };
+                } else {
+                    cancelBtn.innerText = "Cancel Subscription Plan";
+                    cancelBtn.className = "w-full bg-white hover:bg-red-50 text-red-600 border border-neutral-200 hover:border-red-200 text-xs font-bold tracking-widest uppercase py-4 rounded-full transition-all text-center focus:outline-none cursor-pointer";
+                    cancelBtn.onclick = () => toggleModal('cancelConfirmModal');
+                }
+            }
+
+            if (prof.plan_status === 'Cancellation Pending') {
+                payBtn.disabled = true;
+                payBtn.innerText = "Renewal Locked (Cancellation Pending)";
+                payBtn.onclick = null;
+                payBtn.className = "w-full bg-neutral-200 text-neutral-400 text-xs font-bold py-4 rounded-full transition-all text-center cursor-not-allowed border border-neutral-300 focus:outline-none";
+                return;
+            }
+
             if (prof.plan_status === 'Expired' || prof.plan_status === 'Inactive') {
                 payBtn.disabled = true;
                 payBtn.innerText = "Subscription Expired";
@@ -1142,13 +1188,13 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                 payBtn.disabled = false;
                 payBtn.innerText = "Pay Next Monthly Renewal";
                 payBtn.className = "w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-4 rounded-full transition-all text-center shadow-sm focus:outline-none cursor-pointer";
-                payBtn.onclick = () => toggleModal('renewalHubModal');
+                payBtn.onclick = payBtnClick;
             } else {
                 // Active & Eligible to Pay
                 payBtn.disabled = false;
                 payBtn.innerText = "Pay Next Monthly Renewal";
                 payBtn.className = "w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-4 rounded-full transition-all text-center shadow-sm focus:outline-none cursor-pointer";
-                payBtn.onclick = () => toggleModal('renewalHubModal');
+                payBtn.onclick = payBtnClick;
             }
         }
 
