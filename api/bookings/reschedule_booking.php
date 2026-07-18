@@ -84,10 +84,12 @@ try {
     // 1. Verify the booking exists and fetch client details for notification email
     $checkQuery = "SELECT b.booking_id, b.customer_id, b.user_id, b.service_id, b.booking_status, 
                           s.service_duration, s.service_name, b.scheduled_date AS old_date, b.time_slot AS old_slot,
-                          c.full_name AS customer_name, c.email AS customer_email
+                          CASE WHEN b.user_id IS NOT NULL THEN u.username ELSE c.full_name END AS customer_name,
+                          CASE WHEN b.user_id IS NOT NULL THEN u.email ELSE c.email END AS customer_email
                    FROM Booking b
                    JOIN Service s ON b.service_id = s.service_id
-                   JOIN Customer c ON b.customer_id = c.customer_id
+                   LEFT JOIN Customer c ON b.customer_id = c.customer_id
+                   LEFT JOIN User u ON b.user_id = u.user_id
                    WHERE b.booking_id = :booking_id LIMIT 1";
     $checkStmt = $conn->prepare($checkQuery);
     $checkStmt->bindValue(':booking_id', $booking_id, PDO::PARAM_INT);

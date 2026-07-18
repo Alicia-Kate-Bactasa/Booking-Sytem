@@ -40,17 +40,33 @@ if ($inputData === null) {
     exit();
 }
 
-$customer_id = isset($inputData['customer_id']) ? $inputData['customer_id'] : null;
-$service_id = isset($inputData['service_id']) ? $inputData['service_id'] : null;
+$customer_id = isset($inputData['customer_id']) ? (int)$inputData['customer_id'] : null;
+$admin_user_id = isset($inputData['user_id']) ? (int)$inputData['user_id'] : null;
+$service_id = isset($inputData['service_id']) ? (int)$inputData['service_id'] : null;
 $scheduled_date = isset($inputData['scheduled_date']) ? $inputData['scheduled_date'] : null;
 $time_slot = isset($inputData['time_slot']) ? trim($inputData['time_slot']) : null;
 
 // === SECTION: INPUT VALIDATION ===
-if (empty($customer_id) || empty($service_id) || empty($scheduled_date) || empty($time_slot)) {
+if (empty($service_id) || empty($scheduled_date) || empty($time_slot)) {
     http_response_code(400);
     echo json_encode([
         "status" => "error",
-        "message" => "Incomplete request. customer_id, service_id, scheduled_date, and time_slot are required fields."
+        "message" => "Incomplete request. service_id, scheduled_date, and time_slot are required fields."
+    ]);
+    exit();
+}
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+$isSubscriberRole = (isset($_SESSION['role']) && $_SESSION['role'] === 'Subscriber');
+
+// If Admin, they must provide either customer_id or user_id
+if (!$isSubscriberRole && empty($customer_id) && empty($admin_user_id)) {
+    http_response_code(400);
+    echo json_encode([
+        "status" => "error",
+        "message" => "Incomplete request. Administrators must specify either customer_id or user_id."
     ]);
     exit();
 }
@@ -60,15 +76,6 @@ if (strtotime($scheduled_date) < strtotime(date('Y-m-d'))) {
     echo json_encode([
         "status" => "error",
         "message" => "Booking date cannot be in the past."
-    ]);
-    exit();
-}
-
-if (!filter_var($customer_id, FILTER_VALIDATE_INT) || !filter_var($service_id, FILTER_VALIDATE_INT)) {
-    http_response_code(400);
-    echo json_encode([
-        "status" => "error",
-        "message" => "Invalid ID formatting. customer_id and service_id must be integers."
     ]);
     exit();
 }
@@ -187,29 +194,53 @@ try {
 
     // Resolve user_id
     $user_id = null;
+    $isSubscriber = false;
+    $customer_email = '';
+    $customer_name = '';
+
     if ($_SESSION['role'] === 'Subscriber') {
         $user_id = $_SESSION['user_id'];
+        $isSubscriber = true;
+        
+        $subStmt = $conn->prepare("SELECT email, username AS full_name FROM User WHERE user_id = :user_id LIMIT 1");
+        $subStmt->bindValue(':user_id', $user_id, PDO::PARAM_INT);
+        $subStmt->execute();
+        $subData = $subStmt->fetch();
+        if ($subData) {
+            $customer_email = $subData['email'];
+            $customer_name = $subData['full_name'];
+        }
+        $customer_id = null;
     } else {
         // Admin
-        $userCheckStmt = $conn->prepare("SELECT user_id FROM User WHERE email = (SELECT email FROM Customer WHERE customer_id = :customer_id)");
-        $userCheckStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
-        $userCheckStmt->execute();
-        $userData = $userCheckStmt->fetch();
-        $user_id = $userData ? (int)$userData['user_id'] : null;
+        if ($admin_user_id) {
+            $user_id = $admin_user_id;
+            $subStmt = $conn->prepare("SELECT email, username AS full_name FROM User WHERE user_id = :user_id LIMIT 1");
+            $subStmt->bindValue(':user_id', $user_id, PDO::PARAM_INT);
+            $subStmt->execute();
+            $subData = $subStmt->fetch();
+            if ($subData) {
+                $customer_email = $subData['email'];
+                $customer_name = $subData['full_name'];
+                $isSubscriber = true;
+            }
+            $customer_id = null;
+        } else {
+            $user_id = null;
+            $custQuery = "SELECT c.customer_type, c.full_name, c.email FROM Customer c WHERE c.customer_id = :customer_id LIMIT 1";
+            $custStmt = $conn->prepare($custQuery);
+            $custStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+            $custStmt->execute();
+            $customerInfo = $custStmt->fetch();
+            if ($customerInfo) {
+                $customer_email = $customerInfo['email'];
+                $customer_name = $customerInfo['full_name'];
+                $isSubscriber = ($customerInfo['customer_type'] === 'Subscriber');
+            }
+        }
     }
 
-    // 3. Check customer type and details to see if they are a subscriber or regular guest
-    $custQuery = "SELECT c.customer_type, c.full_name, COALESCE(u.email, c.email) AS email
-                  FROM Customer c
-                  LEFT JOIN User u ON c.email = u.email
-                  WHERE c.customer_id = :customer_id LIMIT 1";
-    $custStmt = $conn->prepare($custQuery);
-    $custStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
-    $custStmt->execute();
-    $customerInfo = $custStmt->fetch();
-    $customer = $customerInfo;
-
-    $booking_status = ($customer && $customer['customer_type'] === 'Subscriber') ? 'Pending' : 'Pending Verification';
+    $booking_status = $isSubscriber ? 'Pending' : 'Pending Verification';
 
     // 4. Insert booking first (without invoice_id, but with user_id)
     $query = "INSERT INTO Booking (customer_id, user_id, service_id, scheduled_date, time_slot, bay_number, purchased_price, booking_status) 
@@ -217,7 +248,7 @@ try {
               
     $stmt = $conn->prepare($query);
     
-    $stmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+    $stmt->bindValue(':customer_id', $customer_id, $customer_id === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
     $stmt->bindValue(':user_id', $user_id, $user_id === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
     $stmt->bindValue(':service_id', $service_id, PDO::PARAM_INT);
     $stmt->bindValue(':scheduled_date', $scheduled_date, PDO::PARAM_STR);
@@ -228,10 +259,8 @@ try {
     
     if ($stmt->execute()) {
         $booking_id = (int)$conn->lastInsertId();
-        
-        // 5. Downstream Invoice Generation
         $invoice_id = null;
-        if ($customer && $customer['customer_type'] === 'Subscriber') {
+        if ($isSubscriber) {
             // Fetch active subscription ID via user_id
             $subIdQuery = "SELECT subscription_id FROM Subscription WHERE user_id = :user_id AND plan_status IN ('Active', 'Cancellation Pending') LIMIT 1";
             $subIdStmt = $conn->prepare($subIdQuery);
@@ -264,13 +293,12 @@ try {
         $conn->commit();
 
         // Send booking confirmation email to client
-        if ($customerInfo && !empty($customerInfo['email']) && filter_var($customerInfo['email'], FILTER_VALIDATE_EMAIL)) {
+        if (!empty($customer_email) && filter_var($customer_email, FILTER_VALIDATE_EMAIL)) {
             require_once __DIR__ . '/../utils/mailer.php';
-            $clientEmail = $customerInfo['email'];
-            $fullName = $customerInfo['full_name'];
+            $clientEmail = $customer_email;
+            $fullName = $customer_name;
             $subject = "Booking Received - Montage Auto Studio";
 
-            $isSubscriber = ($customerInfo['customer_type'] === 'Subscriber');
             $originalPrice = (float)$service['service_price'];
             
             $subtotal = $isSubscriber ? $originalPrice : (float)$purchased_price;

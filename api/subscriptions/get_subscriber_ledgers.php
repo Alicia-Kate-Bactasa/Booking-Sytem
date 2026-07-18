@@ -15,18 +15,17 @@ try {
 
     // 1. Fetch Monthly Roster invoices (subscriber payments)
     $rosterQuery = "SELECT i.invoice_id, 
+                           i.total_amount AS total,
                            s.user_id,
-                           i.total_amount AS total, 
                            i.invoice_status AS status, 
                            i.issued_at AS date,
-                           c.full_name AS client,
+                           u.username AS client,
                            p.payment_id, 
                            p.payment_status, 
                            p.proof_of_payment AS img
                     FROM Invoice i
                     JOIN Subscription s ON i.subscription_id = s.subscription_id
                     JOIN User u ON s.user_id = u.user_id
-                    LEFT JOIN Customer c ON u.email = c.email
                     LEFT JOIN Payment p ON i.invoice_id = p.invoice_id
                     WHERE i.invoice_type = 'Monthly Roster'
                     ORDER BY i.issued_at DESC";
@@ -71,11 +70,12 @@ try {
     // 2. Fetch Zero-Value detailing invoices
     $freeQuery = "SELECT i.invoice_id, 
                          i.issued_at AS date,
-                         c.full_name AS client,
+                         CASE WHEN b.user_id IS NOT NULL THEN u.username ELSE c.full_name END AS client,
                          s.service_name
                   FROM Invoice i
                   JOIN Booking b ON i.booking_id = b.booking_id
-                  JOIN Customer c ON b.customer_id = c.customer_id
+                  LEFT JOIN Customer c ON b.customer_id = c.customer_id
+                  LEFT JOIN User u ON b.user_id = u.user_id
                   JOIN Service s ON b.service_id = s.service_id
                   WHERE i.invoice_type = 'Single Detailing' 
                     AND i.total_amount = 0.00

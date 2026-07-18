@@ -170,45 +170,33 @@ try {
                 ]);
                 exit();
             } else {
-                // Fetch associated Customer record via email
-                $customerQuery = "SELECT customer_id, full_name, phone_number, customer_type 
-                                  FROM Customer 
-                                  WHERE email = :email 
-                                  LIMIT 1";
-                $customerStmt = $conn->prepare($customerQuery);
-                $customerStmt->bindValue(':email', $user['email'], PDO::PARAM_STR);
-                $customerStmt->execute();
-                $customer = $customerStmt->fetch();
+                // Fetch Subscription details via user_id
+                $subQuery = "SELECT subscription_id, plan_status FROM Subscription WHERE user_id = :user_id LIMIT 1";
+                $subStmt = $conn->prepare($subQuery);
+                $subStmt->bindValue(':user_id', (int)$user['user_id'], PDO::PARAM_INT);
+                $subStmt->execute();
+                $subscription = $subStmt->fetch();
 
-                $customer_id = 0;
-                $full_name = '';
                 $subscription_id = 0;
+                if ($subscription) {
+                    $subscription_id = (int)$subscription['subscription_id'];
+                    $plan_status = $subscription['plan_status'];
 
-                if ($customer) {
-                    $customer_id = (int)$customer['customer_id'];
-                    $full_name = $customer['full_name'];
-
-                    // Fetch Subscription details via user_id
-                    $subQuery = "SELECT subscription_id, plan_status FROM Subscription WHERE user_id = :user_id LIMIT 1";
-                    $subStmt = $conn->prepare($subQuery);
-                    $subStmt->bindValue(':user_id', (int)$user['user_id'], PDO::PARAM_INT);
-                    $subStmt->execute();
-                    $subscription = $subStmt->fetch();
-                    if ($subscription) {
-                        $subscription_id = (int)$subscription['subscription_id'];
-                        $plan_status = $subscription['plan_status'];
-
-                        // Enforce: User should not be able to log in / open an account that hasn't been approved yet
-                        if ($plan_status === 'Payment Pending') {
-                            http_response_code(403);
-                            echo json_encode([
-                                "status" => "error",
-                                "message" => "Your subscriber account is pending admin approval. You will be able to access your account once your subscription and payment have been verified by an admin."
-                            ]);
-                            exit();
-                        }
+                    // Enforce: User should not be able to log in / open an account that hasn't been approved yet
+                    if ($plan_status === 'Payment Pending') {
+                        http_response_code(403);
+                        echo json_encode([
+                            "status" => "error",
+                            "message" => "Your subscriber account is pending admin approval. You will be able to access your account once your subscription and payment have been verified by an admin."
+                        ]);
+                        exit();
                     }
                 }
+
+                // Under the new model, subscribers are NOT in the Customer table.
+                // Their name is User.username, and their customer_id is 0.
+                $customer_id = 0;
+                $full_name = $user['username'];
 
                 $_SESSION['user_id'] = (int)$user['user_id'];
                 $_SESSION['role'] = 'Subscriber';

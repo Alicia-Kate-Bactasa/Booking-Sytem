@@ -55,10 +55,9 @@ try {
         exit();
     }
 
-    $query = "SELECT s.subscription_id AS subscriber_id, s.user_id, u.email, s.plan_tier, s.plan_status, s.last_billing_date, s.next_billing_date, s.created_at, c.full_name, c.customer_id 
+    $query = "SELECT s.subscription_id AS subscriber_id, s.user_id, u.email, s.plan_tier, s.plan_status, s.last_billing_date, s.next_billing_date, s.created_at, u.username AS full_name 
               FROM Subscription s
               JOIN User u ON s.user_id = u.user_id
-              LEFT JOIN Customer c ON u.email = c.email
               WHERE {$whereClause} 
               LIMIT 1";
               
@@ -78,7 +77,7 @@ try {
 
     $subscription_id = (int)$profile['subscriber_id'];
     $user_id = (int)$profile['user_id'];
-    $customer_id = (int)$profile['customer_id'];
+    $customer_id = 0;
     
     // Fetch last completed booking date
     $lastVisitQuery = "SELECT MAX(scheduled_date) AS last_visit FROM Booking WHERE user_id = :user_id AND booking_status = 'Completed'";

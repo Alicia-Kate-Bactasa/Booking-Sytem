@@ -837,8 +837,6 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                 }
 
                 // Client-side subscriber mutation conversion check
-                const displayPriceTag = isSubscribedProfile ? "₱0 (Included in Plan)" : `₱${service.price}`;
-                const badgeStyleClass = isSubscribedProfile ? "text-emerald-600 bg-emerald-50 border border-emerald-100" : "text-neutral-500 bg-neutral-50";
 
                 const optionBtnHTML = `
                     <button type="button" onclick="selectDashboardServiceItem('${service.name}', '${service.duration}', '${service.name} — ${displayPriceTag}')" class="w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors flex justify-between items-center">

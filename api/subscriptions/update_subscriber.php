@@ -75,12 +75,10 @@ try {
     require_auth('Admin');
     verify_csrf_request();
 
-    // Retrieve the subscription and customer information
-    // Retrieve the subscription and customer information
-    $subQuery = "SELECT s.subscription_id, s.user_id, s.plan_status, u.email, c.full_name, c.customer_id 
+    // Retrieve the subscription information
+    $subQuery = "SELECT s.subscription_id, s.user_id, s.plan_status, u.email, u.username AS full_name 
                  FROM Subscription s
                  JOIN User u ON s.user_id = u.user_id
-                 LEFT JOIN Customer c ON u.email = c.email
                  WHERE u.email = :email LIMIT 1";
     $subStmt = $conn->prepare($subQuery);
     $subStmt->bindValue(':email', $email, PDO::PARAM_STR);
@@ -96,7 +94,7 @@ try {
         exit();
     }
 
-    $customer_id = $subscriber['customer_id'] ? (int)$subscriber['customer_id'] : 0;
+    $customer_id = 0;
     $user_id = (int)$subscriber['user_id'];
 
     // Double-Approval Prevention (Idempotency check)

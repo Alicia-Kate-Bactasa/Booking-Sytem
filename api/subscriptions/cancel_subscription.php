@@ -64,9 +64,8 @@ try {
     log_system_event($conn, 'Subscription Cancellation Requested', "User ID {$user_id} requested subscription cancellation. Plan status transitioned to Cancellation Pending. Expiry effective after next billing date: {$subscription['next_billing_date']}.");
 
     // Fetch user info for email notification
-    $userQuery = "SELECT c.full_name, u.email 
+    $userQuery = "SELECT u.username AS full_name, u.email 
                   FROM User u 
-                  LEFT JOIN Customer c ON u.email = c.email 
                   WHERE u.user_id = :user_id LIMIT 1";
     $userStmt = $conn->prepare($userQuery);
     $userStmt->bindValue(':user_id', $user_id, PDO::PARAM_INT);

@@ -29,11 +29,14 @@ try {
     // Allow both Admin and Subscriber users to retrieve booking list
     require_auth(['Admin', 'Subscriber']);
 
-    $query = "SELECT b.booking_id, b.time_slot, b.scheduled_date, b.booking_status, b.bay_number, b.purchased_price, s.service_name, c.full_name, c.customer_type,
+    $query = "SELECT b.booking_id, b.time_slot, b.scheduled_date, b.booking_status, b.bay_number, b.purchased_price, s.service_name,
+                     CASE WHEN b.user_id IS NOT NULL THEN u.username ELSE c.full_name END AS full_name,
+                     CASE WHEN b.user_id IS NOT NULL THEN 'Subscriber' ELSE 'Regular' END AS customer_type,
                      p.payment_status
               FROM Booking b 
               JOIN Service s ON b.service_id = s.service_id 
-              JOIN Customer c ON b.customer_id = c.customer_id
+              LEFT JOIN Customer c ON b.customer_id = c.customer_id
+              LEFT JOIN User u ON b.user_id = u.user_id
               LEFT JOIN Invoice i ON b.booking_id = i.booking_id
               LEFT JOIN Payment p ON i.invoice_id = p.invoice_id";
 

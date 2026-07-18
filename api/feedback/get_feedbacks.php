@@ -33,12 +33,13 @@ try {
                 f.rating,
                 f.comments,
                 f.created_at,
-                c.customer_type AS feedback_type,
-                COALESCE(c.full_name, 'Guest') AS client,
+                CASE WHEN b.user_id IS NOT NULL THEN 'Subscriber' ELSE COALESCE(c.customer_type, 'Regular') END AS feedback_type,
+                CASE WHEN b.user_id IS NOT NULL THEN u.username ELSE COALESCE(c.full_name, 'Guest') END AS client,
                 COALESCE(s.service_name, 'N/A') AS service
               FROM Feedback f
               LEFT JOIN Booking b ON f.booking_id = b.booking_id
               LEFT JOIN Customer c ON b.customer_id = c.customer_id
+              LEFT JOIN User u ON b.user_id = u.user_id
               LEFT JOIN Service s ON b.service_id = s.service_id
               ORDER BY f.created_at DESC";
               

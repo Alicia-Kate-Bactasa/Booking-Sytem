@@ -32,12 +32,11 @@ try {
                      s.plan_tier, 
                      s.plan_status AS status, 
                      s.next_billing_date,
-                     c.full_name AS name,
+                     u.username AS name,
                      u.email,
                      p.proof_of_payment AS img
               FROM Subscription s
               JOIN User u ON s.user_id = u.user_id
-              LEFT JOIN Customer c ON u.email = c.email
               LEFT JOIN (
                   SELECT i1.subscription_id, p1.proof_of_payment
                   FROM Invoice i1

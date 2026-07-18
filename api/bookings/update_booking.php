@@ -67,12 +67,15 @@ try {
     verify_csrf_request();
 
     // Check if the booking actually exists before updating and fetch details
-    $checkQuery = "SELECT b.booking_id, b.customer_id, i.invoice_id, c.customer_type, b.booking_status AS current_status,
-                          COALESCE(u.email, c.email) AS customer_email, c.full_name AS customer_name,
+    $checkQuery = "SELECT b.booking_id, b.customer_id, i.invoice_id, 
+                          CASE WHEN b.user_id IS NOT NULL THEN 'Subscriber' ELSE COALESCE(c.customer_type, 'Regular') END AS customer_type, 
+                          b.booking_status AS current_status,
+                          CASE WHEN b.user_id IS NOT NULL THEN u.email ELSE c.email END AS customer_email, 
+                          CASE WHEN b.user_id IS NOT NULL THEN u.username ELSE c.full_name END AS customer_name,
                           s.service_name, b.scheduled_date, b.time_slot
                    FROM Booking b
-                   JOIN Customer c ON b.customer_id = c.customer_id
-                   LEFT JOIN User u ON c.email = u.email
+                   LEFT JOIN Customer c ON b.customer_id = c.customer_id
+                   LEFT JOIN User u ON b.user_id = u.user_id
                    JOIN Service s ON b.service_id = s.service_id
                    LEFT JOIN Invoice i ON b.booking_id = i.booking_id
                    WHERE b.booking_id = :booking_id LIMIT 1";

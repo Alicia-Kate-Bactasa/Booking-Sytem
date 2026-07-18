@@ -88,18 +88,29 @@ try {
     $conn->beginTransaction();
 
     // 2. Fetch Invoice details
+    // 2. Fetch Invoice details and resolve client information dynamically
     $invQuery = "SELECT i.total_amount, 
                         i.invoice_type,
                         ser.service_name,
                         i.booking_id,
                         s.user_id AS subscription_user_id,
                         b.customer_id AS booking_customer_id,
-                        c.customer_id AS subscription_customer_id
+                        CASE 
+                            WHEN s.user_id IS NOT NULL THEN u1.email 
+                            WHEN b.user_id IS NOT NULL THEN u2.email 
+                            ELSE c.email 
+                        END AS client_email,
+                        CASE 
+                            WHEN s.user_id IS NOT NULL THEN u1.username 
+                            WHEN b.user_id IS NOT NULL THEN u2.username 
+                            ELSE c.full_name 
+                        END AS client_name
                  FROM Invoice i
                  LEFT JOIN Subscription s ON i.subscription_id = s.subscription_id
-                 LEFT JOIN User u ON s.user_id = u.user_id
-                 LEFT JOIN Customer c ON u.email = c.email
+                 LEFT JOIN User u1 ON s.user_id = u1.user_id
                  LEFT JOIN Booking b ON i.booking_id = b.booking_id
+                 LEFT JOIN User u2 ON b.user_id = u2.user_id
+                 LEFT JOIN Customer c ON b.customer_id = c.customer_id
                  LEFT JOIN Service ser ON b.service_id = ser.service_id
                  WHERE i.invoice_id = :invoice_id LIMIT 1";
     $invStmt = $conn->prepare($invQuery);
@@ -117,25 +128,11 @@ try {
         exit();
     }
 
-    $customer_id = 0;
-    if ($invoice['invoice_type'] === 'Monthly Roster') {
-        $customer_id = (int)$invoice['subscription_customer_id'];
-    } else {
-        $customer_id = (int)$invoice['booking_customer_id'];
-    }
+    $customer_id = $invoice['booking_customer_id'] ? (int)$invoice['booking_customer_id'] : 0;
     $subscription_user_id = $invoice['subscription_user_id'] ? (int)$invoice['subscription_user_id'] : 0;
 
-    // Fetch customer email and name (directly from Customer)
-    $emailQuery = "SELECT email, full_name 
-                   FROM Customer 
-                   WHERE customer_id = :customer_id LIMIT 1";
-    $emailStmt = $conn->prepare($emailQuery);
-    $emailStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
-    $emailStmt->execute();
-    $customerInfo = $emailStmt->fetch();
-
-    $email = isset($customerInfo['email']) ? $customerInfo['email'] : null;
-    $fullName = isset($customerInfo['full_name']) ? $customerInfo['full_name'] : 'Customer';
+    $email = $invoice['client_email'];
+    $fullName = $invoice['client_name'] ? $invoice['client_name'] : 'Customer';
 
     if ($status === 'Paid') {
         // Update Payment status to Paid

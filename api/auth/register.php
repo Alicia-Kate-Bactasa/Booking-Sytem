@@ -232,33 +232,33 @@ try {
 
     if ($existingUser) {
         $user_id = (int)$existingUser['user_id'];
-        
-        $custQuery = "SELECT customer_id FROM Customer WHERE email = :email LIMIT 1";
-        $custStmt = $conn->prepare($custQuery);
-        $custStmt->bindValue(':email', $email, PDO::PARAM_STR);
-        $custStmt->execute();
-        $existingCust = $custStmt->fetch();
-        
-        $customer_id = $existingCust ? (int)$existingCust['customer_id'] : 0;
         $subscription_id = $existingUser['subscription_id'] ? (int)$existingUser['subscription_id'] : null;
 
-        // 1. Update Customer table (set customer_type to Regular since they are pending payment approval)
-        if ($customer_id) {
-            $customerQuery = "UPDATE Customer SET full_name = :full_name, customer_type = 'Regular' WHERE customer_id = :customer_id";
-            $customerStmt = $conn->prepare($customerQuery);
-            $customerStmt->bindValue(':full_name', $name, PDO::PARAM_STR);
-            $customerStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
-            $customerStmt->execute();
+        // Ensure username (Full name) is unique, excluding current user
+        $username = $name;
+        $origUsername = $username;
+        $counter = 1;
+        while (true) {
+            $checkStmt = $conn->prepare("SELECT user_id FROM User WHERE username = :username AND user_id != :user_id LIMIT 1");
+            $checkStmt->bindValue(':username', $username, PDO::PARAM_STR);
+            $checkStmt->bindValue(':user_id', $user_id, PDO::PARAM_INT);
+            $checkStmt->execute();
+            if (!$checkStmt->fetch()) {
+                break;
+            }
+            $username = $origUsername . ' ' . $counter;
+            $counter++;
         }
 
-        // 2. Update User table (password)
-        $userQuery = "UPDATE User SET password = :password WHERE user_id = :user_id";
+        // 1. Update User table (username and password)
+        $userQuery = "UPDATE User SET username = :username, password = :password WHERE user_id = :user_id";
         $userStmt = $conn->prepare($userQuery);
+        $userStmt->bindValue(':username', $username, PDO::PARAM_STR);
         $userStmt->bindValue(':password', $hashedPassword, PDO::PARAM_STR);
         $userStmt->bindValue(':user_id', $user_id, PDO::PARAM_INT);
         $userStmt->execute();
 
-        // 3. Update or Insert Subscription table
+        // 2. Update or Insert Subscription table
         if ($subscription_id) {
             $subscriptionQuery = "UPDATE Subscription 
                                   SET plan_tier = 'VIP Unlimited', plan_status = 'Payment Pending', last_billing_date = NULL, next_billing_date = NULL 
@@ -274,17 +274,10 @@ try {
             $subscriptionStmt->execute();
             $subscription_id = (int)$conn->lastInsertId();
         }
+        $customer_id = null;
     } else {
-        // 1. Generate unique username
-        $emailPrefix = explode('@', $email)[0];
-        $username = preg_replace('/[^a-zA-Z0-9_]/', '', $emailPrefix);
-        if (strlen($username) < 3) {
-            $username = 'user_' . substr(md5(uniqid()), 0, 8);
-        }
-        if (strlen($username) > 40) {
-            $username = substr($username, 0, 40);
-        }
-        
+        // Ensure username (Full name) is unique
+        $username = $name;
         $origUsername = $username;
         $counter = 1;
         while (true) {
@@ -294,22 +287,11 @@ try {
             if (!$checkStmt->fetch()) {
                 break;
             }
-            $username = substr($origUsername, 0, 35) . $counter;
+            $username = $origUsername . ' ' . $counter;
             $counter++;
         }
 
-        // 2. Insert into Customer table
-        $customerQuery = "INSERT INTO Customer (full_name, phone_number, email, customer_type) 
-                          VALUES (:full_name, :phone_number, :email, :customer_type)";
-        $customerStmt = $conn->prepare($customerQuery);
-        $customerStmt->bindValue(':full_name', $name, PDO::PARAM_STR);
-        $customerStmt->bindValue(':phone_number', 'N/A', PDO::PARAM_STR);
-        $customerStmt->bindValue(':email', $email, PDO::PARAM_STR);
-        $customerStmt->bindValue(':customer_type', 'Regular', PDO::PARAM_STR);
-        $customerStmt->execute();
-        $customer_id = (int)$conn->lastInsertId();
-
-        // 3. Insert into User table
+        // 1. Insert into User table
         $userQuery = "INSERT INTO User (email, username, password, role) 
                       VALUES (:email, :username, :password, 'Customer')";
         $userStmt = $conn->prepare($userQuery);
@@ -319,13 +301,15 @@ try {
         $userStmt->execute();
         $user_id = (int)$conn->lastInsertId();
 
-        // 4. Insert into Subscription table
+        // 2. Insert into Subscription table
         $subscriptionQuery = "INSERT INTO Subscription (user_id, plan_tier, plan_status, last_billing_date, next_billing_date) 
                              VALUES (:user_id, 'VIP Unlimited', 'Payment Pending', NULL, NULL)";
         $subscriptionStmt = $conn->prepare($subscriptionQuery);
         $subscriptionStmt->bindValue(':user_id', $user_id, PDO::PARAM_INT);
         $subscriptionStmt->execute();
         $subscription_id = (int)$conn->lastInsertId();
+        
+        $customer_id = null;
     }
 
     // 5. Insert into Invoice table (Subscription registration fee 1500 PHP)

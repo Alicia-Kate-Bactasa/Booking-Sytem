@@ -30,12 +30,15 @@ try {
 
     // 1. Fetch pending_verifications (GCash screenshots for regular bookings)
     $verifyQuery = "SELECT b.booking_id, b.scheduled_date, b.time_slot, b.bay_number, b.purchased_price,
-                           s.service_name, c.full_name, c.customer_type,
+                           s.service_name, 
+                           CASE WHEN b.user_id IS NOT NULL THEN u.username ELSE c.full_name END AS full_name,
+                           CASE WHEN b.user_id IS NOT NULL THEN 'Subscriber' ELSE 'Regular' END AS customer_type,
                            i.invoice_id, i.total_amount, i.invoice_type, i.invoice_status,
                            p.payment_id, p.payment_method, p.payment_status, p.proof_of_payment, p.amount AS paid_amount
                     FROM Booking b
                     JOIN Service s ON b.service_id = s.service_id
-                    JOIN Customer c ON b.customer_id = c.customer_id
+                    LEFT JOIN Customer c ON b.customer_id = c.customer_id
+                    LEFT JOIN User u ON b.user_id = u.user_id
                     JOIN Invoice i ON b.booking_id = i.booking_id
                     JOIN Payment p ON i.invoice_id = p.invoice_id
                     WHERE p.payment_status = 'Pending Approval' 
@@ -47,13 +50,12 @@ try {
 
     // 2. Fetch pending_registrations (Subscriptions/accounts waiting for activation)
     $regQuery = "SELECT s.subscription_id, s.plan_tier, s.plan_status, s.created_at,
-                        c.customer_id, c.full_name, c.phone_number,
+                        NULL AS customer_id, u.username AS full_name, 'N/A' AS phone_number,
                         u.email, u.username,
                         i.invoice_id, i.total_amount,
                         p.payment_id, p.payment_method, p.payment_status, p.proof_of_payment
                  FROM Subscription s
                  JOIN User u ON s.user_id = u.user_id
-                 JOIN Customer c ON u.email = c.email
                  JOIN Invoice i ON s.subscription_id = i.subscription_id
                  JOIN Payment p ON i.invoice_id = p.invoice_id
                  WHERE p.payment_status = 'Pending Approval'
@@ -65,11 +67,10 @@ try {
     $pending_registrations = $regStmt->fetchAll();
 
     // 3. Fetch billing_alerts (Overdue subscribers next_billing_date < CURRENT_DATE)
-    $alertQuery = "SELECT s.subscription_id, c.customer_id, s.plan_tier, s.plan_status, s.next_billing_date,
-                          c.full_name, u.email
+    $alertQuery = "SELECT s.subscription_id, NULL AS customer_id, s.plan_tier, s.plan_status, s.next_billing_date,
+                          u.username AS full_name, u.email
                    FROM Subscription s
                    JOIN User u ON s.user_id = u.user_id
-                   JOIN Customer c ON u.email = c.email
                    WHERE s.plan_status = 'Active'
                      AND s.next_billing_date < CURRENT_DATE()";
     $alertStmt = $conn->prepare($alertQuery);

@@ -55,10 +55,9 @@ try {
     }
 
     // 2. Fetch Subscription details
-    $subQuery = "SELECT s.subscription_id, s.last_billing_date, s.plan_status, c.full_name, u.email
+    $subQuery = "SELECT s.subscription_id, s.last_billing_date, s.plan_status, u.username AS full_name, u.email
                  FROM Subscription s
                  JOIN User u ON s.user_id = u.user_id
-                 LEFT JOIN Customer c ON u.email = c.email
                  WHERE s.user_id = :user_id LIMIT 1";
     $subStmt = $conn->prepare($subQuery);
     $subStmt->bindValue(':user_id', $user_id, PDO::PARAM_INT);
