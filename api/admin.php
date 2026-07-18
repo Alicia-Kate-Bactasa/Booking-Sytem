@@ -114,10 +114,13 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Admin') {
                         <h2 class="text-3xl font-bold tracking-tight text-black">Bookings</h2>
                         <p class="text-neutral-500 text-sm mt-2">Manage customer bookings and track the studio schedule.</p>
                     </div>
-                    <div class="bg-neutral-200/80 p-1 rounded-full flex gap-1 self-end sm:self-auto">
-                        <button onclick="switchBookingSlide('pending')" id="slideBtn-pending" class="text-xs font-bold uppercase tracking-wider px-4 py-2 rounded-full bg-white text-black shadow-sm transition-all">Pending</button>
-                        <button onclick="switchBookingSlide('completed')" id="slideBtn-completed" class="text-xs font-semibold uppercase tracking-wider px-4 py-2 rounded-full text-neutral-500 hover:text-black transition-all">Completed</button>
-                        <button onclick="switchBookingSlide('cancelled')" id="slideBtn-cancelled" class="text-xs font-semibold uppercase tracking-wider px-4 py-2 rounded-full text-neutral-500 hover:text-black transition-all">Cancelled</button>
+                    <div class="flex flex-wrap gap-3 self-end sm:self-auto items-center">
+                        <button onclick="toggleModal('onsiteBookingModal')" class="bg-black text-white px-5 py-2.5 rounded-full text-xs font-bold tracking-wider uppercase hover:bg-neutral-800 transition-all focus:outline-none shadow-sm">+ Onsite Booking</button>
+                        <div class="bg-neutral-200/80 p-1 rounded-full flex gap-1">
+                            <button onclick="switchBookingSlide('pending')" id="slideBtn-pending" class="text-xs font-bold uppercase tracking-wider px-4 py-2 rounded-full bg-white text-black shadow-sm transition-all">Pending</button>
+                            <button onclick="switchBookingSlide('completed')" id="slideBtn-completed" class="text-xs font-semibold uppercase tracking-wider px-4 py-2 rounded-full text-neutral-500 hover:text-black transition-all">Completed</button>
+                            <button onclick="switchBookingSlide('cancelled')" id="slideBtn-cancelled" class="text-xs font-semibold uppercase tracking-wider px-4 py-2 rounded-full text-neutral-500 hover:text-black transition-all">Cancelled</button>
+                        </div>
                     </div>
                 </div>
 
@@ -150,9 +153,12 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Admin') {
                         <h2 class="text-3xl font-bold tracking-tight text-black">Payments</h2>
                         <p class="text-neutral-500 text-sm mt-2">Check payment proof images and review past payments.</p>
                     </div>
-                    <div class="bg-neutral-200/80 p-1 rounded-full flex gap-1">
-                        <button onclick="switchLedgerSlide('pending-workspace')" id="ledgerSlideBtn-pending" class="text-xs font-bold uppercase tracking-wider px-4 py-2 rounded-full bg-white text-black shadow-sm transition-all">Pending</button>
-                        <button onclick="switchLedgerSlide('archive-view')" id="ledgerSlideBtn-archive" class="text-xs font-semibold uppercase tracking-wider px-4 py-2 rounded-full text-neutral-500 hover:text-black transition-all">History</button>
+                    <div class="flex flex-wrap gap-3 self-end sm:self-auto items-center">
+                        <button onclick="toggleModal('onsiteBookingModal')" class="bg-black text-white px-5 py-2.5 rounded-full text-xs font-bold tracking-wider uppercase hover:bg-neutral-800 transition-all focus:outline-none shadow-sm">+ Onsite Booking</button>
+                        <div class="bg-neutral-200/80 p-1 rounded-full flex gap-1">
+                            <button onclick="switchLedgerSlide('pending-workspace')" id="ledgerSlideBtn-pending" class="text-xs font-bold uppercase tracking-wider px-4 py-2 rounded-full bg-white text-black shadow-sm transition-all">Pending</button>
+                            <button onclick="switchLedgerSlide('archive-view')" id="ledgerSlideBtn-archive" class="text-xs font-semibold uppercase tracking-wider px-4 py-2 rounded-full text-neutral-500 hover:text-black transition-all">History</button>
+                        </div>
                     </div>
                 </div>
 
@@ -449,6 +455,89 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Admin') {
                 <div class="pt-4">
                     <button type="submit" class="w-full bg-black text-white text-xs font-bold tracking-widest uppercase py-4 rounded-full border border-black hover:bg-neutral-800 transition-all shadow-sm">
                         Create Service Package
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===================== ONSITE WALK-IN BOOKING MODAL ===================== -->
+    <div id="onsiteBookingModal" class="fixed inset-0 z-50 flex items-center justify-center bg-dark/80 backdrop-blur-sm hidden">
+        <div class="bg-white p-8 max-w-lg w-full rounded-[2.5rem] shadow-2xl relative border border-neutral-200 mx-4 max-h-[90vh] overflow-y-auto">
+            <button onclick="toggleModal('onsiteBookingModal')" class="absolute top-6 right-6 text-neutral-400 hover:text-black font-bold text-xs bg-neutral-100 p-2 rounded-full w-8 h-8 flex items-center justify-center focus:outline-none">✕</button>
+            <div class="mb-6">
+                <span class="text-[9px] font-extrabold tracking-widest uppercase text-neutral-400 bg-neutral-50 border border-neutral-100 px-2 py-0.5 rounded-full">Walk-In Panel</span>
+                <h4 class="text-xl font-bold text-black uppercase tracking-tight mt-2">Log Physical Walk-In Booking</h4>
+                <p class="text-xs text-neutral-500 font-medium mt-1">Directly schedule a physical walk-in wash and record cash collection audit.</p>
+            </div>
+            
+            <form id="onsiteBookingForm" onsubmit="handleOnsiteBookingSubmission(event)" class="space-y-4">
+                <!-- Customer Details -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1.5">Full Name</label>
+                        <input type="text" id="onsiteFullName" required placeholder="e.g. John Doe" class="w-full bg-neutral-50 border border-neutral-200 p-3 rounded-full text-xs font-semibold text-black focus:outline-none focus:border-black px-4">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1.5">Phone Number</label>
+                        <input type="tel" id="onsitePhone" required placeholder="e.g. 09123456789" class="w-full bg-neutral-50 border border-neutral-200 p-3 rounded-full text-xs font-semibold text-black focus:outline-none focus:border-black px-4">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1.5">Email Address (Optional)</label>
+                    <input type="email" id="onsiteEmail" placeholder="e.g. john@example.com" class="w-full bg-neutral-50 border border-neutral-200 p-3 rounded-full text-xs font-semibold text-black focus:outline-none focus:border-black px-4">
+                </div>
+
+                <!-- Service Selector -->
+                <div>
+                    <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1.5">Service Package</label>
+                    <select id="onsiteServiceSelect" required onchange="handleOnsiteServiceChange()" class="w-full bg-neutral-50 border border-neutral-200 p-3 rounded-full text-xs font-bold text-black focus:outline-none focus:border-black px-4 cursor-pointer">
+                        <option value="">Choose a service...</option>
+                    </select>
+                </div>
+
+                <!-- Date and Time Picker -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1.5">Scheduled Date</label>
+                        <input type="date" id="onsiteBookingDate" required onchange="handleOnsiteDateChange()" class="w-full bg-neutral-50 border border-neutral-200 p-3 rounded-full text-xs font-semibold text-black focus:outline-none focus:border-black px-4">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1.5">Time Slot</label>
+                        <select id="onsiteTimeSlotSelect" required class="w-full bg-neutral-50 border border-neutral-200 p-3 rounded-full text-xs font-bold text-black focus:outline-none focus:border-black px-4 cursor-pointer">
+                            <option value="">Select date and service first</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Financial Override & Booking Status -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1.5">Amount Paid (PHP Cash)</label>
+                        <input type="number" id="onsiteAmountPaid" required step="0.01" placeholder="e.g. 500" class="w-full bg-neutral-50 border border-neutral-200 p-3 rounded-full text-xs font-bold text-black focus:outline-none focus:border-black px-4">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1.5">Initial Booking Status</label>
+                        <select id="onsiteBookingStatus" required class="w-full bg-neutral-50 border border-neutral-200 p-3 rounded-full text-xs font-bold text-black focus:outline-none focus:border-black px-4 cursor-pointer">
+                            <option value="Scheduled">Scheduled</option>
+                            <option value="Completed">Completed (Post-Wash)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Proof of Identity or Receipt Upload -->
+                <div>
+                    <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1.5">Valid Proof of Identification or Receipt Snapshot</label>
+                    <div class="w-full bg-neutral-50 border border-dashed border-neutral-300 rounded-[1.5rem] p-4 text-center cursor-pointer hover:border-black transition-colors relative">
+                        <input type="file" id="onsiteProofOfPayment" accept="image/*" required class="absolute inset-0 opacity-0 cursor-pointer" onchange="document.getElementById('onsiteUploadLabel').innerText = this.files[0] ? this.files[0].name : 'Click to select picture';">
+                        <span id="onsiteUploadLabel" class="text-xs font-semibold text-neutral-400 block">Click to select picture (JPEG, PNG, WEBP max 8MB)</span>
+                    </div>
+                </div>
+
+                <div class="pt-4">
+                    <button type="submit" class="w-full bg-black text-white text-xs font-bold tracking-widest uppercase py-4 rounded-full border border-black hover:bg-neutral-800 transition-all shadow-sm">
+                        Create Onsite Booking
                     </button>
                 </div>
             </form>

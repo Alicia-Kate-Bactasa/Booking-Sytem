@@ -101,27 +101,20 @@ try {
     $customer = $nameStmt->fetch();
     $fullName = $customer ? $customer['full_name'] : $user['username'];
 
-    // 8. Send Reset Email via mailer
     require_once __DIR__ . '/../utils/mailer.php';
     $subject = "Reset Your Password - Montage Auto Studio";
     
-    // Sleek HTML email template that fits branding
-    $htmlContent = Mailer::formatInvoice([
+    // Sleek HTML email notification template that fits branding without invoice structure
+    $htmlContent = Mailer::formatNotification([
         'title' => 'Password Reset',
         'status_bg' => '#fcf8e3',
         'status_border' => '#f0ad4e',
-        'status_color' => '#f0ad4e',
-        'status_label' => 'REQUESTED',
-        'status_detail' => "Dear {$fullName}, we received a request to reset the password associated with your account. Click the button below to set a new password. This link is valid for 1 hour.",
-        'invoice_no' => 'RESET-' . rand(10000, 99999),
+        'status_color' => '#8a6d3b',
+        'status_label' => 'Password Reset Requested',
+        'status_detail' => "Hello {$fullName}, we received a request to reset the password associated with your account. Click the button below to set a new password. This link is valid for 1 hour.",
         'date' => date('Y-m-d'),
         'client_name' => $fullName,
-        'client_email' => $email,
-        'item_name' => 'Password Reset Link',
-        'item_subtext' => "<a href=\"{$resetLink}\" style=\"display: inline-block; background-color: #000; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 9999px; font-weight: bold; font-size: 11px; text-transform: uppercase; margin-top: 10px;\">Reset Password</a>",
-        'item_price' => 0.00,
-        'subtotal' => 0.00,
-        'total_due' => 0.00
+        'button_html' => "<a href=\"{$resetLink}\" style=\"display: inline-block; background-color: #000; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 9999px; font-weight: bold; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;\">Reset Password</a>"
     ]);
 
     Mailer::send($email, $subject, $htmlContent);

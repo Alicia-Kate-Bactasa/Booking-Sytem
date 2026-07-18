@@ -175,14 +175,6 @@ try {
                 $lastBillingDate = $today;
             }
 
-            // Set Customer to Subscriber
-            if ($customer_id) {
-                $updateCust = "UPDATE Customer SET customer_type = 'Subscriber' WHERE customer_id = :customer_id";
-                $stmtCust = $conn->prepare($updateCust);
-                $stmtCust->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
-                $stmtCust->execute();
-            }
-
             // Set Subscription to Active
             $updateSub = "UPDATE Subscription 
                           SET plan_status = 'Active', 

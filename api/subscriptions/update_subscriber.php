@@ -164,14 +164,6 @@ try {
         $stmtInv->bindValue(':user_id', $user_id, PDO::PARAM_INT);
         $stmtInv->execute();
 
-        // Also update Customer type to Subscriber
-        if ($customer_id) {
-            $updateCustType = "UPDATE Customer SET customer_type = 'Subscriber' WHERE customer_id = :customer_id";
-            $stmtCustType = $conn->prepare($updateCustType);
-            $stmtCustType->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
-            $stmtCustType->execute();
-        }
-
         log_system_event($conn, 'Subscription Approved', "Subscription for User ID {$user_id} approved as Active by Admin. Next billing date: {$nextBillingDate}.");
 
     } elseif ($status === 'Inactive') {
@@ -182,14 +174,6 @@ try {
         $stmtSub = $conn->prepare($updateSub);
         $stmtSub->bindValue(':user_id', $user_id, PDO::PARAM_INT);
         $stmtSub->execute();
-
-        // Revert Customer type to Regular
-        if ($customer_id) {
-            $updateCust = "UPDATE Customer SET customer_type = 'Regular' WHERE customer_id = :customer_id";
-            $stmtCust = $conn->prepare($updateCust);
-            $stmtCust->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
-            $stmtCust->execute();
-        }
 
         log_system_event($conn, 'Subscription Downgraded', "Subscription for User ID {$user_id} manually set to Expired by Admin.");
 
@@ -216,14 +200,6 @@ try {
             $stmtSub->bindValue(':user_id', $user_id, PDO::PARAM_INT);
             $stmtSub->execute();
             
-            // Revert Customer type to Regular
-            if ($customer_id) {
-                $updateCust = "UPDATE Customer SET customer_type = 'Regular' WHERE customer_id = :customer_id";
-                $stmtCust = $conn->prepare($updateCust);
-                $stmtCust->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
-                $stmtCust->execute();
-            }
-
             log_system_event($conn, 'Subscription Registration Rejected', "Subscription signup request for User ID {$user_id} rejected by Admin. plan_status set to Expired.");
         }
 

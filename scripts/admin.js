@@ -788,6 +788,9 @@ const defaultServices = [
                         };
                     });
                     renderAdminServices();
+                    if (typeof populateOnsiteServices === 'function') {
+                        populateOnsiteServices();
+                    }
                 })
                 .catch(err => {
                     console.warn("Failed to load services from database, using fallback:", err);
@@ -803,6 +806,9 @@ const defaultServices = [
                         };
                     });
                     renderAdminServices();
+                    if (typeof populateOnsiteServices === 'function') {
+                        populateOnsiteServices();
+                    }
                 });
         }
         window.loadServices = loadServices;
@@ -1519,6 +1525,161 @@ const defaultServices = [
                 });
             }
         }
+
+        // ===================== ONSITE WALK-IN BOOKING FLOW =====================
+        function populateOnsiteServices() {
+            const select = document.getElementById('onsiteServiceSelect');
+            if (!select) return;
+            select.innerHTML = '<option value="">Choose a service...</option>';
+            masterCatalogServices.forEach(s => {
+                if (s.is_active) {
+                    select.innerHTML += `<option value="${s.service_id}" data-price="${s.price}" data-duration="${s.duration}">${s.name} — ₱${s.price}</option>`;
+                }
+            });
+        }
+
+        function handleOnsiteServiceChange() {
+            const serviceSelect = document.getElementById('onsiteServiceSelect');
+            const amountInput = document.getElementById('onsiteAmountPaid');
+            if (serviceSelect.value) {
+                const selectedOption = serviceSelect.options[serviceSelect.selectedIndex];
+                const price = selectedOption.getAttribute('data-price');
+                amountInput.value = price;
+            } else {
+                amountInput.value = '';
+            }
+            handleOnsiteDateChange();
+        }
+
+        async function handleOnsiteDateChange() {
+            const dateInput = document.getElementById('onsiteBookingDate').value;
+            const serviceSelect = document.getElementById('onsiteServiceSelect');
+            const timeSelect = document.getElementById('onsiteTimeSlotSelect');
+            if (!timeSelect) return;
+            
+            if (!dateInput || !serviceSelect.value) {
+                timeSelect.innerHTML = '<option value="">Select date and service first</option>';
+                return;
+            }
+            
+            const selectedOption = serviceSelect.options[serviceSelect.selectedIndex];
+            const duration = selectedOption.getAttribute('data-duration') || 30;
+            
+            try {
+                timeSelect.innerHTML = '<option value="">Loading slots...</option>';
+                const response = await fetch(`bookings/check_availability.php?scheduled_date=${dateInput}&duration=${duration}`);
+                const result = await response.json();
+                
+                if (response.ok && result && result.status === 'success' && Array.isArray(result.data)) {
+                    timeSelect.innerHTML = '<option value="">Choose a time...</option>';
+                    if (result.data.length === 0) {
+                        timeSelect.innerHTML = '<option value="">Fully Booked for this date</option>';
+                    } else {
+                        result.data.forEach(slot => {
+                            timeSelect.innerHTML += `<option value="${slot.time_slot}" data-bay="${slot.allocated_bay}">${slot.display_label}</option>`;
+                        });
+                    }
+                } else {
+                    timeSelect.innerHTML = '<option value="">Failed to load slots</option>';
+                }
+            } catch (err) {
+                console.error(err);
+                timeSelect.innerHTML = '<option value="">Error loading slots</option>';
+            }
+        }
+
+        async function handleOnsiteBookingSubmission(event) {
+            event.preventDefault();
+            
+            const fullName = document.getElementById('onsiteFullName').value.trim();
+            const phone = document.getElementById('onsitePhone').value.trim();
+            const email = document.getElementById('onsiteEmail').value.trim();
+            const serviceId = document.getElementById('onsiteServiceSelect').value;
+            const date = document.getElementById('onsiteBookingDate').value;
+            const timeSlot = document.getElementById('onsiteTimeSlotSelect').value;
+            const amount = document.getElementById('onsiteAmountPaid').value;
+            const proofFile = document.getElementById('onsiteProofOfPayment').files[0];
+            const status = document.getElementById('onsiteBookingStatus').value;
+            
+            if (!fullName || !phone || !serviceId || !date || !timeSlot || !amount || !proofFile) {
+                alert('All fields including the identification/receipt picture are required.');
+                return;
+            }
+            
+            const serviceSelect = document.getElementById('onsiteServiceSelect');
+            const selectedOption = serviceSelect.options[serviceSelect.selectedIndex];
+            const duration = selectedOption.getAttribute('data-duration') || 30;
+            
+            // Pre-submission guard: execute standard slot validation check
+            try {
+                const checkRes = await fetch(`bookings/check_availability.php?scheduled_date=${date}&duration=${duration}`);
+                const checkResult = await checkRes.json();
+                
+                if (!checkRes.ok || checkResult.status !== 'success' || !Array.isArray(checkResult.data)) {
+                    alert('Could not verify slot availability. Please try again.');
+                    return;
+                }
+                
+                const matchingSlot = checkResult.data.find(slot => slot.time_slot === timeSlot);
+                if (!matchingSlot) {
+                    alert('Selected timeslot has no available bay allocation.');
+                    return;
+                }
+                
+                const allocatedBay = matchingSlot.allocated_bay;
+                
+                // Pack form data
+                const formData = new FormData();
+                formData.append('name', fullName);
+                formData.append('phone', phone);
+                formData.append('email', email);
+                formData.append('service_id', serviceId);
+                formData.append('date', date);
+                formData.append('time', timeSlot);
+                formData.append('bay', allocatedBay);
+                formData.append('amount', amount);
+                formData.append('booking_status', status);
+                formData.append('proof_of_payment', proofFile);
+                
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                
+                const response = await fetch('create_onsite_booking.php', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken
+                    }
+                });
+                
+                const result = await response.json();
+                if (response.ok && result.status === 'success') {
+                    alert(result.message || 'Onsite booking successfully recorded!');
+                    
+                    // Reset UI State
+                    toggleModal('onsiteBookingModal');
+                    document.getElementById('onsiteBookingForm').reset();
+                    document.getElementById('onsiteUploadLabel').innerText = 'Click to select picture (JPEG, PNG, WEBP max 8MB)';
+                    document.getElementById('onsiteTimeSlotSelect').innerHTML = '<option value="">Select date and service first</option>';
+                    
+                    // Immediately refresh live lists/grids and analytics metrics
+                    await loadAppointments();
+                    await loadInvoices();
+                    renderBookingSlideData();
+                    renderInvoicePendingTable();
+                    renderArchiveLedgerTable();
+                } else {
+                    alert(result.message || 'Failed to create onsite booking.');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('An error occurred during onsite booking.');
+            }
+        }
+
+        window.populateOnsiteServices = populateOnsiteServices;
+        window.handleOnsiteServiceChange = handleOnsiteServiceChange;
+        window.handleOnsiteDateChange = handleOnsiteDateChange;
+        window.handleOnsiteBookingSubmission = handleOnsiteBookingSubmission;
 
         window.renderFeedbacks = renderFeedbacks;
         window.loadSubscriberLedgers = loadSubscriberLedgers;

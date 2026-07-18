@@ -235,7 +235,7 @@ try {
             if ($customerInfo) {
                 $customer_email = $customerInfo['email'];
                 $customer_name = $customerInfo['full_name'];
-                $isSubscriber = ($customerInfo['customer_type'] === 'Subscriber');
+                $isSubscriber = false;
             }
         }
     }

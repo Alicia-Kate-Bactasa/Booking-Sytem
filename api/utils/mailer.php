@@ -159,6 +159,66 @@ class Mailer {
     }
 
     /**
+     * Generate a premium formal HTML email notification template (non-invoice)
+     * 
+     * @param array $data Notification details
+     * @return string HTML string
+     */
+    public static function formatNotification($data) {
+        $title = htmlspecialchars($data['title']);
+        $date = htmlspecialchars($data['date']);
+        $clientName = htmlspecialchars($data['client_name']);
+        
+        $statusBg = htmlspecialchars($data['status_bg']);
+        $statusBorder = htmlspecialchars($data['status_border']);
+        $statusColor = htmlspecialchars($data['status_color']);
+        $statusLabel = htmlspecialchars($data['status_label']);
+        $statusDetail = $data['status_detail'];
+        
+        $buttonHtml = isset($data['button_html']) ? $data['button_html'] : '';
+
+        return "
+        <div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 25px; border: 1px solid #eee; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); color: #333;'>
+            <!-- Header -->
+            <table style='width: 100%; border-collapse: collapse; margin-bottom: 25px;'>
+                <tr>
+                    <td>
+                        <span style='font-size: 9px; font-weight: bold; letter-spacing: 2px; color: #999; text-transform: uppercase;'>Montage Auto Studio</span>
+                        <h2 style='margin: 5px 0 0 0; color: #111; font-weight: 900; letter-spacing: -0.5px; text-transform: uppercase;'>{$title}</h2>
+                    </td>
+                    <td style='text-align: right; vertical-align: top;'>
+                        <span style='font-size: 11px; color: #777; display: block;'>Date: <strong>{$date}</strong></span>
+                    </td>
+                </tr>
+            </table>
+            
+            <!-- Recipient Details -->
+            <table style='width: 100%; border-collapse: collapse; margin-bottom: 25px; font-size: 13px; line-height: 1.5;'>
+                <tr>
+                    <td style='vertical-align: top;'>
+                        <span style='font-size: 10px; font-weight: bold; text-transform: uppercase; color: #999; display: block; margin-bottom: 5px;'>Recipient:</span>
+                        <strong>{$clientName}</strong>
+                    </td>
+                </tr>
+            </table>
+
+            <!-- Status Banner -->
+            <div style='background-color: {$statusBg}; border-left: 4px solid {$statusBorder}; padding: 18px; margin-bottom: 25px; border-radius: 8px; font-size: 13px; color: {$statusColor}; line-height: 1.6;'>
+                <strong style='font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;'>{$statusLabel}</strong><br><br>
+                {$statusDetail}
+                " . (!empty($buttonHtml) ? "<div style='margin-top: 18px;'>{$buttonHtml}</div>" : "") . "
+            </div>
+
+            <!-- Footer -->
+            <hr style='border: none; border-top: 1px solid #eee; margin: 25px 0;'>
+            <p style='font-size: 11px; color: #888; text-align: center; margin: 0;'>
+                If you did not request this email, you can safely ignore it.<br><br>
+                Thank you, <br><strong>Montage Auto Studio Team</strong>
+            </p>
+        </div>";
+    }
+
+    /**
      * Send email notification to client
      * 
      * @param string $to Recipient email address
