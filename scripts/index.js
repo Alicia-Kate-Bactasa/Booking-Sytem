@@ -378,13 +378,19 @@
                 return;
             }
 
-            // Check if email already exists in User table
+            // Check if email already exists or is invalid
             try {
                 const checkRes = await fetch('api/auth/check_email.php?email=' + encodeURIComponent(emailVal));
                 const checkData = await checkRes.json();
-                if (checkData && checkData.status === 'success' && checkData.exists) {
-                    showErrorModal('An account with this email address already exists. Please use another email.');
-                    return;
+                if (checkData) {
+                    if (checkData.status === 'error') {
+                        showErrorModal(checkData.message || 'Invalid email address.');
+                        return;
+                    }
+                    if (checkData.exists) {
+                        showErrorModal('An account with this email address already exists. Please use another email.');
+                        return;
+                    }
                 }
             } catch (err) {
                 console.error("Email uniqueness verification failed:", err);
@@ -759,5 +765,53 @@
 
                 bookingIdInput.addEventListener('input', handleBookingIdChange);
                 bookingIdInput.addEventListener('change', handleBookingIdChange);
+            }
+
+            // Real-time email validation check for guest bookings
+            const custEmailInput = document.getElementById('custEmail');
+            if (custEmailInput) {
+                const emailErrorText = document.getElementById('emailError');
+                
+                custEmailInput.addEventListener('blur', async () => {
+                    const email = custEmailInput.value.trim();
+                    if (!email) return;
+                    
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (!emailRegex.test(email)) {
+                        if (emailErrorText) {
+                            emailErrorText.textContent = "Please enter a valid email address.";
+                            emailErrorText.classList.remove('hidden');
+                        }
+                        custEmailInput.classList.add('border-red-500');
+                        return;
+                    }
+                    
+                    try {
+                        const response = await fetch(`api/auth/check_email.php?email=${encodeURIComponent(email)}`);
+                        const result = await response.json();
+                        
+                        if (!response.ok || result.status === 'error') {
+                            if (emailErrorText) {
+                                emailErrorText.textContent = result.message || "Invalid email address.";
+                                emailErrorText.classList.remove('hidden');
+                            }
+                            custEmailInput.classList.add('border-red-500');
+                        } else {
+                            if (emailErrorText) {
+                                emailErrorText.classList.add('hidden');
+                            }
+                            custEmailInput.classList.remove('border-red-500');
+                        }
+                    } catch (err) {
+                        console.error("Real-time email check failed:", err);
+                    }
+                });
+                
+                custEmailInput.addEventListener('input', () => {
+                    if (emailErrorText) {
+                        emailErrorText.classList.add('hidden');
+                    }
+                    custEmailInput.classList.remove('border-red-500');
+                });
             }
         });
