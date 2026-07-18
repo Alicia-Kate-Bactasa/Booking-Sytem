@@ -363,13 +363,13 @@ try {
             "message" => "Failed to save booking. Database did not execute the operation."
         ]);
     }
-// === SECTION: ERROR HANDLING ===
 } catch (PDOException $e) {
     error_log("Failed to create booking: " . $e->getMessage());
     http_response_code(500);
     echo json_encode([
         "status" => "error",
-        "message" => "An error occurred while attempting to write booking to the database."
+        "message" => "An error occurred while attempting to write booking to the database.",
+        "debug_error" => $e->getMessage()
     ]);
 }
 ?>
