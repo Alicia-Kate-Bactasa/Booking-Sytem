@@ -78,6 +78,7 @@ try {
 
     $subscription_id = (int)$profile['subscriber_id'];
     $user_id = (int)$profile['user_id'];
+    $customer_id = (int)$profile['customer_id'];
     
     // Fetch last completed booking date
     $lastVisitQuery = "SELECT MAX(scheduled_date) AS last_visit FROM Booking WHERE user_id = :user_id AND booking_status = 'Completed'";
