@@ -1533,28 +1533,44 @@ const defaultServices = [
         }
 
         // ===================== ONSITE WALK-IN BOOKING FLOW =====================
-        function populateOnsiteServices() {
-            const select = document.getElementById('onsiteServiceSelect');
-            if (!select) return;
-            select.innerHTML = '<option value="">Choose a service...</option>';
-            masterCatalogServices.forEach(s => {
-                if (s.is_active) {
-                    select.innerHTML += `<option value="${s.service_id}" data-price="${s.price}" data-duration="${s.duration}">${s.name} — ₱${s.price}</option>`;
-                }
-            });
-        }
-
-        function handleOnsiteServiceChange() {
-            const serviceSelect = document.getElementById('onsiteServiceSelect');
+        function selectOnsiteService(serviceId, serviceName, price, duration) {
+            const valInput = document.getElementById('onsiteServiceVal');
+            if (valInput) {
+                valInput.value = serviceId;
+                valInput.setAttribute('data-price', price);
+                valInput.setAttribute('data-duration', duration);
+            }
+            const displaySpan = document.getElementById('customOnsiteServiceDisplay');
+            if (displaySpan) {
+                displaySpan.innerText = `${serviceName} — ₱${price}`;
+            }
             const amountInput = document.getElementById('onsiteAmountPaid');
-            if (serviceSelect.value) {
-                const selectedOption = serviceSelect.options[serviceSelect.selectedIndex];
-                const price = selectedOption.getAttribute('data-price');
+            if (amountInput) {
                 amountInput.value = price;
-            } else {
-                amountInput.value = '';
+            }
+            const menu = document.getElementById('onsiteServiceDropdownMenu');
+            if (menu) {
+                menu.classList.add('hidden');
             }
             handleOnsiteDateChange();
+        }
+        window.selectOnsiteService = selectOnsiteService;
+
+        function populateOnsiteServices() {
+            const menu = document.getElementById('onsiteServiceDropdownMenu');
+            if (!menu) return;
+            menu.innerHTML = '';
+            
+            masterCatalogServices.forEach(s => {
+                if (s.is_active) {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = "w-full text-left px-5 py-2.5 text-[10px] font-bold text-neutral-700 hover:bg-neutral-50 transition-colors uppercase tracking-wider block";
+                    btn.innerText = `${s.name} — ₱${s.price}`;
+                    btn.onclick = () => selectOnsiteService(s.service_id, s.name, s.price, s.duration);
+                    menu.appendChild(btn);
+                }
+            });
         }
 
         function toggleAdminCustomDropdown(menuId) {
@@ -1582,7 +1598,7 @@ const defaultServices = [
 
         async function handleOnsiteDateChange() {
             const dateInput = document.getElementById('onsiteBookingDate').value;
-            const serviceSelect = document.getElementById('onsiteServiceSelect');
+            const serviceVal = document.getElementById('onsiteServiceVal');
             const timeContainer = document.getElementById('onsiteTimeDropdownMenu');
             const warningElement = document.getElementById('onsiteCapacityWarning');
             if (!timeContainer) return;
@@ -1602,13 +1618,12 @@ const defaultServices = [
             const displaySpan = document.getElementById('customOnsiteTimeDisplay');
             if (displaySpan) displaySpan.innerText = 'Choose a time...';
             
-            if (!dateInput || !serviceSelect.value) {
+            if (!dateInput || !serviceVal || !serviceVal.value) {
                 timeContainer.innerHTML = '<p class="p-3 text-[10px] text-neutral-400 font-semibold text-center">Select date and service first</p>';
                 return;
             }
             
-            const selectedOption = serviceSelect.options[serviceSelect.selectedIndex];
-            const duration = selectedOption.getAttribute('data-duration') || 30;
+            const duration = serviceVal.getAttribute('data-duration') || 30;
             
             try {
                 timeContainer.innerHTML = '<p class="p-3 text-[10px] text-neutral-400 font-semibold text-center">Loading slots...</p>';
@@ -1644,7 +1659,7 @@ const defaultServices = [
             const fullName = document.getElementById('onsiteFullName').value.trim();
             const phone = document.getElementById('onsitePhone').value.trim();
             const email = document.getElementById('onsiteEmail').value.trim();
-            const serviceId = document.getElementById('onsiteServiceSelect').value;
+            const serviceId = document.getElementById('onsiteServiceVal').value;
             const date = document.getElementById('onsiteBookingDate').value;
             const timeSlot = document.getElementById('onsiteTimeSlotVal').value;
             const amount = document.getElementById('onsiteAmountPaid').value;
@@ -1656,9 +1671,8 @@ const defaultServices = [
                 return;
             }
             
-            const serviceSelect = document.getElementById('onsiteServiceSelect');
-            const selectedOption = serviceSelect.options[serviceSelect.selectedIndex];
-            const duration = selectedOption.getAttribute('data-duration') || 30;
+            const serviceVal = document.getElementById('onsiteServiceVal');
+            const duration = serviceVal ? (serviceVal.getAttribute('data-duration') || 30) : 30;
             
             // Pre-submission guard: execute standard slot validation check
             try {
@@ -1719,6 +1733,15 @@ const defaultServices = [
                     }
                     const warningElement = document.getElementById('onsiteCapacityWarning');
                     if (warningElement) warningElement.classList.add('hidden');
+                    
+                    const serviceVal = document.getElementById('onsiteServiceVal');
+                    if (serviceVal) {
+                        serviceVal.value = '';
+                        serviceVal.removeAttribute('data-price');
+                        serviceVal.removeAttribute('data-duration');
+                    }
+                    const serviceDisplay = document.getElementById('customOnsiteServiceDisplay');
+                    if (serviceDisplay) serviceDisplay.innerText = 'Choose a service...';
                     
                     // Immediately refresh live lists/grids and analytics metrics
                     await loadAppointments();

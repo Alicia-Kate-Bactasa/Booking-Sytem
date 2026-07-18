@@ -491,9 +491,15 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Admin') {
                 <!-- Service Selector -->
                 <div>
                     <label class="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1.5">Service Package</label>
-                    <select id="onsiteServiceSelect" required onchange="handleOnsiteServiceChange()" class="w-full bg-neutral-50 border border-neutral-200 p-3 rounded-full text-xs font-bold text-black focus:outline-none focus:border-black px-4 cursor-pointer">
-                        <option value="">Choose a service...</option>
-                    </select>
+                    <div class="relative">
+                        <button type="button" onclick="toggleAdminCustomDropdown('onsiteServiceDropdownMenu')" class="w-full bg-neutral-50 border border-neutral-200 p-3 rounded-full text-xs font-semibold text-black text-left flex justify-between items-center focus:outline-none focus:border-black px-4 cursor-pointer">
+                            <span id="customOnsiteServiceDisplay">Choose a service...</span>
+                            <span class="text-neutral-400 text-[10px]">▼</span>
+                        </button>
+                        <div id="onsiteServiceDropdownMenu" class="absolute left-0 right-0 mt-2 bg-white border border-neutral-200 rounded-[1.5rem] shadow-xl overflow-hidden hidden z-50 divide-y divide-neutral-100 max-h-[180px] overflow-y-auto">
+                        </div>
+                        <input type="hidden" id="onsiteServiceVal" required>
+                    </div>
                 </div>
 
                 <!-- Date and Time Picker -->
