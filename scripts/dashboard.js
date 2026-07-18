@@ -623,12 +623,10 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
             // Immediately lock the dashboard button to prevent double click/spam before response
             const payBtn = document.getElementById('payRenewalBtn');
             if (payBtn) {
-                payBtn.disabled = false; // enabled to capture info clicks
-                payBtn.innerText = "Payment awaiting admin approval.";
-                payBtn.className = "w-full bg-neutral-200 text-neutral-400 text-xs font-bold py-4 rounded-full transition-all text-center cursor-pointer border border-neutral-300 focus:outline-none";
-                payBtn.onclick = () => {
-                    showErrorModal("Payment awaiting admin approval.", true);
-                };
+                payBtn.disabled = true;
+                payBtn.innerText = "Payment Awaiting Approval";
+                payBtn.className = "w-full bg-neutral-200 text-neutral-400 text-xs font-bold py-4 rounded-full transition-all text-center cursor-not-allowed border border-neutral-300 focus:outline-none";
+                payBtn.onclick = null;
             }
 
             const formData = new FormData();
@@ -1123,35 +1121,31 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
             if (prof.plan_status === 'Expired' || prof.plan_status === 'Inactive') {
                 payBtn.disabled = true;
                 payBtn.innerText = "Subscription Expired";
-                payBtn.removeAttribute('onclick');
+                payBtn.onclick = null;
                 payBtn.className = "w-full bg-neutral-200 text-neutral-400 text-xs font-bold py-4 rounded-full transition-all text-center cursor-not-allowed border border-neutral-300 focus:outline-none";
                 return;
             }
 
             if (prof.renewal_status === 'Awaiting Approval') {
-                payBtn.disabled = false; // Enabled styled as disabled so click can trigger modal
+                payBtn.disabled = true;
                 payBtn.innerText = "Payment Awaiting Approval";
                 payBtn.className = "w-full bg-neutral-200 text-neutral-400 text-xs font-bold py-4 rounded-full transition-all text-center cursor-not-allowed border border-neutral-300 focus:outline-none";
-                payBtn.onclick = () => {
-                    showErrorModal("Your renewal payment is currently awaiting administrator review.", true);
-                };
+                payBtn.onclick = null;
             } else if (prof.renewal_status === 'Temporal Lock') {
-                payBtn.disabled = false; // Enabled styled as disabled so click can trigger modal
+                payBtn.disabled = true;
                 payBtn.innerText = "Next Month Already Paid";
                 payBtn.className = "w-full bg-neutral-200 text-neutral-400 text-xs font-bold py-4 rounded-full transition-all text-center cursor-not-allowed border border-neutral-300 focus:outline-none";
-                payBtn.onclick = () => {
-                    showErrorModal(`You have already prepaid for the upcoming cycle. The next renewal window opens on ${prof.last_billing_date_plus_1 || 'the start of the next cycle'}.`, true);
-                };
+                payBtn.onclick = null;
             } else if (prof.renewal_status === 'Payment Rejected') {
                 payBtn.disabled = false;
-                payBtn.innerText = "Pay Next Monthly Renewal Bill";
-                payBtn.className = "w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-4 rounded-full transition-all text-center shadow-sm focus:outline-none";
+                payBtn.innerText = "Pay Next Monthly Renewal";
+                payBtn.className = "w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-4 rounded-full transition-all text-center shadow-sm focus:outline-none cursor-pointer";
                 payBtn.onclick = () => toggleModal('renewalHubModal');
             } else {
                 // Active & Eligible to Pay
                 payBtn.disabled = false;
-                payBtn.innerText = "Pay Next Monthly Renewal Bill";
-                payBtn.className = "w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-4 rounded-full transition-all text-center shadow-sm focus:outline-none";
+                payBtn.innerText = "Pay Next Monthly Renewal";
+                payBtn.className = "w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-4 rounded-full transition-all text-center shadow-sm focus:outline-none cursor-pointer";
                 payBtn.onclick = () => toggleModal('renewalHubModal');
             }
         }
