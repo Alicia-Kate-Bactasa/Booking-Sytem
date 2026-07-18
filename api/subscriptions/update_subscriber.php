@@ -51,6 +51,15 @@ if (empty($email) || empty($status)) {
     exit();
 }
 
+if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    http_response_code(400);
+    echo json_encode([
+        "status" => "error",
+        "message" => "Invalid email address format."
+    ]);
+    exit();
+}
+
 if ($status !== 'Approved' && $status !== 'Rejected' && $status !== 'Inactive') {
     http_response_code(400);
     echo json_encode([
