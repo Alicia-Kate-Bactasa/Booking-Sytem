@@ -368,8 +368,7 @@ try {
     http_response_code(500);
     echo json_encode([
         "status" => "error",
-        "message" => "An error occurred while attempting to write booking to the database.",
-        "debug_error" => $e->getMessage()
+        "message" => "An error occurred while attempting to write booking to the database."
     ]);
 }
 ?>
