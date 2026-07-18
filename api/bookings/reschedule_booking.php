@@ -81,10 +81,13 @@ try {
     require_auth(['Subscriber', 'Admin']);
     verify_csrf_request();
 
-    // 1. Verify the booking exists
-    $checkQuery = "SELECT b.booking_id, b.customer_id, b.user_id, b.service_id, b.booking_status, s.service_duration 
+    // 1. Verify the booking exists and fetch client details for notification email
+    $checkQuery = "SELECT b.booking_id, b.customer_id, b.user_id, b.service_id, b.booking_status, 
+                          s.service_duration, s.service_name, b.scheduled_date AS old_date, b.time_slot AS old_slot,
+                          c.full_name AS customer_name, c.email AS customer_email
                    FROM Booking b
                    JOIN Service s ON b.service_id = s.service_id
+                   JOIN Customer c ON b.customer_id = c.customer_id
                    WHERE b.booking_id = :booking_id LIMIT 1";
     $checkStmt = $conn->prepare($checkQuery);
     $checkStmt->bindValue(':booking_id', $booking_id, PDO::PARAM_INT);
@@ -195,6 +198,42 @@ try {
 
     log_system_event($conn, 'Booking Rescheduled', "Booking ID {$booking_id} rescheduled to {$scheduled_date} at {$time_slot} ({$allocatedBay}).");
     $conn->commit();
+
+    // 7. Dispatch Email Notification to Client
+    $email = $booking['customer_email'];
+    if ($email && filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        require_once __DIR__ . '/../utils/mailer.php';
+        
+        $customerName = $booking['customer_name'] ?: 'Valued Customer';
+        $serviceName = $booking['service_name'];
+        $cleanBookingRef = 'MTG-' . $booking_id;
+
+        $subject = "Appointment Rescheduled Confirmation - " . $cleanBookingRef;
+        $htmlContent = Mailer::formatInvoice([
+            'title' => 'Reschedule Confirmed',
+            'status_bg' => '#e8f4fd',
+            'status_border' => '#2980b9',
+            'status_color' => '#2980b9',
+            'status_label' => 'RESCHEDULED',
+            'status_detail' => "Dear {$customerName}, your appointment for <strong>{$serviceName}</strong> has been successfully rescheduled to a new slot.<br><br><strong>New Schedule:</strong><br>📅 Date: {$scheduled_date}<br>🕒 Time: {$time_slot}<br><br><em>(Previous Schedule: {$booking['old_date']} at {$booking['old_slot']})</em>",
+            'invoice_no' => $cleanBookingRef,
+            'date' => date('Y-m-d'),
+            'client_name' => $customerName,
+            'client_email' => $email,
+            'item_name' => $serviceName,
+            'item_subtext' => "Rescheduled detailing session.",
+            'item_price' => 0.00,
+            'subtotal' => 0.00,
+            'total_due' => 0.00,
+            'booking_id' => $booking_id
+        ]);
+
+        try {
+            Mailer::send($email, $subject, $htmlContent);
+        } catch (Exception $mailEx) {
+            error_log("Failed to send reschedule email: " . $mailEx->getMessage());
+        }
+    }
 
     http_response_code(200);
     echo json_encode([
