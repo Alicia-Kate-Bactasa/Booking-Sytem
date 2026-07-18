@@ -57,11 +57,12 @@ if (strtotime($scheduled_date) < strtotime(date('Y-m-d'))) {
     exit();
 }
 
-if (!filter_var($client_email, FILTER_VALIDATE_EMAIL)) {
+$email_err = validate_email_active($client_email);
+if ($email_err !== true) {
     http_response_code(400);
     echo json_encode([
         "status" => "error",
-        "message" => "Invalid email address format."
+        "message" => $email_err
     ]);
     exit();
 }

@@ -81,11 +81,12 @@ if (strlen($email) > MAX_EMAIL_LENGTH) {
     exit();
 }
 
-if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+$email_err = validate_email_active($email);
+if ($email_err !== true) {
     http_response_code(400);
     echo json_encode([
         "status" => "error",
-        "message" => "Please provide a valid email address."
+        "message" => $email_err
     ]);
     exit();
 }
