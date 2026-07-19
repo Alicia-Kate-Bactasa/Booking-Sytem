@@ -81,7 +81,7 @@ try {
     }
 
     if (!$is_reactivation && $sub && !empty($sub['last_billing_date'])) {
-        if ($today <= $sub['last_billing_date']) {
+        if ($today < $sub['last_billing_date']) {
             http_response_code(400);
             echo json_encode([
                 "status" => "error",

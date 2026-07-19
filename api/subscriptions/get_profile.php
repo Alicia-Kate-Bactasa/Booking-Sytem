@@ -137,8 +137,6 @@ try {
     // Determine renewal status according to the exact state machine rules
     if ($hasPendingApproval) {
         $renewal_status = 'Awaiting Approval';
-    } elseif (!empty($profile['last_billing_date']) && $today === $profile['last_billing_date']) {
-        $renewal_status = 'Paid Today';
     } elseif (!empty($profile['last_billing_date']) && $today < $profile['last_billing_date']) {
         $renewal_status = 'Temporal Lock';
     } elseif ($hasRejectedInvoice) {

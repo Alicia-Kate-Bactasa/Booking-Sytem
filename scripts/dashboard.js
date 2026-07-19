@@ -1232,9 +1232,9 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                 payBtn.innerText = "Payment Awaiting Approval";
                 payBtn.className = "w-full bg-neutral-200 text-neutral-400 text-xs font-bold py-4 rounded-full transition-all text-center cursor-not-allowed border border-neutral-300 focus:outline-none";
                 payBtn.onclick = null;
-            } else if (prof.renewal_status === 'Paid Today' || prof.renewal_status === 'Temporal Lock') {
+            } else if (prof.renewal_status === 'Temporal Lock') {
                 payBtn.disabled = true;
-                payBtn.innerText = prof.renewal_status === 'Paid Today' ? "Current Month Paid" : "Next Month Already Paid";
+                payBtn.innerText = "Next Month Already Paid";
                 payBtn.className = "w-full bg-neutral-200 text-neutral-400 text-xs font-bold py-4 rounded-full transition-all text-center cursor-not-allowed border border-neutral-300 focus:outline-none";
                 payBtn.onclick = null;
             } else if (prof.renewal_status === 'Payment Rejected') {

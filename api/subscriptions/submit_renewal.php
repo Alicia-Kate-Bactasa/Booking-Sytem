@@ -66,7 +66,7 @@ try {
 
     $today = date('Y-m-d');
     if ($sub && !empty($sub['last_billing_date'])) {
-        if ($sub['last_billing_date'] >= $today) {
+        if ($sub['last_billing_date'] > $today) {
             http_response_code(400);
             echo json_encode([
                 "status" => "error",
