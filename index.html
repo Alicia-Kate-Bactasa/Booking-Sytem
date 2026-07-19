@@ -195,10 +195,18 @@
                                     <input type="tel" id="custPhone" placeholder="Mobile Phone (Required)" required class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-medium focus:outline-none focus:border-dark focus:bg-white transition-all px-5">
                                     <p id="phoneError" class="text-[10px] text-red-500 font-semibold mt-1.5 ml-3 hidden">Phone number is required.</p>
                                 </div>
-                                <div>
-                                    <input type="email" id="custEmail" placeholder="Email Address (Required)" required class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-medium focus:outline-none focus:border-dark focus:bg-white transition-all px-5">
+                                <div class="relative w-full">
+                                    <input type="email" id="custEmail" placeholder="Email Address (Required)" required class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-medium px-5 pr-28 focus:outline-none focus:border-dark focus:bg-white transition-all">
+                                    <button type="button" id="sendGuestOtpBtn" onclick="sendGuestVerificationOtp()" class="absolute right-2 top-1/2 -translate-y-1/2 bg-black text-white hover:bg-neutral-800 text-[10px] font-bold px-3.5 py-2.5 rounded-full transition-all focus:outline-none">Send Code</button>
                                     <p id="emailError" class="text-[10px] text-red-500 font-semibold mt-1.5 ml-3 hidden">Valid email is required.</p>
                                 </div>
+                            </div>
+                            <div id="guestOtpVerificationSection" class="hidden space-y-2">
+                                <div class="relative w-full">
+                                    <input type="text" id="custOtp" placeholder="Enter 6-Digit Code" maxlength="6" class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-medium px-5 pr-28 focus:outline-none focus:border-dark">
+                                    <button type="button" id="verifyGuestOtpBtn" onclick="verifyGuestVerificationOtp()" class="absolute right-2 top-1/2 -translate-y-1/2 bg-emerald-600 text-white hover:bg-emerald-700 text-[10px] font-bold px-3.5 py-2.5 rounded-full transition-all focus:outline-none">Verify Code</button>
+                                </div>
+                                <p id="guestOtpMessage" class="text-[10px] font-semibold mt-1 ml-3 hidden"></p>
                             </div>
 
                             <div id="payment-section" class="pt-4">
@@ -300,7 +308,7 @@
             </div>
             <div>
                 <div class="text-[11px] font-bold tracking-widest uppercase text-neutral-500 mb-4">Studio Coordinates</div>
-                <p class="text-neutral-400 font-light">📍 Near Mago Green Village, Banilad, Mandaue City, Cebu, Philippines</p>
+                <p class="text-neutral-400 font-light">Near Mango Green Village, Banilad, Mandaue City, Cebu, Philippines</p>
             </div>
         </div>
         <div class="max-w-7xl mx-auto px-6 pt-8 border-t border-neutral-800/60 text-xs text-neutral-500 font-medium">
@@ -351,7 +359,17 @@
             </div>
             <form onsubmit="handleRegistrationStep(event)" class="space-y-4">
                 <input type="text" id="subRegName" placeholder="Full Name" required class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-medium px-5 focus:outline-none focus:border-dark">
-                <input type="email" id="subRegEmail" placeholder="Primary Email Address" required class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-medium px-5 focus:outline-none focus:border-dark">
+                <div class="relative w-full">
+                    <input type="email" id="subRegEmail" placeholder="Primary Email Address" required class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-medium px-5 pr-28 focus:outline-none focus:border-dark">
+                    <button type="button" id="sendOtpBtn" onclick="sendVerificationOtp()" class="absolute right-2 top-1/2 -translate-y-1/2 bg-black text-white hover:bg-neutral-800 text-[10px] font-bold px-3.5 py-2.5 rounded-full transition-all focus:outline-none">Send Code</button>
+                </div>
+                <div id="otpVerificationSection" class="hidden space-y-2">
+                    <div class="relative w-full">
+                        <input type="text" id="subRegOtp" placeholder="Enter 6-Digit Code" maxlength="6" class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-medium px-5 pr-28 focus:outline-none focus:border-dark">
+                        <button type="button" id="verifyOtpBtn" onclick="verifyVerificationOtp()" class="absolute right-2 top-1/2 -translate-y-1/2 bg-emerald-600 text-white hover:bg-emerald-700 text-[10px] font-bold px-3.5 py-2.5 rounded-full transition-all focus:outline-none">Verify Code</button>
+                    </div>
+                    <p id="otpMessage" class="text-[10px] font-semibold mt-1 ml-3 hidden"></p>
+                </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div class="relative w-full">
                         <input type="password" id="subRegPassword" placeholder="Password" required class="w-full bg-neutral-50 border border-neutral-200 p-3.5 rounded-full text-xs font-medium px-5 pr-12 focus:outline-none focus:border-dark">

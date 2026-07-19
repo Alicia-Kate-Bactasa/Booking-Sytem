@@ -93,7 +93,7 @@ class Mailer {
                     <td style='width: 50%; padding-left: 15px; vertical-align: top;'>
                         <span style='font-size: 10px; font-weight: bold; text-transform: uppercase; color: #999; display: block; margin-bottom: 5px;'>From:</span>
                         <strong>Montage Auto Studio</strong><br>
-                        Near Mago Green Village,<br>
+                        Near Mango Green Village,<br>
                         Banilad, Mandaue City, Cebu, Philippines
                     </td>
                 </tr>

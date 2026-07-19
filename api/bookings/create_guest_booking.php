@@ -67,6 +67,17 @@ if ($email_err !== true) {
     exit();
 }
 
+// Verify that the guest email has been validated via OTP in the session
+if (!isset($_SESSION['guest_otp_verified']) || $_SESSION['guest_otp_verified'] !== true || !isset($_SESSION['guest_otp_target']) || $_SESSION['guest_otp_target'] !== strtolower($client_email)) {
+    http_response_code(400);
+    echo json_encode([
+        "status" => "error",
+        "message" => "Security Violation: Email verification via OTP is required before booking."
+    ]);
+    exit();
+}
+
+
 // Verify that payment proof file was uploaded
 if (!isset($_FILES['proof_of_payment']) || $_FILES['proof_of_payment']['error'] !== UPLOAD_ERR_OK) {
     $uploadError = isset($_FILES['proof_of_payment']) ? $_FILES['proof_of_payment']['error'] : 'Missing file';

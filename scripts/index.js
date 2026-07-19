@@ -22,6 +22,8 @@
         let activeServicePrice = 0;
         let activeServiceDuration = "";
         let activeTimeState = "";
+        let emailVerified = false;
+        let guestEmailVerified = false;
 
           /* ===================== LANDING PAGE TIMELINE STATE =====================
               Feature: Persisted occupancy registry for dates and time slots.
@@ -236,6 +238,11 @@
                 return;
             }
 
+            if (!guestEmailVerified) {
+                showErrorModal('Please verify your email address using the verification code sent to your inbox before proceeding.');
+                return;
+            }
+
             const submitBtn = event.target.querySelector('button[type="submit"]');
             const originalText = submitBtn ? submitBtn.innerText : '';
             if (submitBtn) {
@@ -370,6 +377,11 @@
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailVal || !emailRegex.test(emailVal)) {
                 showErrorModal('Please enter a valid email address.');
+                return;
+            }
+
+            if (!emailVerified) {
+                showErrorModal('Please verify your email address using the verification code sent to your inbox before proceeding.');
                 return;
             }
 
@@ -734,7 +746,263 @@
             }
         }
 
+        async function sendVerificationOtp() {
+            const emailInput = document.getElementById('subRegEmail');
+            const emailVal = emailInput ? emailInput.value.trim() : '';
+            const sendBtn = document.getElementById('sendOtpBtn');
+
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailVal || !emailRegex.test(emailVal)) {
+                showErrorModal('Please enter a valid email address first.');
+                return;
+            }
+
+            if (sendBtn) {
+                sendBtn.disabled = true;
+                sendBtn.innerText = "Sending...";
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append('email', emailVal);
+
+                const response = await fetch('api/auth/send_otp.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                const res = await response.json();
+
+                if (response.ok && res.status === 'success') {
+                    const otpSection = document.getElementById('otpVerificationSection');
+                    if (otpSection) otpSection.classList.remove('hidden');
+                    
+                    const otpMsg = document.getElementById('otpMessage');
+                    if (otpMsg) {
+                        otpMsg.innerText = res.message;
+                        otpMsg.className = "text-[10px] text-emerald-600 font-semibold mt-1 ml-3";
+                        otpMsg.classList.remove('hidden');
+                    }
+
+                    if (sendBtn) {
+                        sendBtn.innerText = "Resend Code";
+                        sendBtn.disabled = false;
+                    }
+                } else {
+                    showErrorModal(res.message || 'Failed to send verification code.');
+                    if (sendBtn) {
+                        sendBtn.innerText = "Send Code";
+                        sendBtn.disabled = false;
+                    }
+                }
+            } catch (err) {
+                console.error("OTP send failed:", err);
+                showErrorModal('Failed to send verification email due to a network connection error.');
+                if (sendBtn) {
+                    sendBtn.innerText = "Send Code";
+                    sendBtn.disabled = false;
+                }
+            }
+        }
+
+        async function verifyVerificationOtp() {
+            const emailInput = document.getElementById('subRegEmail');
+            const emailVal = emailInput ? emailInput.value.trim() : '';
+            const otpInput = document.getElementById('subRegOtp');
+            const otpVal = otpInput ? otpInput.value.trim() : '';
+            const verifyBtn = document.getElementById('verifyOtpBtn');
+            const otpMsg = document.getElementById('otpMessage');
+
+            if (!otpVal || otpVal.length !== 6 || !/^\d+$/.test(otpVal)) {
+                showErrorModal('Please enter a valid 6-digit numeric verification code.');
+                return;
+            }
+
+            if (verifyBtn) {
+                verifyBtn.disabled = true;
+                verifyBtn.innerText = "Verifying...";
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append('email', emailVal);
+                formData.append('code', otpVal);
+
+                const response = await fetch('api/auth/verify_otp.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                const res = await response.json();
+
+                if (response.ok && res.status === 'success') {
+                    emailVerified = true;
+                    
+                    if (otpMsg) {
+                        otpMsg.innerText = "Email verified successfully! You may now continue.";
+                        otpMsg.className = "text-[10px] text-emerald-600 font-semibold mt-1 ml-3";
+                        otpMsg.classList.remove('hidden');
+                    }
+
+                    const sendBtn = document.getElementById('sendOtpBtn');
+                    if (sendBtn) {
+                        sendBtn.disabled = true;
+                        sendBtn.innerText = "Verified ✔";
+                        sendBtn.className = "absolute right-2 top-1/2 -translate-y-1/2 bg-emerald-600 text-white text-[10px] font-bold px-3.5 py-2.5 rounded-full transition-all focus:outline-none cursor-not-allowed";
+                    }
+
+                    if (verifyBtn) {
+                        verifyBtn.disabled = true;
+                        verifyBtn.innerText = "Verified ✔";
+                        verifyBtn.className = "absolute right-2 top-1/2 -translate-y-1/2 bg-emerald-600 text-white text-[10px] font-bold px-3.5 py-2.5 rounded-full transition-all focus:outline-none cursor-not-allowed";
+                    }
+                } else {
+                    showErrorModal(res.message || 'Verification failed. Incorrect code.');
+                    if (verifyBtn) {
+                        verifyBtn.disabled = false;
+                        verifyBtn.innerText = "Verify Code";
+                    }
+                }
+            } catch (err) {
+                console.error("OTP verification failed:", err);
+                showErrorModal('An error occurred during verification. Please try again.');
+                if (verifyBtn) {
+                    verifyBtn.disabled = false;
+                    verifyBtn.innerText = "Verify Code";
+                }
+            }
+        }
+
+        async function sendGuestVerificationOtp() {
+            const emailInput = document.getElementById('custEmail');
+            const emailVal = emailInput ? emailInput.value.trim() : '';
+            const sendBtn = document.getElementById('sendGuestOtpBtn');
+
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailVal || !emailRegex.test(emailVal)) {
+                showErrorModal('Please enter a valid email address first.');
+                return;
+            }
+
+            if (sendBtn) {
+                sendBtn.disabled = true;
+                sendBtn.innerText = "Sending...";
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append('email', emailVal);
+                formData.append('type', 'guest');
+
+                const response = await fetch('api/auth/send_otp.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                const res = await response.json();
+
+                if (response.ok && res.status === 'success') {
+                    const otpSection = document.getElementById('guestOtpVerificationSection');
+                    if (otpSection) otpSection.classList.remove('hidden');
+                    
+                    const otpMsg = document.getElementById('guestOtpMessage');
+                    if (otpMsg) {
+                        otpMsg.innerText = res.message;
+                        otpMsg.className = "text-[10px] text-emerald-600 font-semibold mt-1 ml-3";
+                        otpMsg.classList.remove('hidden');
+                    }
+
+                    if (sendBtn) {
+                        sendBtn.innerText = "Resend Code";
+                        sendBtn.disabled = false;
+                    }
+                } else {
+                    showErrorModal(res.message || 'Failed to send verification code.');
+                    if (sendBtn) {
+                        sendBtn.innerText = "Send Code";
+                        sendBtn.disabled = false;
+                    }
+                }
+            } catch (err) {
+                console.error("Guest OTP send failed:", err);
+                showErrorModal('Failed to send verification email due to a network connection error.');
+                if (sendBtn) {
+                    sendBtn.innerText = "Send Code";
+                    sendBtn.disabled = false;
+                }
+            }
+        }
+
+        async function verifyGuestVerificationOtp() {
+            const emailInput = document.getElementById('custEmail');
+            const emailVal = emailInput ? emailInput.value.trim() : '';
+            const otpInput = document.getElementById('custOtp');
+            const otpVal = otpInput ? otpInput.value.trim() : '';
+            const verifyBtn = document.getElementById('verifyGuestOtpBtn');
+            const otpMsg = document.getElementById('guestOtpMessage');
+
+            if (!otpVal || otpVal.length !== 6 || !/^\d+$/.test(otpVal)) {
+                showErrorModal('Please enter a valid 6-digit numeric verification code.');
+                return;
+            }
+
+            if (verifyBtn) {
+                verifyBtn.disabled = true;
+                verifyBtn.innerText = "Verifying...";
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append('email', emailVal);
+                formData.append('code', otpVal);
+                formData.append('type', 'guest');
+
+                const response = await fetch('api/auth/verify_otp.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                const res = await response.json();
+
+                if (response.ok && res.status === 'success') {
+                    guestEmailVerified = true;
+                    
+                    if (otpMsg) {
+                        otpMsg.innerText = "Email verified successfully! You may now continue.";
+                        otpMsg.className = "text-[10px] text-emerald-600 font-semibold mt-1 ml-3";
+                        otpMsg.classList.remove('hidden');
+                    }
+
+                    const sendBtn = document.getElementById('sendGuestOtpBtn');
+                    if (sendBtn) {
+                        sendBtn.disabled = true;
+                        sendBtn.innerText = "Verified ✔";
+                        sendBtn.className = "absolute right-2 top-1/2 -translate-y-1/2 bg-emerald-600 text-white text-[10px] font-bold px-3.5 py-2.5 rounded-full transition-all focus:outline-none cursor-not-allowed";
+                    }
+
+                    if (verifyBtn) {
+                        verifyBtn.disabled = true;
+                        verifyBtn.innerText = "Verified ✔";
+                        verifyBtn.className = "absolute right-2 top-1/2 -translate-y-1/2 bg-emerald-600 text-white text-[10px] font-bold px-3.5 py-2.5 rounded-full transition-all focus:outline-none cursor-not-allowed";
+                    }
+                } else {
+                    showErrorModal(res.message || 'Verification failed. Incorrect code.');
+                    if (verifyBtn) {
+                        verifyBtn.disabled = false;
+                        verifyBtn.innerText = "Verify Code";
+                    }
+                }
+            } catch (err) {
+                console.error("Guest OTP verification failed:", err);
+                showErrorModal('An error occurred during verification. Please try again.');
+                if (verifyBtn) {
+                    verifyBtn.disabled = false;
+                    verifyBtn.innerText = "Verify Code";
+                }
+            }
+        }
+
         window.togglePasswordVisibility = togglePasswordVisibility;
+        window.sendVerificationOtp = sendVerificationOtp;
+        window.verifyVerificationOtp = verifyVerificationOtp;
+        window.sendGuestVerificationOtp = sendGuestVerificationOtp;
+        window.verifyGuestVerificationOtp = verifyGuestVerificationOtp;
 
         document.addEventListener('DOMContentLoaded', () => {
             const bookingIdInput = document.getElementById('feedbackBookingId');
@@ -782,6 +1050,30 @@
                 bookingIdInput.addEventListener('change', handleBookingIdChange);
             }
 
+            // Real-time listener for subRegEmail to reset verification status when modified
+            const subRegEmailInput = document.getElementById('subRegEmail');
+            if (subRegEmailInput) {
+                subRegEmailInput.addEventListener('input', () => {
+                    emailVerified = false;
+                    const sendBtn = document.getElementById('sendOtpBtn');
+                    if (sendBtn) {
+                        sendBtn.disabled = false;
+                        sendBtn.innerText = "Send Code";
+                        sendBtn.className = "absolute right-2 top-1/2 -translate-y-1/2 bg-black text-white hover:bg-neutral-800 text-[10px] font-bold px-3.5 py-2.5 rounded-full transition-all focus:outline-none";
+                    }
+                    const otpSection = document.getElementById('otpVerificationSection');
+                    if (otpSection) otpSection.classList.add('hidden');
+                    const otpInput = document.getElementById('subRegOtp');
+                    if (otpInput) otpInput.value = '';
+                    const verifyBtn = document.getElementById('verifyOtpBtn');
+                    if (verifyBtn) {
+                        verifyBtn.disabled = false;
+                        verifyBtn.innerText = "Verify Code";
+                        verifyBtn.className = "absolute right-2 top-1/2 -translate-y-1/2 bg-emerald-600 text-white hover:bg-emerald-700 text-[10px] font-bold px-3.5 py-2.5 rounded-full transition-all focus:outline-none";
+                    }
+                });
+            }
+
             // Real-time email validation check for guest bookings
             const custEmailInput = document.getElementById('custEmail');
             if (custEmailInput) {
@@ -823,6 +1115,23 @@
                 });
                 
                 custEmailInput.addEventListener('input', () => {
+                    guestEmailVerified = false;
+                    const sendBtn = document.getElementById('sendGuestOtpBtn');
+                    if (sendBtn) {
+                        sendBtn.disabled = false;
+                        sendBtn.innerText = "Send Code";
+                        sendBtn.className = "absolute right-2 top-1/2 -translate-y-1/2 bg-black text-white hover:bg-neutral-800 text-[10px] font-bold px-3.5 py-2.5 rounded-full transition-all focus:outline-none";
+                    }
+                    const otpSection = document.getElementById('guestOtpVerificationSection');
+                    if (otpSection) otpSection.classList.add('hidden');
+                    const otpInput = document.getElementById('custOtp');
+                    if (otpInput) otpInput.value = '';
+                    const verifyBtn = document.getElementById('verifyGuestOtpBtn');
+                    if (verifyBtn) {
+                        verifyBtn.disabled = false;
+                        verifyBtn.innerText = "Verify Code";
+                        verifyBtn.className = "absolute right-2 top-1/2 -translate-y-1/2 bg-emerald-600 text-white hover:bg-emerald-700 text-[10px] font-bold px-3.5 py-2.5 rounded-full transition-all focus:outline-none";
+                    }
                     if (emailErrorText) {
                         emailErrorText.classList.add('hidden');
                     }

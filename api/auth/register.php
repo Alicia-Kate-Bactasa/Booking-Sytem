@@ -91,6 +91,17 @@ if ($email_err !== true) {
     exit();
 }
 
+// Check if email has been verified via OTP in session
+if (!isset($_SESSION['email_otp_verified']) || $_SESSION['email_otp_verified'] !== true || !isset($_SESSION['email_otp_target']) || $_SESSION['email_otp_target'] !== strtolower($email)) {
+    http_response_code(400);
+    echo json_encode([
+        "status" => "error",
+        "message" => "Security Violation: Email verification via OTP is required before registering."
+    ]);
+    exit();
+}
+
+
 if (strlen($password) > MAX_PASSWORD_LENGTH) {
     http_response_code(400);
     echo json_encode([
