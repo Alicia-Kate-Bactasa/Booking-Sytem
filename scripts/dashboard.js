@@ -926,12 +926,16 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                                 restrictedNotice.classList.remove('hidden');
                                 const noticeTitle = restrictedNotice.querySelector('h5');
                                 const noticeDesc = restrictedNotice.querySelector('p');
+                                const btnWrapper = document.getElementById('bookingRestrictedNoticeBtnWrapper');
+                                
                                 if (prof.plan_status === 'Payment Pending') {
                                     if (noticeTitle) noticeTitle.innerText = "Subscription Pending Verification";
                                     if (noticeDesc) noticeDesc.innerText = "Your subscription registration, renewal, or reactivation payment proof is currently pending administrator verification. Once verified, your account will be fully activated and booking privileges will be enabled.";
+                                    if (btnWrapper) btnWrapper.classList.add('hidden');
                                 } else {
                                     if (noticeTitle) noticeTitle.innerText = "Booking Privileges Disabled";
-                                    if (noticeDesc) noticeDesc.innerText = "Detailing bookings on this dashboard are only available for active VIP Subscribers. If your subscription has expired or is cancelled, please reactivate your subscription in the Subscription tab to re-enable booking privileges.";
+                                    if (noticeDesc) noticeDesc.innerText = "This feature is only for active VIP subscribers. If you want to book, you can book as a regular client through the main dashboard.";
+                                    if (btnWrapper) btnWrapper.classList.remove('hidden');
                                 }
                                 if (dateInput) dateInput.disabled = true;
                                 if (submitBtn) {

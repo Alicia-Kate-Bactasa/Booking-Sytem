@@ -153,11 +153,16 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Subscriber') {
 
                     <div id="bookingRestrictedNotice" class="hidden mb-8 p-5 bg-amber-50 border border-amber-200 rounded-[1.5rem] flex items-start gap-3.5 shadow-sm">
                         <span class="text-amber-600 text-lg">⚠️</span>
-                        <div>
+                        <div class="flex-1">
                             <h5 class="text-xs font-bold uppercase tracking-wider text-amber-800">Booking Privileges Disabled</h5>
                             <p class="text-xs text-amber-700 font-medium mt-1 leading-relaxed">
                                 Detailing bookings on this dashboard are only available for active VIP Subscribers. If your subscription has expired or is cancelled, please reactivate your subscription in the **Subscription** tab to re-enable booking privileges.
                             </p>
+                            <div id="bookingRestrictedNoticeBtnWrapper" class="mt-3 hidden">
+                                <button type="button" onclick="terminateSessionLogout()" class="bg-amber-600 hover:bg-amber-700 text-white px-4.5 py-2 rounded-full text-[10px] font-bold tracking-wider uppercase transition-all focus:outline-none shadow-sm cursor-pointer">
+                                    Book through Main Dashboard
+                                </button>
+                            </div>
                         </div>
                     </div>
 

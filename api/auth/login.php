@@ -198,6 +198,14 @@ try {
                         $plan_status = 'Expired';
                     }
 
+                    if ($plan_status === 'Payment Pending') {
+                        http_response_code(403);
+                        echo json_encode([
+                            "status" => "error",
+                            "message" => "Your account is awaiting payment verification and administrative approval. Please try again later."
+                        ]);
+                        exit();
+                    }
                 }
 
                 // Under the new model, subscribers are NOT in the Customer table.
