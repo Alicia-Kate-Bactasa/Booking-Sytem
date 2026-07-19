@@ -1208,6 +1208,7 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
             const cancelBtn = document.getElementById('cancelPlanToggleBtn');
             if (cancelBtn) {
                 if (prof.plan_status === 'Cancellation Pending') {
+                    cancelBtn.classList.remove('hidden');
                     cancelBtn.innerText = "Reactivate Subscription";
                     cancelBtn.className = "w-full bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-600 hover:border-emerald-700 text-xs font-bold tracking-widest uppercase py-4 rounded-full transition-all text-center focus:outline-none cursor-pointer";
                     cancelBtn.onclick = () => {
@@ -1218,7 +1219,10 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                         if (subtitleEl) subtitleEl.innerText = "Submit your GCash payment receipt to reactivate your VIP Unlimited plan.";
                         toggleModal('renewalHubModal');
                     };
+                } else if (prof.plan_status === 'Expired' || prof.plan_status === 'Inactive' || prof.plan_status === 'Payment Pending') {
+                    cancelBtn.classList.add('hidden');
                 } else {
+                    cancelBtn.classList.remove('hidden');
                     cancelBtn.innerText = "Cancel Subscription Plan";
                     cancelBtn.className = "w-full bg-white hover:bg-red-50 text-red-600 border border-neutral-200 hover:border-red-200 text-xs font-bold tracking-widest uppercase py-4 rounded-full transition-all text-center focus:outline-none cursor-pointer";
                     cancelBtn.onclick = () => toggleModal('cancelConfirmModal');
@@ -1234,10 +1238,17 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
             }
 
             if (prof.plan_status === 'Expired' || prof.plan_status === 'Inactive') {
-                payBtn.disabled = true;
-                payBtn.innerText = "Subscription Expired";
-                payBtn.onclick = null;
-                payBtn.className = "w-full bg-neutral-200 text-neutral-400 text-xs font-bold py-4 rounded-full transition-all text-center cursor-not-allowed border border-neutral-300 focus:outline-none";
+                payBtn.disabled = false;
+                payBtn.innerText = "Reactivate Subscription";
+                payBtn.className = "w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-4 rounded-full transition-all text-center shadow-sm focus:outline-none cursor-pointer";
+                payBtn.onclick = () => {
+                    isReactivation = true;
+                    const titleEl = document.getElementById('renewalModalTitle');
+                    const subtitleEl = document.getElementById('renewalModalSubtitle');
+                    if (titleEl) titleEl.innerText = "Membership Reactivation Portal";
+                    if (subtitleEl) subtitleEl.innerText = "Submit your GCash payment receipt to reactivate your VIP Unlimited plan.";
+                    toggleModal('renewalHubModal');
+                };
                 return;
             }
 
