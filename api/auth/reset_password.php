@@ -44,7 +44,7 @@ try {
     $conn->beginTransaction();
 
     // 1. Fetch token and check expiry
-    $tokenQuery = "SELECT email, expires_at FROM PasswordReset WHERE token = :token LIMIT 1";
+    $tokenQuery = "SELECT identifier AS email, expires_at FROM UserSecurityAction WHERE action_type = 'password_reset' AND token = :token LIMIT 1";
     $tokenStmt = $conn->prepare($tokenQuery);
     $tokenStmt->bindValue(':token', $token, PDO::PARAM_STR);
     $tokenStmt->execute();
@@ -63,7 +63,7 @@ try {
     $today = date('Y-m-d H:i:s');
     if ($resetReq['expires_at'] < $today) {
         // Token has expired. Clean it up.
-        $cleanQuery = "DELETE FROM PasswordReset WHERE token = :token";
+        $cleanQuery = "DELETE FROM UserSecurityAction WHERE action_type = 'password_reset' AND token = :token";
         $cleanStmt = $conn->prepare($cleanQuery);
         $cleanStmt->bindValue(':token', $token, PDO::PARAM_STR);
         $cleanStmt->execute();
@@ -90,7 +90,7 @@ try {
     $updateStmt->execute();
 
     // 4. Delete the token so it cannot be reused
-    $deleteQuery = "DELETE FROM PasswordReset WHERE email = :email";
+    $deleteQuery = "DELETE FROM UserSecurityAction WHERE action_type = 'password_reset' AND identifier = :email";
     $deleteStmt = $conn->prepare($deleteQuery);
     $deleteStmt->bindValue(':email', $email, PDO::PARAM_STR);
     $deleteStmt->execute();

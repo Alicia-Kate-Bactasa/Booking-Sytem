@@ -41,13 +41,17 @@ if ($email_err !== true) {
 }
 
 try {
-    // 1. Create PasswordReset table if it does not exist
-    $conn->exec("CREATE TABLE IF NOT EXISTS PasswordReset (
-        reset_id INT AUTO_INCREMENT PRIMARY KEY,
-        email VARCHAR(100) NOT NULL,
-        token VARCHAR(64) NOT NULL UNIQUE,
-        expires_at TIMESTAMP NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    // 1. Create UserSecurityAction table if it does not exist
+    $conn->exec("CREATE TABLE IF NOT EXISTS UserSecurityAction (
+        action_id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT DEFAULT NULL,
+        action_type ENUM('login_attempt','password_reset') NOT NULL,
+        ip_address VARCHAR(45) NOT NULL,
+        identifier VARCHAR(100) NOT NULL,
+        token VARCHAR(64) DEFAULT NULL UNIQUE,
+        expires_at TIMESTAMP NULL DEFAULT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT fk_security_action_user FOREIGN KEY (user_id) REFERENCES User (user_id) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
     // 2. Check if the user exists
@@ -68,7 +72,7 @@ try {
     }
 
     // 3. Delete any existing reset tokens for this email to prevent multiple valid links
-    $deleteQuery = "DELETE FROM PasswordReset WHERE email = :email";
+    $deleteQuery = "DELETE FROM UserSecurityAction WHERE action_type = 'password_reset' AND identifier = :email";
     $deleteStmt = $conn->prepare($deleteQuery);
     $deleteStmt->bindValue(':email', $email, PDO::PARAM_STR);
     $deleteStmt->execute();
@@ -78,8 +82,12 @@ try {
     $expiresAt = date('Y-m-d H:i:s', strtotime('+1 hour'));
 
     // 5. Insert token record
-    $insertQuery = "INSERT INTO PasswordReset (email, token, expires_at) VALUES (:email, :token, :expires_at)";
+    $ip_address = $_SERVER['REMOTE_ADDR'] ?? '';
+    $insertQuery = "INSERT INTO UserSecurityAction (user_id, action_type, ip_address, identifier, token, expires_at) 
+                    VALUES (:user_id, 'password_reset', :ip_address, :email, :token, :expires_at)";
     $insertStmt = $conn->prepare($insertQuery);
+    $insertStmt->bindValue(':user_id', (int)$user['user_id'], PDO::PARAM_INT);
+    $insertStmt->bindValue(':ip_address', $ip_address, PDO::PARAM_STR);
     $insertStmt->bindValue(':email', $email, PDO::PARAM_STR);
     $insertStmt->bindValue(':token', $token, PDO::PARAM_STR);
     $insertStmt->bindValue(':expires_at', $expiresAt, PDO::PARAM_STR);
