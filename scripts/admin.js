@@ -144,6 +144,7 @@ const defaultServices = [
                     if (responseObj && responseObj.status === 'success' && responseObj.data) {
                         const regs = responseObj.data.pending_registrations || [];
                         pendingRequests = regs.map(reg => {
+                            const isReactivation = reg.payment_method === 'GCash (Reactivation)';
                             const isRenewal = reg.last_billing_date && reg.last_billing_date !== '0000-00-00';
                             return {
                                 id: `SUB-${reg.subscription_id}`,
@@ -153,7 +154,7 @@ const defaultServices = [
                                 phone: reg.phone_number,
                                 proof_image: '../' + reg.proof_of_payment,
                                 created_at: reg.created_at,
-                                payment_type: isRenewal ? 'Monthly Renewal' : 'First Month (Registration)'
+                                payment_type: isReactivation ? 'Account Reactivation' : (isRenewal ? 'Monthly Renewal' : 'First Month (Registration)')
                             };
                         });
                         renderPendingSubscriptions();
