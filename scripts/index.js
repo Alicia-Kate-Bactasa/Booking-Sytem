@@ -667,7 +667,7 @@
                 submitButton.textContent = 'Sending...';
             }
 
-            fetch('api/auth/csrf.php')
+            fetch('api/auth/csrf.php', { credentials: 'include' })
                 .then(r => {
                     if (!r.ok) throw new Error('Could not initialize session security.');
                     return r.json();
@@ -681,6 +681,7 @@
                             'Accept': 'application/json',
                             'X-CSRF-Token': csrfToken
                         },
+                        credentials: 'include',
                         body: JSON.stringify({
                             name,
                             booking_id: bookingId || null,
