@@ -667,20 +667,29 @@
                 submitButton.textContent = 'Sending...';
             }
 
-            fetch('api/feedback/submit_feedback.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({
-                    name,
-                    booking_id: bookingId || null,
-                    service,
-                    rating,
-                    comments
+            fetch('api/auth/csrf.php')
+                .then(r => {
+                    if (!r.ok) throw new Error('Could not initialize session security.');
+                    return r.json();
                 })
-            })
+                .then(csrfData => {
+                    const csrfToken = csrfData.csrf_token;
+                    return fetch('api/feedback/submit_feedback.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-Token': csrfToken
+                        },
+                        body: JSON.stringify({
+                            name,
+                            booking_id: bookingId || null,
+                            service,
+                            rating,
+                            comments
+                        })
+                    });
+                })
                 .then(async response => {
                     const payload = await response.json().catch(() => ({}));
                     if (!response.ok) {
