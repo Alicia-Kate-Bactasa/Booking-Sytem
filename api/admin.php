@@ -51,7 +51,10 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Admin') {
             Purpose: Lets the studio manager jump between operational modules quickly.
         -->
     <div class="flex h-screen overflow-hidden">
-        <aside id="sidebar-container" class="w-80 bg-white border-r border-neutral-200 flex flex-col justify-between p-6 z-10 transition-all duration-300 relative">
+        <!-- Sidebar overlay for mobile -->
+        <div id="sidebar-overlay" onclick="toggleMobileSidebar()" class="hidden fixed inset-0 z-30 bg-black/50 md:hidden"></div>
+
+        <aside id="sidebar-container" class="fixed md:relative inset-y-0 left-0 z-40 transform -translate-x-full md:translate-x-0 w-72 md:w-80 bg-white border-r border-neutral-200 flex flex-col justify-between p-6 z-10 transition-all duration-300">
             <div class="space-y-12">
                 <div class="flex justify-between items-center relative">
                     <div class="sidebar-text-element">
@@ -106,7 +109,14 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Admin') {
                Feature: Multi-tab admin workspace for bookings, ledgers, services, compliance, and feedback.
                Purpose: Organizes all back-office actions into separate operational panels.
            -->
-        <main class="flex-1 bg-neutral-50 overflow-y-auto p-12">
+        <main class="flex-1 bg-neutral-50 overflow-y-auto p-6 md:p-12">
+            <!-- Mobile Sticky Header -->
+            <div class="flex md:hidden items-center justify-between bg-white text-black px-6 py-4 sticky top-0 z-30 border border-neutral-200 rounded-2xl mb-6 shadow-sm">
+                <div class="text-sm font-bold uppercase tracking-wider">Montage Admin Hub</div>
+                <button onclick="toggleMobileSidebar()" class="text-neutral-500 hover:text-black focus:outline-none p-1">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                </button>
+            </div>
 
             <section id="tab-bookings" class="space-y-8">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-neutral-200 pb-6 gap-4">
@@ -571,5 +581,20 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Admin') {
 
     <script src="../scripts/modals.js"></script>
     <script src="../scripts/admin.js?v=1.0.4"></script>
+    <script>
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('sidebar-container');
+            const overlay = document.getElementById('sidebar-overlay');
+            if (sidebar.classList.contains('-translate-x-full')) {
+                sidebar.classList.remove('-translate-x-full');
+                sidebar.classList.add('translate-x-0');
+                overlay.classList.remove('hidden');
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                sidebar.classList.remove('translate-x-0');
+                overlay.classList.add('hidden');
+            }
+        }
+    </script>
 </body>
 </html>

@@ -44,8 +44,10 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Subscriber') {
             Purpose: Provides fast movement between the customer-facing workspace sections.
         -->
     <div class="min-h-screen flex flex-col md:flex-row">
+        <!-- Sidebar overlay for mobile -->
+        <div id="sidebar-overlay" onclick="toggleMobileSidebar()" class="hidden fixed inset-0 z-30 bg-black/50 md:hidden"></div>
 
-        <aside id="sidebar-container" class="w-full md:w-72 bg-dark text-light flex flex-col justify-between p-6 border-r border-neutral-800 transition-all duration-300 relative">
+        <aside id="sidebar-container" class="fixed md:relative inset-y-0 left-0 z-40 transform -translate-x-full md:translate-x-0 w-72 md:w-72 bg-dark text-light flex flex-col justify-between p-6 border-r border-neutral-800 transition-all duration-300">
             <div class="space-y-10">
                 <div class="pb-6 border-b border-neutral-800 flex justify-between items-center relative">
                     <div class="sidebar-text-element">
@@ -85,7 +87,14 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Subscriber') {
                Feature: Overview, booking, and subscription panels shown inside the main content area.
                Purpose: Keeps the member experience organized into clear self-service sections.
            -->
-        <main class="flex-1 p-8 md:p-12 space-y-12 overflow-y-auto max-h-screen">
+        <main class="flex-1 p-4 sm:p-8 md:p-12 space-y-12 overflow-y-auto max-h-screen">
+            <!-- Mobile Sticky Header -->
+            <div class="flex md:hidden items-center justify-between bg-dark text-white px-6 py-4 sticky top-0 z-30 border-b border-neutral-800 rounded-2xl mb-6">
+                <div class="text-sm font-bold uppercase tracking-wider">Montage Member Hub</div>
+                <button onclick="toggleMobileSidebar()" class="text-neutral-400 hover:text-white focus:outline-none p-1">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                </button>
+            </div>
 
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-neutral-200">
                 <div>
@@ -516,5 +525,20 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Subscriber') {
 
     <script src="../scripts/modals.js"></script>
     <script src="../scripts/dashboard.js?v=1.1.2"></script>
+    <script>
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('sidebar-container');
+            const overlay = document.getElementById('sidebar-overlay');
+            if (sidebar.classList.contains('-translate-x-full')) {
+                sidebar.classList.remove('-translate-x-full');
+                sidebar.classList.add('translate-x-0');
+                overlay.classList.remove('hidden');
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                sidebar.classList.remove('translate-x-0');
+                overlay.classList.add('hidden');
+            }
+        }
+    </script>
 </body>
 </html>
