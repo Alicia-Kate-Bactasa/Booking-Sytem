@@ -56,12 +56,12 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Admin') {
 
         <aside id="sidebar-container" class="fixed md:relative inset-y-0 left-0 z-40 transform -translate-x-full md:translate-x-0 w-72 md:w-80 bg-white border-r border-neutral-200 flex flex-col justify-between p-6 z-10 transition-all duration-300">
             <div class="space-y-12">
-                <div class="flex justify-between items-center relative">
+                <div id="sidebar-header" class="flex justify-between items-center relative">
                     <div class="sidebar-text-element">
                         <h1 class="font-bold text-xs tracking-widest text-neutral-400">Admin</h1>
                         <p class="text-lg font-bold tracking-tight mt-1 text-black">Montage Auto Studio</p>
                     </div>
-                    <button onclick="toggleSidebar()" class="text-neutral-400 hover:text-black focus:outline-none p-1.5 rounded-full hover:bg-neutral-100 transition-all">
+                    <button onclick="toggleSidebar()" class="hidden md:block text-neutral-400 hover:text-black focus:outline-none p-1.5 rounded-full hover:bg-neutral-100 transition-all">
                         <svg id="sidebar-toggle-icon" class="w-5 h-5 transition-transform duration-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path></svg>
                     </button>
                 </div>

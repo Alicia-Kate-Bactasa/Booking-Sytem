@@ -1476,22 +1476,35 @@ const defaultServices = [
             const toggleIcon = document.getElementById('sidebar-toggle-icon');
             const textElements = document.querySelectorAll('.sidebar-text-element');
             const navButtons = document.querySelectorAll('nav button');
+            const header = document.getElementById('sidebar-header');
 
             if (sidebarCollapsed) {
-                sidebar.classList.remove('w-80');
-                sidebar.classList.add('w-20');
+                sidebar.classList.remove('md:w-80', 'w-72', 'p-6');
+                sidebar.classList.add('md:w-20', 'w-20', 'p-4');
+                if (header) {
+                    header.classList.remove('justify-between');
+                    header.classList.add('justify-center');
+                }
                 if (toggleIcon) toggleIcon.classList.add('rotate-180');
                 textElements.forEach(el => el.classList.add('hidden'));
                 navButtons.forEach(btn => {
                     btn.classList.add('justify-center');
+                    btn.classList.remove('px-4');
+                    btn.classList.add('px-0');
                 });
             } else {
-                sidebar.classList.remove('w-20');
-                sidebar.classList.add('w-80');
+                sidebar.classList.remove('md:w-20', 'w-20', 'p-4');
+                sidebar.classList.add('md:w-80', 'w-72', 'p-6');
+                if (header) {
+                    header.classList.remove('justify-center');
+                    header.classList.add('justify-between');
+                }
                 if (toggleIcon) toggleIcon.classList.remove('rotate-180');
                 textElements.forEach(el => el.classList.remove('hidden'));
                 navButtons.forEach(btn => {
                     btn.classList.remove('justify-center');
+                    btn.classList.remove('px-0');
+                    btn.classList.add('px-4');
                 });
             }
         }

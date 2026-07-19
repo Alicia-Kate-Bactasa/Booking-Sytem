@@ -49,12 +49,12 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Subscriber') {
 
         <aside id="sidebar-container" class="fixed md:relative inset-y-0 left-0 z-40 transform -translate-x-full md:translate-x-0 w-72 md:w-72 bg-dark text-light flex flex-col justify-between p-6 border-r border-neutral-800 transition-all duration-300">
             <div class="space-y-10">
-                <div class="pb-6 border-b border-neutral-800 flex justify-between items-center relative">
+                <div id="sidebar-header" class="pb-6 border-b border-neutral-800 flex justify-between items-center relative">
                     <div class="sidebar-text-element">
                         <div class="text-lg font-bold uppercase tracking-wider text-white">Montage Studio</div>
                         <div class="text-xs text-neutral-400 tracking-widest uppercase font-mono mt-1.5">Member Hub</div>
                     </div>
-                    <button onclick="toggleSidebar()" class="text-neutral-400 hover:text-white focus:outline-none p-1.5 rounded-full hover:bg-neutral-800 transition-all">
+                    <button onclick="toggleSidebar()" class="hidden md:block text-neutral-400 hover:text-white focus:outline-none p-1.5 rounded-full hover:bg-neutral-800 transition-all">
                         <svg id="sidebar-toggle-icon" class="w-5 h-5 transition-transform duration-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path></svg>
                     </button>
                 </div>

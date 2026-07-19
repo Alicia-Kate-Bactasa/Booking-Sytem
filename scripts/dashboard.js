@@ -1144,22 +1144,35 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
             const toggleIcon = document.getElementById('sidebar-toggle-icon');
             const textElements = document.querySelectorAll('.sidebar-text-element');
             const navButtons = document.querySelectorAll('nav button');
+            const header = document.getElementById('sidebar-header');
 
             if (sidebarCollapsed) {
-                sidebar.classList.remove('md:w-72');
-                sidebar.classList.add('md:w-20');
+                sidebar.classList.remove('md:w-72', 'w-72', 'p-6');
+                sidebar.classList.add('md:w-20', 'w-20', 'p-4');
+                if (header) {
+                    header.classList.remove('justify-between');
+                    header.classList.add('justify-center');
+                }
                 if (toggleIcon) toggleIcon.classList.add('rotate-180');
                 textElements.forEach(el => el.classList.add('hidden'));
                 navButtons.forEach(btn => {
                     btn.classList.add('justify-center');
+                    btn.classList.remove('p-4');
+                    btn.classList.add('py-4', 'px-0');
                 });
             } else {
-                sidebar.classList.remove('md:w-20');
-                sidebar.classList.add('md:w-72');
+                sidebar.classList.remove('md:w-20', 'w-20', 'p-4');
+                sidebar.classList.add('md:w-72', 'w-72', 'p-6');
+                if (header) {
+                    header.classList.remove('justify-center');
+                    header.classList.add('justify-between');
+                }
                 if (toggleIcon) toggleIcon.classList.remove('rotate-180');
                 textElements.forEach(el => el.classList.remove('hidden'));
                 navButtons.forEach(btn => {
                     btn.classList.remove('justify-center');
+                    btn.classList.remove('py-4', 'px-0');
+                    btn.classList.add('p-4');
                 });
             }
         }
