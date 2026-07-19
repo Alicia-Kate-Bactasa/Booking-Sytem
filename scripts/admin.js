@@ -26,26 +26,6 @@ const defaultServices = [
         const APPROVED_SUBSCRIPTION_ACCOUNTS_KEY = 'montage_approved_subscribers';
         const PENDING_SUBSCRIPTION_REQUESTS_KEY = 'montage_subscription_requests';
 
-        const defaultAppointments = [
-            { id: "MTG-849201", type: "pending", service: "Complete Interior Detailing", date: "2026-07-06", time: "09:00 AM", client: "Alicia Kate Bactasa", userType: "subscriber" },
-            { id: "MTG-102554", type: "pending", service: "Standard Car Wash", date: "2026-07-06", time: "11:00 AM", client: "Roberto Gomez", userType: "regular" },
-            { id: "MTG-736215", type: "completed", service: "Premium Car Wash", date: "2026-06-18", time: "09:00 AM", client: "VIP Member", userType: "subscriber" },
-            { id: "MTG-412985", type: "completed", service: "Standard Car Wash", date: "2026-05-12", time: "02:00 PM", client: "VIP Member", userType: "subscriber" },
-            { id: "MTG-903821", type: "cancelled", service: "Deluxe Car Wash", date: "2026-06-25", time: "03:00 PM", client: "Kyle Kenner", userType: "regular" }
-        ];
-
-        const defaultInvoices = [
-            { id: "INV-9932", type: "regular", status: "pending", client: "Roberto Gomez", service: "Standard Car Wash", total: 250, img: "https://images.unsplash.com/photo-1554415707-6e8cfc93fe23?auto=format&fit=crop&q=80&w=400", date: "2026-07-05" },
-            { id: "INV-1094", type: "subscriber", status: "pending", client: "Alicia Kate Bactasa", service: "Complete Interior Detailing", total: 0, img: "https://images.unsplash.com/photo-1554415707-6e8cfc93fe23?auto=format&fit=crop&q=80&w=400", date: "2026-07-06" },
-            { id: "INV-4412", type: "regular", status: "Paid", client: "VIP Member", service: "Premium Car Wash", total: 600, img: "", date: "2026-06-18" },
-            { id: "INV-3019", type: "regular", status: "Paid", client: "VIP Member", service: "Standard Car Wash", total: 250, img: "", date: "2026-05-12" }
-        ];
-
-        const defaultSubscribers = [
-            { id: "sub-1", name: "Alicia Kate Bactasa", email: "alicia@gmail.com", password: "password123", next_billing_date: "2026-07-06", status: "Verified", proof_image: "https://images.unsplash.com/photo-1554415707-6e8cfc93fe23?auto=format&fit=crop&q=80&w=400" },
-            { id: "sub-2", name: "Jun Culanag", email: "jun@gmail.com", password: "password123", next_billing_date: "2026-07-01", status: "Verified", proof_image: "https://images.unsplash.com/photo-1554415707-6e8cfc93fe23?auto=format&fit=crop&q=80&w=400" },
-            { id: "sub-3", name: "Chris Evans", email: "chris@gmail.com", password: "password123", next_billing_date: "2026-07-15", status: "Verified", proof_image: "https://images.unsplash.com/photo-1554415707-6e8cfc93fe23?auto=format&fit=crop&q=80&w=400" }
-        ];
 
         let appointmentsRegistry = [];
         let invoicesCollection = [];
@@ -1317,22 +1297,6 @@ const defaultServices = [
 
         /* ===================== FEEDBACKS AUDIT LOG ===================== */
         const FEEDBACKS_KEY = 'montage_feedbacks';
-        const defaultFeedbacks = [
-            {
-                client: "Alicia Kate Bactasa",
-                booking_id: "MTG-841103",
-                service: "Complete Interior Detailing",
-                rating: 4,
-                comments: "The level of precision on the interior cleaning was elite. Every single speck of dirt was cleared away from the center console tracks. Will use my monthly VIP sessions exclusively here."
-            },
-            {
-                client: "June Culanag",
-                booking_id: "MTG-102941",
-                service: "Basic Car Wash",
-                rating: 3,
-                comments: "Fast standard exterior foam wash. Good processing speeds, though wait lines can occasionally spill over the entryway."
-            }
-        ];
 
         function renderFeedbacks() {
             const container = document.getElementById('feedback-entries-container');

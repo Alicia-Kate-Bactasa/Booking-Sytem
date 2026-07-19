@@ -14,11 +14,6 @@
         const PENDING_SUBSCRIPTION_REQUESTS_KEY = 'montage_subscription_requests';
         const APPROVED_SUBSCRIPTION_ACCOUNTS_KEY = 'montage_approved_subscribers';
 
-        const defaultSubscribers = [
-            { id: "sub-1", name: "Alicia Kate Bactasa", email: "alicia@gmail.com", password: "password123", next_billing_date: "2026-07-06", status: "Verified" },
-            { id: "sub-2", name: "Jun Culanag", email: "jun@gmail.com", password: "password123", next_billing_date: "2026-07-03", status: "Rejected / Overdue" },
-            { id: "sub-3", name: "Chris Evans", email: "chris@gmail.com", password: "password123", next_billing_date: "2026-07-15", status: "Verified" }
-        ];
 
         // Master Catalog Collection Schema map matching specifications exactly
         let masterCatalogServices = [];
