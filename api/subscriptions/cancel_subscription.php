@@ -80,22 +80,15 @@ try {
         $expiryDate = $subscription['next_billing_date'];
         
         $subject = "VIP Subscription Cancellation Confirmation";
-        $html = Mailer::formatInvoice([
+        $html = Mailer::formatNotification([
             'title' => 'Subscription Cancelled',
             'status_bg' => '#fdf2f2',
             'status_border' => '#c0392b',
             'status_color' => '#c0392b',
             'status_label' => 'CANCELLATION PENDING',
             'status_detail' => "Dear {$name}, your request to cancel your VIP Unlimited Wash subscription has been processed. Your benefits remain active until your next billing date: <strong>{$expiryDate}</strong>, after which your membership will expire.",
-            'invoice_no' => 'SUB-' . $subscription['subscription_id'],
             'date' => date('Y-m-d'),
-            'client_name' => $name,
-            'client_email' => $email,
-            'item_name' => 'VIP Unlimited Wash Plan',
-            'item_subtext' => "Cancellation requested. Active until {$expiryDate}",
-            'item_price' => 0.00,
-            'subtotal' => 0.00,
-            'total_due' => 0.00
+            'client_name' => $name
         ]);
         
         try {

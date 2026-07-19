@@ -94,6 +94,11 @@ try {
     // Start transaction
     $conn->beginTransaction();
 
+    // Lock bookings for the scheduled date to prevent race conditions / concurrent overbooking
+    $lockStmt = $conn->prepare("SELECT booking_id FROM Booking WHERE scheduled_date = :date FOR UPDATE");
+    $lockStmt->bindValue(':date', $scheduled_date, PDO::PARAM_STR);
+    $lockStmt->execute();
+
     // 1. Retrieve the service price, duration and name
     $serviceQuery = "SELECT service_name, service_price, service_duration FROM Service WHERE service_id = :service_id LIMIT 1";
     $serviceStmt = $conn->prepare($serviceQuery);
@@ -134,6 +139,71 @@ try {
 
     $new_start = getMinutesFromSlot($time_slot);
     $new_end = $new_start + (int)$service['service_duration'];
+
+    // Validate that the slot is one of the allowed slots and fits operating hours
+    $validSlots = [
+        '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM',
+        '02:00 PM', '02:30 PM', '03:00 PM', '03:30 PM', '04:00 PM', '04:30 PM'
+    ];
+    if (!in_array($time_slot, $validSlots, true)) {
+        if ($conn->inTransaction()) {
+            $conn->rollBack();
+        }
+        http_response_code(400);
+        echo json_encode([
+            "status" => "error",
+            "message" => "Invalid time slot. Please choose a valid slot from the schedule catalog."
+        ]);
+        exit();
+    }
+
+    $fitsMorning = ($new_start >= 540 && $new_end <= 720);
+    $fitsAfternoon = ($new_start >= 840 && $new_end <= 1020);
+    if (!$fitsMorning && !$fitsAfternoon) {
+        if ($conn->inTransaction()) {
+            $conn->rollBack();
+        }
+        http_response_code(400);
+        echo json_encode([
+            "status" => "error",
+            "message" => "The requested service duration does not fit within operating blocks (Morning: 09:00 AM-12:00 PM, Afternoon: 02:00 PM-05:00 PM)."
+        ]);
+        exit();
+    }
+
+    // Sunday Constraint
+    if (date('N', strtotime($scheduled_date)) == 7) {
+        if ($conn->inTransaction()) {
+            $conn->rollBack();
+        }
+        http_response_code(400);
+        echo json_encode([
+            "status" => "error",
+            "message" => "Scheduling Constraint Violation: Montage Auto Studio operates strictly Mon-Sat. Sunday slots are unavailable."
+        ]);
+        exit();
+    }
+
+    // Saturday Capacity Ceiling check (max 16 bookings)
+    $dayOfWeek = date('N', strtotime($scheduled_date));
+    if ($dayOfWeek == 6) { // Saturday
+        $satQuery = "SELECT COUNT(*) FROM Booking WHERE scheduled_date = :date AND booking_status NOT IN ('Cancelled', 'No-Show')";
+        $satStmt = $conn->prepare($satQuery);
+        $satStmt->bindValue(':date', $scheduled_date, PDO::PARAM_STR);
+        $satStmt->execute();
+        $satCount = (int)$satStmt->fetchColumn();
+        if ($satCount >= 16) {
+            if ($conn->inTransaction()) {
+                $conn->rollBack();
+            }
+            http_response_code(400);
+            echo json_encode([
+                "status" => "error",
+                "message" => "The booking capacity limit for this Saturday (16 cars) has been reached."
+            ]);
+            exit();
+        }
+    }
 
     // 2. Perform the capacity-aware non-overlap check on Bay 1
     $overlapQuery1 = "SELECT b.booking_id 
@@ -195,34 +265,68 @@ try {
     // Resolve user_id
     $user_id = null;
     $isSubscriber = false;
+    $subscription_id = null;
     $customer_email = '';
     $customer_name = '';
 
     if ($_SESSION['role'] === 'Subscriber') {
         $user_id = $_SESSION['user_id'];
-        $isSubscriber = true;
         
-        $subStmt = $conn->prepare("SELECT email, username AS full_name FROM User WHERE user_id = :user_id LIMIT 1");
+        $subQuery = "SELECT subscription_id, plan_status FROM Subscription WHERE user_id = :user_id LIMIT 1";
+        $subStmt = $conn->prepare($subQuery);
         $subStmt->bindValue(':user_id', $user_id, PDO::PARAM_INT);
         $subStmt->execute();
         $subData = $subStmt->fetch();
-        if ($subData) {
-            $customer_email = $subData['email'];
-            $customer_name = $subData['full_name'];
+        
+        if (!$subData || !in_array($subData['plan_status'], ['Active', 'Cancellation Pending'], true)) {
+            if ($conn->inTransaction()) {
+                $conn->rollBack();
+            }
+            http_response_code(403);
+            echo json_encode([
+                "status" => "error",
+                "message" => "Booking privileges disabled. Your subscription is not active."
+            ]);
+            exit();
+        }
+        $isSubscriber = true;
+        $subscription_id = (int)$subData['subscription_id'];
+
+        $subUserStmt = $conn->prepare("SELECT email, username AS full_name FROM User WHERE user_id = :user_id LIMIT 1");
+        $subUserStmt->bindValue(':user_id', $user_id, PDO::PARAM_INT);
+        $subUserStmt->execute();
+        $subUserData = $subUserStmt->fetch();
+        if ($subUserData) {
+            $customer_email = $subUserData['email'];
+            $customer_name = $subUserData['full_name'];
         }
         $customer_id = null;
     } else {
         // Admin
         if ($admin_user_id) {
             $user_id = $admin_user_id;
-            $subStmt = $conn->prepare("SELECT email, username AS full_name FROM User WHERE user_id = :user_id LIMIT 1");
+            
+            $subQuery = "SELECT subscription_id, plan_status FROM Subscription WHERE user_id = :user_id LIMIT 1";
+            $subStmt = $conn->prepare($subQuery);
             $subStmt->bindValue(':user_id', $user_id, PDO::PARAM_INT);
             $subStmt->execute();
             $subData = $subStmt->fetch();
-            if ($subData) {
-                $customer_email = $subData['email'];
-                $customer_name = $subData['full_name'];
+            
+            if ($subData && in_array($subData['plan_status'], ['Active', 'Cancellation Pending'], true)) {
                 $isSubscriber = true;
+                $subscription_id = (int)$subData['subscription_id'];
+            } else {
+                $isSubscriber = false;
+                $subscription_id = null;
+            }
+
+            $subUserStmt = $conn->prepare("SELECT email, username AS full_name FROM User WHERE user_id = :user_id LIMIT 1");
+            $subUserStmt->bindValue(':user_id', $user_id, PDO::PARAM_INT);
+            $subUserStmt->execute();
+            $subUserData = $subUserStmt->fetch();
+            if ($subUserData) {
+                $customer_email = $subUserData['email'];
+                $customer_name = $subUserData['full_name'];
             }
             $customer_id = null;
         } else {
@@ -261,14 +365,6 @@ try {
         $booking_id = (int)$conn->lastInsertId();
         $invoice_id = null;
         if ($isSubscriber) {
-            // Fetch active subscription ID via user_id
-            $subIdQuery = "SELECT subscription_id FROM Subscription WHERE user_id = :user_id AND plan_status IN ('Active', 'Cancellation Pending') LIMIT 1";
-            $subIdStmt = $conn->prepare($subIdQuery);
-            $subIdStmt->bindValue(':user_id', $user_id, PDO::PARAM_INT);
-            $subIdStmt->execute();
-            $subData = $subIdStmt->fetch();
-            $subscription_id = $subData ? (int)$subData['subscription_id'] : null;
-
             // Zero-Value Invoices: To maintain a complete activity ledger, every booking generates an Invoice row
             $invoiceQuery = "INSERT INTO Invoice (booking_id, subscription_id, total_amount, invoice_type, invoice_status) 
                              VALUES (:booking_id, :subscription_id, 0.00, 'Single Detailing', 'Paid')";

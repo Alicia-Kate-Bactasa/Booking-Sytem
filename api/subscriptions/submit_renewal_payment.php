@@ -66,9 +66,20 @@ try {
     $subStmt->execute();
     $sub = $subStmt->fetch();
 
-    // 3. Guard against early prepayment (Temporal Eligibility Lock)
+    // 3. Guard against early prepayment (Temporal Eligibility Lock) and reactivation bypass
     // Ensure CURRENT_DATE > last_billing_date (unless it is a reactivation request)
     $today = date('Y-m-d');
+    if ($is_reactivation && $sub) {
+        if ($sub['plan_status'] === 'Active') {
+            http_response_code(400);
+            echo json_encode([
+                "status" => "error",
+                "message" => "Reactivation not required. Your subscription is currently Active."
+            ]);
+            exit();
+        }
+    }
+
     if (!$is_reactivation && $sub && !empty($sub['last_billing_date'])) {
         if ($today <= $sub['last_billing_date']) {
             http_response_code(400);

@@ -125,7 +125,18 @@ try {
         exit();
     }
 
-    // 4. Validate Sunday Constraint
+    // 4. Prevent rescheduling of past bookings
+    $today = date('Y-m-d');
+    if ($booking['old_date'] < $today) {
+        http_response_code(400);
+        echo json_encode([
+            "status" => "error",
+            "message" => "Invalid Action. Past bookings cannot be rescheduled."
+        ]);
+        exit();
+    }
+
+    // 5. Validate Sunday Constraint
     if (date('N', strtotime($scheduled_date)) == 7) {
         http_response_code(400);
         echo json_encode([
@@ -138,10 +149,68 @@ try {
     // Start Transaction
     $conn->beginTransaction();
 
-    // 5. Evaluate bay availability on the target slot (excluding current booking to prevent self-overlap)
+    // Lock bookings for the scheduled date to prevent race conditions / concurrent overbooking
+    $lockStmt = $conn->prepare("SELECT booking_id FROM Booking WHERE scheduled_date = :date FOR UPDATE");
+    $lockStmt->bindValue(':date', $scheduled_date, PDO::PARAM_STR);
+    $lockStmt->execute();
+
+    // 6. Evaluate bay availability on the target slot (excluding current booking to prevent self-overlap)
     $duration = (int)$booking['service_duration'];
     $newStart = getMinutesFromSlot($time_slot);
     $newEnd = $newStart + $duration;
+
+    // Validate that the slot is one of the allowed slots and fits operating hours
+    $validSlots = [
+        '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM',
+        '02:00 PM', '02:30 PM', '03:00 PM', '03:30 PM', '04:00 PM', '04:30 PM'
+    ];
+    if (!in_array($time_slot, $validSlots, true)) {
+        if ($conn->inTransaction()) {
+            $conn->rollBack();
+        }
+        http_response_code(400);
+        echo json_encode([
+            "status" => "error",
+            "message" => "Invalid time slot. Please choose a valid slot from the schedule catalog."
+        ]);
+        exit();
+    }
+
+    $fitsMorning = ($newStart >= 540 && $newEnd <= 720);
+    $fitsAfternoon = ($newStart >= 840 && $newEnd <= 1020);
+    if (!$fitsMorning && !$fitsAfternoon) {
+        if ($conn->inTransaction()) {
+            $conn->rollBack();
+        }
+        http_response_code(400);
+        echo json_encode([
+            "status" => "error",
+            "message" => "The requested service duration does not fit within operating blocks (Morning: 09:00 AM-12:00 PM, Afternoon: 02:00 PM-05:00 PM)."
+        ]);
+        exit();
+    }
+
+    // Saturday Capacity Ceiling check (max 16 bookings)
+    $dayOfWeek = date('N', strtotime($scheduled_date));
+    if ($dayOfWeek == 6) { // Saturday
+        $satQuery = "SELECT COUNT(*) FROM Booking WHERE scheduled_date = :date AND booking_id != :booking_id AND booking_status NOT IN ('Cancelled', 'No-Show')";
+        $satStmt = $conn->prepare($satQuery);
+        $satStmt->bindValue(':date', $scheduled_date, PDO::PARAM_STR);
+        $satStmt->bindValue(':booking_id', $booking_id, PDO::PARAM_INT);
+        $satStmt->execute();
+        $satCount = (int)$satStmt->fetchColumn();
+        if ($satCount >= 16) {
+            if ($conn->inTransaction()) {
+                $conn->rollBack();
+            }
+            http_response_code(400);
+            echo json_encode([
+                "status" => "error",
+                "message" => "The booking capacity limit for this Saturday (16 cars) has been reached."
+            ]);
+            exit();
+        }
+    }
 
     // Fetch other active bookings on target date
     $query = "SELECT b.time_slot, s.service_duration, b.bay_number 
@@ -211,23 +280,15 @@ try {
         $cleanBookingRef = 'MTG-' . $booking_id;
 
         $subject = "Appointment Rescheduled Confirmation - " . $cleanBookingRef;
-        $htmlContent = Mailer::formatInvoice([
+        $htmlContent = Mailer::formatNotification([
             'title' => 'Reschedule Confirmed',
             'status_bg' => '#e8f4fd',
             'status_border' => '#2980b9',
             'status_color' => '#2980b9',
             'status_label' => 'RESCHEDULED',
             'status_detail' => "Dear {$customerName}, your appointment for <strong>{$serviceName}</strong> has been successfully rescheduled to a new slot.<br><br><strong>New Schedule:</strong><br>📅 Date: {$scheduled_date}<br>🕒 Time: {$time_slot}<br><br><em>(Previous Schedule: {$booking['old_date']} at {$booking['old_slot']})</em>",
-            'invoice_no' => $cleanBookingRef,
             'date' => date('Y-m-d'),
-            'client_name' => $customerName,
-            'client_email' => $email,
-            'item_name' => $serviceName,
-            'item_subtext' => "Rescheduled detailing session.",
-            'item_price' => 0.00,
-            'subtotal' => 0.00,
-            'total_due' => 0.00,
-            'booking_id' => $booking_id
+            'client_name' => $customerName
         ]);
 
         try {

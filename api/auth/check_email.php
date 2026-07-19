@@ -42,9 +42,7 @@ try {
 
     $exists = false;
     if ($user) {
-        if ($user['role'] === 'Admin' || in_array($user['plan_status'], ['Active', 'Payment Pending', 'Cancellation Pending'])) {
-            $exists = true;
-        }
+        $exists = true;
     }
 
     http_response_code(200);

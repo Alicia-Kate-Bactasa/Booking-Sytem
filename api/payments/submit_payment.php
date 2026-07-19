@@ -141,8 +141,12 @@ try {
     // Require authentication (either Subscriber or Admin)
     require_auth(['Subscriber', 'Admin']);
 
-    // Check if the referenced invoice exists and get its customer_id
-    $invoiceCheckQuery = "SELECT invoice_id, customer_id FROM Invoice WHERE invoice_id = :invoice_id";
+    // Check if the referenced invoice exists and verify ownership via subscription or booking user_id
+    $invoiceCheckQuery = "SELECT i.invoice_id, s.user_id AS sub_user_id, b.user_id AS book_user_id 
+                          FROM Invoice i
+                          LEFT JOIN Subscription s ON i.subscription_id = s.subscription_id
+                          LEFT JOIN Booking b ON i.booking_id = b.booking_id
+                          WHERE i.invoice_id = :invoice_id LIMIT 1";
     $invoiceCheckStmt = $conn->prepare($invoiceCheckQuery);
     $invoiceCheckStmt->bindValue(':invoice_id', $invoice_id, PDO::PARAM_INT);
     $invoiceCheckStmt->execute();
@@ -160,17 +164,23 @@ try {
         exit();
     }
 
-    // If the authenticated user is a Subscriber, ensure they own this invoice
-    if ($_SESSION['role'] === 'Subscriber' && (int)$invoice['customer_id'] !== $_SESSION['customer_id']) {
-        if (file_exists($destinationPath)) {
-            unlink($destinationPath);
+    // If the authenticated user is a Subscriber, ensure they own this invoice (via Subscription or Booking user_id)
+    if ($_SESSION['role'] === 'Subscriber') {
+        $subUserId = $invoice['sub_user_id'] !== null ? (int)$invoice['sub_user_id'] : null;
+        $bookUserId = $invoice['book_user_id'] !== null ? (int)$invoice['book_user_id'] : null;
+        $sessionUserId = (int)$_SESSION['user_id'];
+        
+        if ($subUserId !== $sessionUserId && $bookUserId !== $sessionUserId) {
+            if (file_exists($destinationPath)) {
+                unlink($destinationPath);
+            }
+            http_response_code(403);
+            echo json_encode([
+                "status" => "error",
+                "message" => "Forbidden. You are not authorized to submit payment for this invoice."
+            ]);
+            exit();
         }
-        http_response_code(403);
-        echo json_encode([
-            "status" => "error",
-            "message" => "Forbidden. You are not authorized to submit payment for this invoice."
-        ]);
-        exit();
     }
 
     $payment_status = 'Pending Approval';

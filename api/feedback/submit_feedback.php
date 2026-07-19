@@ -97,6 +97,7 @@ if (is_string($booking_id_raw) && $booking_id_raw !== '') {
 
 // === SECTION: TRANSACTION & DATABASE OPERATION ===
 try {
+    verify_csrf_request();
     $booking_id = null;
     $customer_id = null;
 
@@ -138,8 +139,13 @@ try {
         }
         $booking_id = (int)$booking_id_raw;
 
-        // Verify that the booking exists, is completed, and get customer_id
-        $bookingCheckQuery = "SELECT customer_id, user_id, booking_status FROM Booking WHERE booking_id = :booking_id LIMIT 1";
+        // Verify that the booking exists, is completed, and get customer_id and names
+        $bookingCheckQuery = "SELECT b.customer_id, b.user_id, b.booking_status,
+                                     CASE WHEN b.user_id IS NOT NULL THEN u.username ELSE c.full_name END AS full_name
+                              FROM Booking b
+                              LEFT JOIN Customer c ON b.customer_id = c.customer_id
+                              LEFT JOIN User u ON b.user_id = u.user_id
+                              WHERE b.booking_id = :booking_id LIMIT 1";
         $bookingCheckStmt = $conn->prepare($bookingCheckQuery);
         $bookingCheckStmt->bindValue(':booking_id', $booking_id, PDO::PARAM_INT);
         $bookingCheckStmt->execute();
@@ -174,14 +180,27 @@ try {
 
         $customer_id = (int)$booking['customer_id'];
 
-        // If Subscriber, ensure the booking belongs to them
-        if (isset($_SESSION['role']) && $_SESSION['role'] === 'Subscriber' && isset($_SESSION['user_id']) && (int)$_SESSION['user_id'] !== (int)$booking['user_id']) {
-            http_response_code(403);
-            echo json_encode([
-                "status" => "error",
-                "message" => "Forbidden. You can only submit feedback for your own bookings."
-            ]);
-            exit();
+        // Enforce ownership check
+        if ($booking['user_id'] !== null) {
+            // Belongs to a VIP subscriber -> Must be logged in as that subscriber
+            if (!isset($_SESSION['user_id']) || (int)$_SESSION['user_id'] !== (int)$booking['user_id']) {
+                http_response_code(403);
+                echo json_encode([
+                    "status" => "error",
+                    "message" => "Forbidden. You are not authorized to submit feedback for this subscriber booking."
+                ]);
+                exit();
+            }
+        } else {
+            // Belongs to a guest/regular customer -> Check that the submitted client_name matches the booking name
+            if (strcasecmp(trim($client_name), trim($booking['full_name'])) !== 0) {
+                http_response_code(403);
+                echo json_encode([
+                    "status" => "error",
+                    "message" => "Forbidden. The name provided does not match the customer name registered for this booking."
+                ]);
+                exit();
+            }
         }
     }
 

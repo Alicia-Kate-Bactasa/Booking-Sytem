@@ -82,7 +82,31 @@ try {
         exit();
     }
 
-    // 3. Prevent cancellation of already finalized/cancelled bookings
+    // 3. Prevent cancellation of past bookings
+    $today = date('Y-m-d');
+    if ($booking['scheduled_date'] < $today) {
+        http_response_code(400);
+        echo json_encode([
+            "status" => "error",
+            "message" => "Invalid Action. You cannot cancel a past appointment session."
+        ]);
+        exit();
+    }
+
+    // 4. Enforce 24-hour cancellation notice window for Subscribers
+    if ($_SESSION['role'] === 'Subscriber') {
+        $booking_datetime = strtotime($booking['scheduled_date'] . ' ' . $booking['time_slot']);
+        if ($booking_datetime - time() < 86400) { // 24 hours in seconds
+            http_response_code(400);
+            echo json_encode([
+                "status" => "error",
+                "message" => "Invalid Action. Cancellations must be made at least 24 hours in advance of the scheduled session."
+            ]);
+            exit();
+        }
+    }
+
+    // 5. Prevent cancellation of already finalized/cancelled bookings
     if (in_array($booking['booking_status'], ['Completed', 'Cancelled', 'No-Show'], true)) {
         http_response_code(400);
         echo json_encode([
@@ -115,23 +139,15 @@ try {
         $bookingRef = 'MTG-' . $booking_id;
         
         $subject = "Booking Cancellation Notice - Booking Ref: " . $bookingRef;
-        $html = Mailer::formatInvoice([
+        $html = Mailer::formatNotification([
             'title' => 'Booking Cancelled',
             'status_bg' => '#fdf2f2',
             'status_border' => '#c0392b',
             'status_color' => '#c0392b',
             'status_label' => 'CANCELLED',
             'status_detail' => "Dear {$name}, your booking reference <strong>{$bookingRef}</strong> for <strong>{$service}</strong> scheduled on {$date} at {$time} has been cancelled successfully.",
-            'booking_id' => $booking_id,
-            'invoice_no' => $bookingRef,
             'date' => date('Y-m-d'),
-            'client_name' => $name,
-            'client_email' => $email,
-            'item_name' => $service,
-            'item_subtext' => "Original Schedule: {$date} at {$time}",
-            'item_price' => 0.00,
-            'subtotal' => 0.00,
-            'total_due' => 0.00
+            'client_name' => $name
         ]);
         try {
             Mailer::send($email, $subject, $html);

@@ -160,23 +160,15 @@ try {
                 ]);
             } else {
                 $subject = "Booking Cancellation Notice - Booking Ref: " . $bookingRef;
-                $html = Mailer::formatInvoice([
+                $html = Mailer::formatNotification([
                     'title' => 'Booking Cancelled',
                     'status_bg' => '#fdf2f2',
                     'status_border' => '#c0392b',
                     'status_color' => '#c0392b',
                     'status_label' => 'CANCELLED',
                     'status_detail' => "Dear {$name}, your booking reference <strong>{$bookingRef}</strong> for <strong>{$service}</strong> scheduled on {$date} at {$time} has been cancelled successfully. If this was a mistake, please reach out to us.",
-                    'booking_id' => $booking_id,
-                    'invoice_no' => $bookingRef,
                     'date' => date('Y-m-d'),
-                    'client_name' => $name,
-                    'client_email' => $email,
-                    'item_name' => $service,
-                    'item_subtext' => "Original Schedule: {$date} at {$time}",
-                    'item_price' => $price,
-                    'subtotal' => $price,
-                    'total_due' => $price
+                    'client_name' => $name
                 ]);
             }
             try {

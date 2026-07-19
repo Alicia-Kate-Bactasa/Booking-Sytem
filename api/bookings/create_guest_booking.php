@@ -176,6 +176,11 @@ if (!function_exists('getMinutesFromSlot')) {
 try {
     $conn->beginTransaction();
 
+    // Lock bookings for the scheduled date to prevent race conditions / concurrent overbooking
+    $lockStmt = $conn->prepare("SELECT booking_id FROM Booking WHERE scheduled_date = :date FOR UPDATE");
+    $lockStmt->bindValue(':date', $scheduled_date, PDO::PARAM_STR);
+    $lockStmt->execute();
+
     // 1. Retrieve the service by name
     $serviceQuery = "SELECT service_id, service_price, service_duration FROM Service WHERE service_name = :service_name LIMIT 1";
     $serviceStmt = $conn->prepare($serviceQuery);
@@ -201,6 +206,75 @@ try {
     // 2. Perform capacity-aware non-overlap check on Bay 1
     $new_start = getMinutesFromSlot($time_slot);
     $new_end = $new_start + $duration;
+
+    // Validate that the slot is one of the allowed slots and fits operating hours
+    $validSlots = [
+        '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM',
+        '02:00 PM', '02:30 PM', '03:00 PM', '03:30 PM', '04:00 PM', '04:30 PM'
+    ];
+    if (!in_array($time_slot, $validSlots, true)) {
+        if (file_exists($destinationPath)) unlink($destinationPath);
+        if ($conn->inTransaction()) {
+            $conn->rollBack();
+        }
+        http_response_code(400);
+        echo json_encode([
+            "status" => "error",
+            "message" => "Invalid time slot. Please choose a valid slot from the schedule catalog."
+        ]);
+        exit();
+    }
+
+    $fitsMorning = ($new_start >= 540 && $new_end <= 720);
+    $fitsAfternoon = ($new_start >= 840 && $new_end <= 1020);
+    if (!$fitsMorning && !$fitsAfternoon) {
+        if (file_exists($destinationPath)) unlink($destinationPath);
+        if ($conn->inTransaction()) {
+            $conn->rollBack();
+        }
+        http_response_code(400);
+        echo json_encode([
+            "status" => "error",
+            "message" => "The requested service duration does not fit within operating blocks (Morning: 09:00 AM-12:00 PM, Afternoon: 02:00 PM-05:00 PM)."
+        ]);
+        exit();
+    }
+
+    // Sunday Constraint
+    if (date('N', strtotime($scheduled_date)) == 7) {
+        if (file_exists($destinationPath)) unlink($destinationPath);
+        if ($conn->inTransaction()) {
+            $conn->rollBack();
+        }
+        http_response_code(400);
+        echo json_encode([
+            "status" => "error",
+            "message" => "Scheduling Constraint Violation: Montage Auto Studio operates strictly Mon-Sat. Sunday slots are unavailable."
+        ]);
+        exit();
+    }
+
+    // Saturday Capacity Ceiling check (max 16 bookings)
+    $dayOfWeek = date('N', strtotime($scheduled_date));
+    if ($dayOfWeek == 6) { // Saturday
+        $satQuery = "SELECT COUNT(*) FROM Booking WHERE scheduled_date = :date AND booking_status NOT IN ('Cancelled', 'No-Show')";
+        $satStmt = $conn->prepare($satQuery);
+        $satStmt->bindValue(':date', $scheduled_date, PDO::PARAM_STR);
+        $satStmt->execute();
+        $satCount = (int)$satStmt->fetchColumn();
+        if ($satCount >= 16) {
+            if (file_exists($destinationPath)) unlink($destinationPath);
+            if ($conn->inTransaction()) {
+                $conn->rollBack();
+            }
+            http_response_code(400);
+            echo json_encode([
+                "status" => "error",
+                "message" => "The booking capacity limit for this Saturday (16 cars) has been reached."
+            ]);
+            exit();
+        }
+    }
 
     $overlapQuery1 = "SELECT b.booking_id 
                       FROM Booking b
