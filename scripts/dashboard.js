@@ -958,6 +958,20 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                         document.getElementById('subParamName').innerText = prof.full_name;
                         document.getElementById('subParamNextBilling').innerText = userProfileSession.next_billing_date;
 
+                        const statusTag = document.getElementById('accountStatusTag');
+                        if (statusTag) {
+                            if (prof.plan_status === 'Active' || prof.plan_status === 'Cancellation Pending') {
+                                statusTag.className = "text-xs bg-emerald-50 text-emerald-700 font-bold px-4 py-2 rounded-full border border-emerald-200 flex items-center gap-1.5 self-start sm:self-center";
+                                statusTag.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>VIP STATUS ACTIVE`;
+                            } else if (prof.plan_status === 'Payment Pending') {
+                                statusTag.className = "text-xs bg-amber-50 text-amber-700 font-bold px-4 py-2 rounded-full border border-amber-200 flex items-center gap-1.5 self-start sm:self-center";
+                                statusTag.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500 inline-block"></span>VIP STATUS PENDING`;
+                            } else {
+                                statusTag.className = "text-xs bg-neutral-100 text-neutral-600 font-bold px-4 py-2 rounded-full border border-neutral-200 flex items-center gap-1.5 self-start sm:self-center";
+                                statusTag.innerHTML = `<span class="w-2 h-2 rounded-full bg-neutral-400 inline-block"></span>VIP STATUS INACTIVE`;
+                            }
+                        }
+
                         const customerTypeEl = document.getElementById('subParamType');
                         if (customerTypeEl) {
                             customerTypeEl.innerText = userProfileSession.customer_type;
