@@ -182,7 +182,7 @@ try {
     $lockStmt->execute();
 
     // 1. Retrieve the service by name
-    $serviceQuery = "SELECT service_id, service_price, service_duration FROM Service WHERE service_name = :service_name LIMIT 1";
+    $serviceQuery = "SELECT service_id, service_price, service_duration FROM Service WHERE service_name = :service_name AND is_active = 1 LIMIT 1";
     $serviceStmt = $conn->prepare($serviceQuery);
     $serviceStmt->bindValue(':service_name', $service_name, PDO::PARAM_STR);
     $serviceStmt->execute();

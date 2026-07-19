@@ -28,7 +28,15 @@ try {
                     FROM Invoice i
                     JOIN Subscription s ON i.subscription_id = s.subscription_id
                     JOIN User u ON s.user_id = u.user_id
-                    LEFT JOIN Payment p ON i.invoice_id = p.invoice_id
+                    LEFT JOIN (
+                        SELECT invoice_id, payment_id, payment_method, payment_status, proof_of_payment
+                        FROM Payment 
+                        WHERE (invoice_id, payment_id) IN (
+                            SELECT invoice_id, MAX(payment_id) 
+                            FROM Payment 
+                            GROUP BY invoice_id
+                        )
+                    ) p ON i.invoice_id = p.invoice_id
                     WHERE i.invoice_type = 'Monthly Roster'
                       AND p.payment_status IN ('Paid', 'Rejected')
                     ORDER BY i.issued_at DESC";

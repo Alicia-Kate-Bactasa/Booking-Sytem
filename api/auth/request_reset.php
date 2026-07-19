@@ -71,6 +71,24 @@ try {
         exit();
     }
 
+    // Check if a reset token was already requested in the last 60 seconds (rate limiting)
+    $rateLimitQuery = "SELECT created_at FROM UserSecurityAction WHERE action_type = 'password_reset' AND identifier = :email LIMIT 1";
+    $rateLimitStmt = $conn->prepare($rateLimitQuery);
+    $rateLimitStmt->bindValue(':email', $email, PDO::PARAM_STR);
+    $rateLimitStmt->execute();
+    $existingToken = $rateLimitStmt->fetch();
+    if ($existingToken) {
+        $createdTime = strtotime($existingToken['created_at']);
+        if (time() - $createdTime < 60) {
+            http_response_code(429); // Too Many Requests
+            echo json_encode([
+                "status" => "error",
+                "message" => "Rate limit exceeded. Please wait at least 60 seconds before requesting another password reset link."
+            ]);
+            exit();
+        }
+    }
+
     // 3. Delete any existing reset tokens for this email to prevent multiple valid links
     $deleteQuery = "DELETE FROM UserSecurityAction WHERE action_type = 'password_reset' AND identifier = :email";
     $deleteStmt = $conn->prepare($deleteQuery);

@@ -128,7 +128,7 @@ if (!move_uploaded_file($fileTmpPath, $destinationPath)) {
 
 try {
     // Retrieve service name and duration
-    $serviceQuery = "SELECT service_name, service_price, service_duration FROM Service WHERE service_id = :service_id LIMIT 1";
+    $serviceQuery = "SELECT service_name, service_price, service_duration FROM Service WHERE service_id = :service_id AND is_active = 1 LIMIT 1";
     $serviceStmt = $conn->prepare($serviceQuery);
     $serviceStmt->bindValue(':service_id', $service_id, PDO::PARAM_INT);
     $serviceStmt->execute();
@@ -148,8 +148,124 @@ try {
     $service_price = $service['service_price'];
     $amount_paid = (float)$service_price;
 
+    if (!function_exists('getMinutesFromSlot')) {
+        function getMinutesFromSlot($timeStr) {
+            $timeStr = trim($timeStr);
+            $parts = explode(' ', $timeStr);
+            if (count($parts) < 2) return 0;
+            $hm = explode(':', $parts[0]);
+            $h = (int)$hm[0];
+            $m = isset($hm[1]) ? (int)$hm[1] : 0;
+            $ampm = strtoupper($parts[1]);
+            
+            if ($ampm === 'PM' && $h !== 12) {
+                $h += 12;
+            }
+            if ($ampm === 'AM' && $h === 12) {
+                $h = 0;
+            }
+            return $h * 60 + $m;
+        }
+    }
+
+    $new_start = getMinutesFromSlot($time_slot);
+    $new_end = $new_start + (int)$service['service_duration'];
+
+    // Validate that the slot is one of the allowed slots and fits operating hours
+    $validSlots = [
+        '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM',
+        '02:00 PM', '02:30 PM', '03:00 PM', '03:30 PM', '04:00 PM', '04:30 PM'
+    ];
+    if (!in_array($time_slot, $validSlots, true)) {
+        if (file_exists($destinationPath)) unlink($destinationPath);
+        http_response_code(400);
+        echo json_encode([
+            "status" => "error",
+            "message" => "Invalid time slot. Please choose a valid slot from the schedule catalog."
+        ]);
+        exit();
+    }
+
+    $fitsMorning = ($new_start >= 540 && $new_end <= 720);
+    $fitsAfternoon = ($new_start >= 840 && $new_end <= 1020);
+    if (!$fitsMorning && !$fitsAfternoon) {
+        if (file_exists($destinationPath)) unlink($destinationPath);
+        http_response_code(400);
+        echo json_encode([
+            "status" => "error",
+            "message" => "The requested service duration does not fit within operating blocks (Morning: 09:00 AM-12:00 PM, Afternoon: 02:00 PM-05:00 PM)."
+        ]);
+        exit();
+    }
+
+    // Sunday Constraint
+    if (date('N', strtotime($scheduled_date)) == 7) {
+        if (file_exists($destinationPath)) unlink($destinationPath);
+        http_response_code(400);
+        echo json_encode([
+            "status" => "error",
+            "message" => "Scheduling Constraint Violation: Montage Auto Studio operates strictly Mon-Sat. Sunday slots are unavailable."
+        ]);
+        exit();
+    }
+
+    // Saturday Capacity Ceiling check (max 16 bookings)
+    $dayOfWeek = date('N', strtotime($scheduled_date));
+    if ($dayOfWeek == 6) { // Saturday
+        $satQuery = "SELECT COUNT(*) FROM Booking WHERE scheduled_date = :date AND booking_status NOT IN ('Cancelled', 'No-Show')";
+        $satStmt = $conn->prepare($satQuery);
+        $satStmt->bindValue(':date', $scheduled_date, PDO::PARAM_STR);
+        $satStmt->execute();
+        $satCount = (int)$satStmt->fetchColumn();
+        if ($satCount >= 16) {
+            if (file_exists($destinationPath)) unlink($destinationPath);
+            http_response_code(400);
+            echo json_encode([
+                "status" => "error",
+                "message" => "The booking capacity limit for this Saturday (16 cars) has been reached."
+            ]);
+            exit();
+        }
+    }
+
     // Start Transaction
     $conn->beginTransaction();
+
+    // Lock bookings for the scheduled date to prevent race conditions / concurrent overbooking
+    $lockStmt = $conn->prepare("SELECT booking_id FROM Booking WHERE scheduled_date = :date FOR UPDATE");
+    $lockStmt->bindValue(':date', $scheduled_date, PDO::PARAM_STR);
+    $lockStmt->execute();
+
+    // Verify bay availability on the target slot
+    $overlapQuery = "SELECT b.booking_id 
+                     FROM Booking b
+                     JOIN Service s ON b.service_id = s.service_id
+                     WHERE b.scheduled_date = :date 
+                       AND b.bay_number = :bay 
+                       AND b.booking_status NOT IN ('Cancelled', 'No-Show')
+                       AND (
+                         (TIME_TO_SEC(STR_TO_DATE(b.time_slot, '%h:%i %p')) / 60) < :new_end 
+                         AND 
+                         ((TIME_TO_SEC(STR_TO_DATE(b.time_slot, '%h:%i %p')) / 60) + s.service_duration) > :new_start
+                       ) LIMIT 1";
+    $overlapStmt = $conn->prepare($overlapQuery);
+    $overlapStmt->bindValue(':date', $scheduled_date, PDO::PARAM_STR);
+    $overlapStmt->bindValue(':bay', $bay_number, PDO::PARAM_INT);
+    $overlapStmt->bindValue(':new_start', $new_start, PDO::PARAM_INT);
+    $overlapStmt->bindValue(':new_end', $new_end, PDO::PARAM_INT);
+    $overlapStmt->execute();
+    if ($overlapStmt->fetch()) {
+        if (file_exists($destinationPath)) unlink($destinationPath);
+        if ($conn->inTransaction()) {
+            $conn->rollBack();
+        }
+        http_response_code(400);
+        echo json_encode([
+            "status" => "error",
+            "message" => "The selected bay is already occupied during this time slot."
+        ]);
+        exit();
+    }
 
     // 1. Create or resolve Walk-In customer record
     $checkCustQuery = "SELECT customer_id FROM Customer WHERE phone_number = :phone_number LIMIT 1";

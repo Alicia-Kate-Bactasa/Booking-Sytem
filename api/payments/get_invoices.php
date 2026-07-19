@@ -44,7 +44,15 @@ try {
               JOIN Booking b ON i.booking_id = b.booking_id
               JOIN Customer c ON b.customer_id = c.customer_id
               JOIN Service ser ON b.service_id = ser.service_id
-              LEFT JOIN Payment p ON i.invoice_id = p.invoice_id
+              LEFT JOIN (
+                  SELECT invoice_id, payment_id, payment_method, payment_status, proof_of_payment
+                  FROM Payment 
+                  WHERE (invoice_id, payment_id) IN (
+                      SELECT invoice_id, MAX(payment_id) 
+                      FROM Payment 
+                      GROUP BY invoice_id
+                  )
+              ) p ON i.invoice_id = p.invoice_id
               WHERE i.invoice_type = 'Single Detailing' AND i.total_amount > 0.00
               ORDER BY i.issued_at DESC";
               

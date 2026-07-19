@@ -100,7 +100,7 @@ try {
     $lockStmt->execute();
 
     // 1. Retrieve the service price, duration and name
-    $serviceQuery = "SELECT service_name, service_price, service_duration FROM Service WHERE service_id = :service_id LIMIT 1";
+    $serviceQuery = "SELECT service_name, service_price, service_duration FROM Service WHERE service_id = :service_id AND is_active = 1 LIMIT 1";
     $serviceStmt = $conn->prepare($serviceQuery);
     $serviceStmt->bindValue(':service_id', $service_id, PDO::PARAM_INT);
     $serviceStmt->execute();
@@ -272,20 +272,24 @@ try {
     if ($_SESSION['role'] === 'Subscriber') {
         $user_id = $_SESSION['user_id'];
         
-        $subQuery = "SELECT subscription_id, plan_status FROM Subscription WHERE user_id = :user_id LIMIT 1";
+        $subQuery = "SELECT subscription_id, plan_status, next_billing_date FROM Subscription WHERE user_id = :user_id LIMIT 1";
         $subStmt = $conn->prepare($subQuery);
         $subStmt->bindValue(':user_id', $user_id, PDO::PARAM_INT);
         $subStmt->execute();
         $subData = $subStmt->fetch();
         
-        if (!$subData || !in_array($subData['plan_status'], ['Active', 'Cancellation Pending'], true)) {
+        $today = date('Y-m-d');
+        if (!$subData 
+            || !in_array($subData['plan_status'], ['Active', 'Cancellation Pending'], true)
+            || (!empty($subData['next_billing_date']) && $today > $subData['next_billing_date'])
+        ) {
             if ($conn->inTransaction()) {
                 $conn->rollBack();
             }
             http_response_code(403);
             echo json_encode([
                 "status" => "error",
-                "message" => "Booking privileges disabled. Your subscription is not active."
+                "message" => "Booking privileges disabled. Your subscription is not active or has expired."
             ]);
             exit();
         }
@@ -306,13 +310,17 @@ try {
         if ($admin_user_id) {
             $user_id = $admin_user_id;
             
-            $subQuery = "SELECT subscription_id, plan_status FROM Subscription WHERE user_id = :user_id LIMIT 1";
+            $subQuery = "SELECT subscription_id, plan_status, next_billing_date FROM Subscription WHERE user_id = :user_id LIMIT 1";
             $subStmt = $conn->prepare($subQuery);
             $subStmt->bindValue(':user_id', $user_id, PDO::PARAM_INT);
             $subStmt->execute();
             $subData = $subStmt->fetch();
             
-            if ($subData && in_array($subData['plan_status'], ['Active', 'Cancellation Pending'], true)) {
+            $today = date('Y-m-d');
+            if ($subData 
+                && in_array($subData['plan_status'], ['Active', 'Cancellation Pending'], true)
+                && (empty($subData['next_billing_date']) || $today <= $subData['next_billing_date'])
+            ) {
                 $isSubscriber = true;
                 $subscription_id = (int)$subData['subscription_id'];
             } else {

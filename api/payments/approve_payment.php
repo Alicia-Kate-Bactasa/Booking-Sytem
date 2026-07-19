@@ -212,11 +212,21 @@ try {
         }
 
         if ($invoice['invoice_type'] === 'Monthly Roster') {
-            // Set Subscription to Expired (archived)
-            $updateSub = "UPDATE Subscription SET plan_status = 'Expired' WHERE user_id = :user_id";
-            $stmtSub = $conn->prepare($updateSub);
-            $stmtSub->bindValue(':user_id', $subscription_user_id, PDO::PARAM_INT);
-            $stmtSub->execute();
+            // Check current subscription status before updating to Expired
+            $checkSubQuery = "SELECT plan_status FROM Subscription WHERE user_id = :user_id LIMIT 1";
+            $checkSubStmt = $conn->prepare($checkSubQuery);
+            $checkSubStmt->bindValue(':user_id', $subscription_user_id, PDO::PARAM_INT);
+            $checkSubStmt->execute();
+            $subInfo = $checkSubStmt->fetch();
+
+            if ($subInfo && $subInfo['plan_status'] === 'Active') {
+                log_system_event($conn, 'Renewal Payment Rejected', "Subscription renewal payment for User ID {$subscription_user_id} rejected by Admin. Subscription remains Active for current cycle.");
+            } else {
+                $updateSub = "UPDATE Subscription SET plan_status = 'Expired' WHERE user_id = :user_id";
+                $stmtSub = $conn->prepare($updateSub);
+                $stmtSub->bindValue(':user_id', $subscription_user_id, PDO::PARAM_INT);
+                $stmtSub->execute();
+            }
         }
 
         log_system_event($conn, 'Payment Rejected', "Invoice ID {$invoice_id} rejected. Status set to Rejected. Amount: ₱{$payment['amount']}. Type: {$invoice['invoice_type']}.");
@@ -248,27 +258,43 @@ try {
 
         if ($status === 'Paid') {
             $subject = "Payment Approved - Invoice ID: INV-" . $invoice_id;
-            $invoiceData['title'] = 'Official Invoice';
-            $invoiceData['status_bg'] = '#f4fbf7';
-            $invoiceData['status_border'] = '#27ae60';
-            $invoiceData['status_color'] = '#27ae60';
-            $invoiceData['status_label'] = 'PAID';
-            $invoiceData['status_detail'] = ($invoice['invoice_type'] === 'Monthly Roster')
-                ? ($isReactivation ? 'Your payment has been successfully approved! Your VIP Unlimited Plan is now REACTIVATED and ACTIVE.' : 'Your payment has been successfully approved! Your VIP Unlimited Plan is now ACTIVE.')
-                : 'Your booking payment has been successfully approved and confirmed. We look forward to servicing your vehicle!';
+            $invoiceData = [
+                'invoice_no' => 'INV-' . $invoice_id,
+                'date' => date('Y-m-d'),
+                'client_name' => $fullName,
+                'client_email' => $email,
+                'item_name' => $itemName,
+                'item_subtext' => $itemSubtext,
+                'item_price' => (float)$payment['amount'],
+                'subtotal' => (float)$payment['amount'],
+                'total_due' => (float)$payment['amount'],
+                'booking_id' => !empty($invoice['booking_id']) ? (int)$invoice['booking_id'] : null,
+                'title' => 'Official Invoice',
+                'status_bg' => '#f4fbf7',
+                'status_border' => '#27ae60',
+                'status_color' => '#27ae60',
+                'status_label' => 'PAID',
+                'status_detail' => ($invoice['invoice_type'] === 'Monthly Roster')
+                    ? ($isReactivation ? 'Your payment has been successfully approved! Your VIP Unlimited Plan is now REACTIVATED and ACTIVE.' : 'Your payment has been successfully approved! Your VIP Unlimited Plan is now ACTIVE.')
+                    : 'Your booking payment has been successfully approved and confirmed. We look forward to servicing your vehicle!'
+            ];
+            $htmlContent = Mailer::formatInvoice($invoiceData);
         } else {
             $subject = "Payment Proof Rejected - Invoice ID: INV-" . $invoice_id;
-            $invoiceData['title'] = 'Rejection Notice';
-            $invoiceData['status_bg'] = '#fdf2f2';
-            $invoiceData['status_border'] = '#c0392b';
-            $invoiceData['status_color'] = '#c0392b';
-            $invoiceData['status_label'] = 'PAYMENT REJECTED';
-            $invoiceData['status_detail'] = ($invoice['invoice_type'] === 'Monthly Roster')
+            $statusDetail = ($invoice['invoice_type'] === 'Monthly Roster')
                 ? 'Unfortunately, your payment proof was rejected. Please review your GCash receipt details and resubmit.'
                 : 'Unfortunately, your booking payment proof was rejected. Please resubmit your booking with a valid payment screenshot.';
+            $htmlContent = Mailer::formatNotification([
+                'title' => 'Rejection Notice',
+                'status_bg' => '#fdf2f2',
+                'status_border' => '#c0392b',
+                'status_color' => '#c0392b',
+                'status_label' => 'PAYMENT REJECTED',
+                'status_detail' => $statusDetail,
+                'date' => date('Y-m-d'),
+                'client_name' => $fullName
+            ]);
         }
-
-        $htmlContent = Mailer::formatInvoice($invoiceData);
         Mailer::send($email, $subject, $htmlContent);
     }
 

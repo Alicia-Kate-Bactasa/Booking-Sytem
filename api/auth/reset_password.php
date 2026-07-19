@@ -31,11 +31,16 @@ if (empty($token) || empty($new_password)) {
     exit();
 }
 
-if (strlen($new_password) < 6) {
+if (strlen($new_password) < 8 || 
+    !preg_match("/[A-Z]/", $new_password) || 
+    !preg_match("/[a-z]/", $new_password) || 
+    !preg_match("/[0-9]/", $new_password) || 
+    !preg_match("/[^a-zA-Z0-9]/", $new_password)) {
+    
     http_response_code(400);
     echo json_encode([
         "status" => "error",
-        "message" => "Password must be at least 6 characters long."
+        "message" => "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character."
     ]);
     exit();
 }

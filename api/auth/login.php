@@ -190,7 +190,7 @@ try {
                     $next_billing_date = $subscription['next_billing_date'];
 
                     $today = date('Y-m-d');
-                    if ($plan_status === 'Cancellation Pending' && !empty($next_billing_date) && $today > $next_billing_date) {
+                    if (in_array($plan_status, ['Active', 'Cancellation Pending'], true) && !empty($next_billing_date) && $today > $next_billing_date) {
                         $updateExpired = "UPDATE Subscription SET plan_status = 'Expired' WHERE subscription_id = :sub_id";
                         $stmtExp = $conn->prepare($updateExpired);
                         $stmtExp->bindValue(':sub_id', $subscription_id, PDO::PARAM_INT);

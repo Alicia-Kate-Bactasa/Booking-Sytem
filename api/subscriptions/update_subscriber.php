@@ -120,7 +120,7 @@ try {
         $subDates = $dateFetchStmt->fetch();
 
         $today = date('Y-m-d');
-        if ($subDates && $subDates['plan_status'] === 'Active' && !empty($subDates['next_billing_date']) && $subDates['next_billing_date'] >= $today) {
+        if ($subDates && ($subDates['plan_status'] === 'Active' || $subDates['plan_status'] === 'Cancellation Pending') && !empty($subDates['next_billing_date']) && $subDates['next_billing_date'] >= $today) {
             // Early renewal: extend from the current next billing date
             $nextBillingDate = date('Y-m-d', strtotime($subDates['next_billing_date'] . ' + 30 days'));
             $lastBillingDate = $subDates['next_billing_date'];
@@ -239,46 +239,53 @@ try {
         $amount = $latestInv ? (float)$latestInv['total_amount'] : 1500.00;
         $invDate = $latestInv ? substr($latestInv['issued_at'], 0, 10) : date('Y-m-d');
 
-        $invoiceData = [
-            'invoice_no' => 'INV-' . $invoice_id,
-            'date' => $invDate,
-            'client_name' => $fullName,
-            'client_email' => $clientEmail,
-            'item_name' => 'VIP Unlimited Plan',
-            'item_subtext' => 'Monthly VIP subscription roster payment.',
-            'item_price' => $amount,
-            'subtotal' => $amount,
-            'total_due' => $amount
-        ];
-
         if ($status === 'Approved') {
+            $invoiceData = [
+                'invoice_no' => 'INV-' . $invoice_id,
+                'date' => $invDate,
+                'client_name' => $fullName,
+                'client_email' => $clientEmail,
+                'item_name' => 'VIP Unlimited Plan',
+                'item_subtext' => 'Monthly VIP subscription roster payment.',
+                'item_price' => $amount,
+                'subtotal' => $amount,
+                'total_due' => $amount,
+                'title' => 'Official Invoice',
+                'status_bg' => '#f4fbf7',
+                'status_border' => '#27ae60',
+                'status_color' => '#27ae60',
+                'status_label' => 'PAID / ACTIVE',
+                'status_detail' => 'Your registration payment has been successfully approved! Your VIP Unlimited Plan is now ACTIVE.'
+            ];
             $subject = "Subscription Approved - VIP Unlimited Plan";
-            $invoiceData['title'] = 'Official Invoice';
-            $invoiceData['status_bg'] = '#f4fbf7';
-            $invoiceData['status_border'] = '#27ae60';
-            $invoiceData['status_color'] = '#27ae60';
-            $invoiceData['status_label'] = 'PAID / ACTIVE';
-            $invoiceData['status_detail'] = 'Your registration payment has been successfully approved! Your VIP Unlimited Plan is now ACTIVE.';
+            $htmlContent = Mailer::formatInvoice($invoiceData);
         } elseif ($status === 'Rejected') {
             $subject = "Subscription Registration Rejected";
-            $invoiceData['title'] = 'Rejection Notice';
-            $invoiceData['status_bg'] = '#fdf2f2';
-            $invoiceData['status_border'] = '#c0392b';
-            $invoiceData['status_color'] = '#c0392b';
-            $invoiceData['status_label'] = 'PAYMENT REJECTED';
-            $invoiceData['status_detail'] = 'We regret to inform you that your subscription registration payment proof was rejected. Please review your GCash receipt details and resubmit registration.';
+            $htmlContent = Mailer::formatNotification([
+                'title' => 'Rejection Notice',
+                'status_bg' => '#fdf2f2',
+                'status_border' => '#c0392b',
+                'status_color' => '#c0392b',
+                'status_label' => 'PAYMENT REJECTED',
+                'status_detail' => 'We regret to inform you that your subscription registration payment proof was rejected. Please review your GCash receipt details and resubmit registration.',
+                'date' => date('Y-m-d'),
+                'client_name' => $fullName
+            ]);
         } else {
             // Inactive / manual downgrade
             $subject = "Subscription Service Status Update";
-            $invoiceData['title'] = 'Subscription Downgraded';
-            $invoiceData['status_bg'] = '#fef9e7';
-            $invoiceData['status_border'] = '#e67e22';
-            $invoiceData['status_color'] = '#d35400';
-            $invoiceData['status_label'] = 'INACTIVE / EXPIRED';
-            $invoiceData['status_detail'] = 'Your VIP Unlimited Plan subscription has been updated to INACTIVE. Your priority scheduling access and detailing wash session benefits are now expired.';
+            $htmlContent = Mailer::formatNotification([
+                'title' => 'Subscription Downgraded',
+                'status_bg' => '#fef9e7',
+                'status_border' => '#e67e22',
+                'status_color' => '#d35400',
+                'status_label' => 'INACTIVE / EXPIRED',
+                'status_detail' => 'Your VIP Unlimited Plan subscription has been updated to INACTIVE. Your priority scheduling access and detailing wash session benefits are now expired.',
+                'date' => date('Y-m-d'),
+                'client_name' => $fullName
+            ]);
         }
 
-        $htmlContent = Mailer::formatInvoice($invoiceData);
         Mailer::send($clientEmail, $subject, $htmlContent);
     }
 
