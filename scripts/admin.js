@@ -191,12 +191,12 @@ const defaultServices = [
         function switchBookingUserFilter(filterId) {
             activeUserTypeFilter = filterId;
             ['all', 'regular', 'subscriber'].forEach(f => {
-                const btn = document.getElementById(`userFilterBtn-${f}`);
+                const btn = document.getElementById(`bookingFilterBtn-${f}`);
                 if (btn) {
                     if (f === filterId) {
-                        btn.className = "px-3 py-1.5 rounded-full bg-white text-black shadow-sm transition-all focus:outline-none";
+                        btn.className = "px-3.5 py-1.5 rounded-full bg-white text-black shadow-sm transition-all focus:outline-none";
                     } else {
-                        btn.className = "px-3 py-1.5 rounded-full text-neutral-500 hover:text-black transition-all focus:outline-none";
+                        btn.className = "px-3.5 py-1.5 rounded-full text-neutral-500 hover:text-black transition-all focus:outline-none";
                     }
                 }
             });
