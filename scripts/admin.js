@@ -430,6 +430,9 @@ const defaultServices = [
                     activeBtn.classList.add('justify-center');
                 }
             }
+            if (tabId === 'feedbacks') {
+                renderFeedbacks();
+            }
         }
 
         function toggleModal(modalId) {
@@ -1298,6 +1301,19 @@ const defaultServices = [
         /* ===================== FEEDBACKS AUDIT LOG ===================== */
         const FEEDBACKS_KEY = 'montage_feedbacks';
 
+        function escapeHTML(str) {
+            if (!str) return '';
+            return str.replace(/[&<>'"]/g, 
+                tag => ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    "'": '&#39;',
+                    '"': '&quot;'
+                }[tag] || tag)
+            );
+        }
+
         function renderFeedbacks() {
             const container = document.getElementById('feedback-entries-container');
             if (!container) return;
@@ -1325,18 +1341,27 @@ const defaultServices = [
 
                     feedbacks.forEach(entry => {
                         const bookingIdText = entry.booking_id ? `MTG-${String(entry.booking_id).replace(/^MTG-/, '')}` : 'Public Feedback';
+                        const ratingVal = parseInt(entry.rating, 10) || 5;
+
+                        // Format created_at date nicely
+                        const formattedDate = entry.created_at ? new Date(entry.created_at).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric'
+                        }) : 'N/A';
+
                         container.innerHTML += `
                             <div class="p-8 space-y-3">
                                 <div class="flex justify-between items-start">
                                     <div>
-                                        <h4 class="font-bold text-base text-black">${entry.client}</h4>
-                                        <p class="text-xs font-mono text-neutral-400 mt-0.5">Booking ID: ${bookingIdText} • Service: ${entry.service}</p>
+                                        <h4 class="font-bold text-base text-black">${escapeHTML(entry.client)}</h4>
+                                        <p class="text-xs font-mono text-neutral-400 mt-0.5">Booking ID: ${bookingIdText} • Service: ${escapeHTML(entry.service)} • ${formattedDate}</p>
                                     </div>
                                     <div class="bg-neutral-900 text-white px-3 py-1 rounded-full text-xs font-bold tracking-wider uppercase">
-                                        Rating Score: ${entry.rating} / 5
+                                        Rating Score: ${ratingVal} / 5
                                     </div>
                                 </div>
-                                <p class="text-sm text-neutral-600 font-medium leading-relaxed">"${entry.comments}"</p>
+                                <p class="text-sm text-neutral-600 font-medium leading-relaxed">"${escapeHTML(entry.comments)}"</p>
                             </div>
                         `;
                     });
