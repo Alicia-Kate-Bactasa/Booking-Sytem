@@ -258,7 +258,7 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Admin') {
                         <div class="p-6 border-b border-neutral-100 bg-neutral-50/50 flex justify-between items-center">
                             <div>
                                 <h3 class="text-sm font-bold tracking-wider uppercase text-neutral-400">Pending Registrations</h3>
-                                <p class="text-[11px] text-neutral-400 font-normal mt-1">Review GCash payments and approve new subscriber accounts.</p>
+                                <p class="text-[11px] text-neutral-400 font-normal mt-1">Review GCash payments and approve subscriber accounts.</p>
                             </div>
                             <span id="pending-subs-count" class="text-xs bg-amber-50 text-amber-700 border border-amber-100 font-bold px-3 py-1 rounded-full">0 Pending</span>
                         </div>
@@ -295,12 +295,10 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Admin') {
                                 <p class="text-[11px] text-neutral-400 font-normal mt-1">Status of current active members and billing compliance audits.</p>
                             </div>
                             <div class="flex items-center gap-3 self-end sm:self-auto">
-                                <!-- Compliance Status Filter -->
                                 <div class="bg-neutral-100 p-1 rounded-full flex gap-1 text-[10px] font-bold uppercase tracking-wider">
                                     <button onclick="switchComplianceFilter('all')" id="complianceFilterBtn-all" class="px-3 py-1.5 rounded-full bg-white text-black shadow-sm transition-all focus:outline-none">All</button>
                                     <button onclick="switchComplianceFilter('verified')" id="complianceFilterBtn-verified" class="px-3 py-1.5 rounded-full text-neutral-500 hover:text-black transition-all focus:outline-none">Verified</button>
                                     <button onclick="switchComplianceFilter('overdue')" id="complianceFilterBtn-overdue" class="px-3 py-1.5 rounded-full text-neutral-500 hover:text-black transition-all focus:outline-none">Overdue</button>
-                                    <button onclick="switchComplianceFilter('archived')" id="complianceFilterBtn-archived" class="px-3 py-1.5 rounded-full text-neutral-500 hover:text-black transition-all focus:outline-none">Rejected/Archived</button>
                                 </div>
                                 <span id="compliance-flagged-count" class="text-xs bg-red-50 text-red-700 border border-red-100 font-bold px-3 py-1 rounded-full">0 Accounts Flagged</span>
                             </div>

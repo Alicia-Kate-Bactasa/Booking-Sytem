@@ -60,8 +60,10 @@ try {
     $formattedSubscribers = array_map(function($sub) {
         // UI expects Status: "Verified" or "Rejected / Overdue" or "Pending"
         $status = 'Verified';
-        if ($sub['status'] === 'Expired' || $sub['status'] === 'Inactive') {
-            $status = 'Rejected / Overdue';
+        if ($sub['status'] === 'Expired') {
+            $status = 'Expired';
+        } elseif ($sub['status'] === 'Inactive') {
+            $status = 'Inactive';
         }
         
         $img = $sub['img'];

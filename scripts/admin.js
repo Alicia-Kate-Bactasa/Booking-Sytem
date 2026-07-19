@@ -1121,7 +1121,7 @@ const defaultServices = [
 
         function switchComplianceFilter(filterId) {
             activeComplianceFilter = filterId;
-            ['all', 'verified', 'overdue', 'archived'].forEach(f => {
+            ['all', 'verified', 'overdue'].forEach(f => {
                 const btn = document.getElementById(`complianceFilterBtn-${f}`);
                 if (btn) {
                     if (f === filterId) {
@@ -1149,22 +1149,22 @@ const defaultServices = [
                 graceThresholdDeadline.setDate(graceThresholdDeadline.getDate() + 3); // 3 days grace!
 
                 const failsComplianceWindow = CONTEMPORARY_SYSTEM_DATE > graceThresholdDeadline;
-                const isOverdue = account.status === "Overdue" || (account.status === "Verified" && failsComplianceWindow);
+                const isOverdue = account.status === "Overdue" || account.status === "Expired" || account.status === "Inactive" || (account.status === "Verified" && failsComplianceWindow);
 
                 if (isOverdue) {
                     forcedDowngradeCounter++;
                 }
             });
 
-            let accountsToRender = subscriberAccounts.filter(acc => acc.status !== 'Rejected / Overdue');
+            let accountsToRender = subscriberAccounts;
             if (activeComplianceFilter === 'verified') {
                 accountsToRender = subscriberAccounts.filter(acc => {
                     const billingDeadlineDate = new Date(acc.next_billing_date);
                     let graceThresholdDeadline = new Date(billingDeadlineDate);
                     graceThresholdDeadline.setDate(graceThresholdDeadline.getDate() + 3);
                     const failsCompliance = CONTEMPORARY_SYSTEM_DATE > graceThresholdDeadline;
-                    const isOverdue = acc.status === "Overdue" || (acc.status === "Verified" && failsCompliance);
-                    const isInactive = acc.status === "Inactive" || acc.status === "Rejected / Overdue";
+                    const isOverdue = acc.status === "Overdue" || acc.status === "Expired" || acc.status === "Inactive" || (acc.status === "Verified" && failsCompliance);
+                    const isInactive = acc.status === "Inactive" || acc.status === "Expired";
                     return acc.status === 'Verified' && !isOverdue && !isInactive;
                 });
             } else if (activeComplianceFilter === 'overdue') {
@@ -1173,12 +1173,10 @@ const defaultServices = [
                     let graceThresholdDeadline = new Date(billingDeadlineDate);
                     graceThresholdDeadline.setDate(graceThresholdDeadline.getDate() + 3);
                     const failsCompliance = CONTEMPORARY_SYSTEM_DATE > graceThresholdDeadline;
-                    return acc.status === "Overdue" || (acc.status === "Verified" && failsCompliance);
+                    return acc.status === "Overdue" || acc.status === "Expired" || acc.status === "Inactive" || (acc.status === "Verified" && failsCompliance);
                 });
             } else if (activeComplianceFilter === 'archived') {
-                accountsToRender = subscriberAccounts.filter(acc => {
-                    return acc.status === "Rejected / Overdue";
-                });
+                accountsToRender = [];
             }
 
             if (accountsToRender.length === 0) {
@@ -1193,13 +1191,11 @@ const defaultServices = [
                 graceThresholdDeadline.setDate(graceThresholdDeadline.getDate() + 3);
 
                 const failsComplianceWindow = CONTEMPORARY_SYSTEM_DATE > graceThresholdDeadline;
-                const isOverdue = account.status === "Overdue" || (account.status === "Verified" && failsComplianceWindow);
+                const isOverdue = account.status === "Overdue" || account.status === "Expired" || account.status === "Inactive" || (account.status === "Verified" && failsComplianceWindow);
                 
                 let displayStatus = account.status;
                 if (account.status === "Verified" && failsComplianceWindow) {
                     displayStatus = "Overdue";
-                } else if (account.status === "Rejected / Overdue") {
-                    displayStatus = "Rejected";
                 }
 
                 let statusBadgeStyle = '';
@@ -1207,8 +1203,9 @@ const defaultServices = [
                     statusBadgeStyle = 'bg-emerald-50 text-emerald-700 border border-emerald-100 font-bold';
                 } else if (displayStatus === 'Overdue') {
                     statusBadgeStyle = 'bg-red-50 text-red-700 border border-red-100 font-extrabold';
+                } else if (displayStatus === 'Expired' || displayStatus === 'Inactive') {
+                    statusBadgeStyle = 'bg-neutral-100 text-neutral-600 border border-neutral-200 font-bold';
                 } else {
-                    // Rejected
                     statusBadgeStyle = 'bg-red-50 text-red-600 border border-red-100 font-bold';
                 }
 
