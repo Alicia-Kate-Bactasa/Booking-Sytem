@@ -38,7 +38,7 @@ try {
                         )
                     ) p ON i.invoice_id = p.invoice_id
                     WHERE i.invoice_type = 'Monthly Roster'
-                      AND p.payment_status IN ('Paid', 'Rejected')
+                      AND p.payment_status IN ('Paid', 'Rejected', 'Pending Approval')
                     ORDER BY i.issued_at DESC";
     $rosterStmt = $conn->prepare($rosterQuery);
     $rosterStmt->execute();
