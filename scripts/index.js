@@ -24,6 +24,8 @@
         let activeTimeState = "";
         let emailVerified = false;
         let guestEmailVerified = false;
+        let isGuestDiscountEligible = false;
+        let lastNotifiedDiscountEmail = "";
 
           /* ===================== LANDING PAGE TIMELINE STATE =====================
               Feature: Persisted occupancy registry for dates and time slots.
@@ -182,11 +184,28 @@
         }
 
         function updateSummary() {
-            document.getElementById('summaryService').innerText = activeServiceState || 'None Selected';
+            let serviceText = activeServiceState || 'None Selected';
+            let basePrice = parseFloat(activeServicePrice) || 0;
+            
+            document.getElementById('summaryService').innerText = serviceText;
             document.getElementById('summaryDate').innerText = document.getElementById('bookingDate').value || '—';
             document.getElementById('summaryTime').innerText = activeTimeState || '—';
             document.getElementById('summaryDuration').innerText = activeServiceDuration || '—';
-            document.getElementById('summaryTotal').innerText = '₱' + parseFloat(activeServicePrice).toLocaleString('en-US', { minimumFractionDigits: 2 });
+            
+            const summaryTotalEl = document.getElementById('summaryTotal');
+            if (summaryTotalEl) {
+                if (isGuestDiscountEligible && basePrice > 0) {
+                    const discounted = basePrice * 0.90;
+                    summaryTotalEl.innerHTML = `
+                        <div class="flex flex-col items-end">
+                            <span class="text-emerald-600 font-bold">₱${discounted.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            <span class="text-[9px] text-emerald-700 font-bold uppercase tracking-wider bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 mt-1">10% Promo Discount Applied (Regular: ₱${basePrice.toFixed(2)})</span>
+                        </div>
+                    `;
+                } else {
+                    summaryTotalEl.innerText = '₱' + basePrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                }
+            }
         }
 
         async function handleFormSubmission(event) {
@@ -1103,11 +1122,25 @@
                                 emailErrorText.classList.remove('hidden');
                             }
                             custEmailInput.classList.add('border-red-500');
+                            isGuestDiscountEligible = false;
+                            updateSummary();
                         } else {
                             if (emailErrorText) {
                                 emailErrorText.classList.add('hidden');
                             }
                             custEmailInput.classList.remove('border-red-500');
+
+                            if (result.discount_eligible) {
+                                isGuestDiscountEligible = true;
+                                updateSummary();
+                                if (lastNotifiedDiscountEmail !== email) {
+                                    lastNotifiedDiscountEmail = email;
+                                    showErrorModal("🎉 Special Loyalty Promo Unlocked!\n\nYou've availed our promos 3 times! You get a 10% discount on this service. Avail 3 more times again to get discounted again!");
+                                }
+                            } else {
+                                isGuestDiscountEligible = false;
+                                updateSummary();
+                            }
                         }
                     } catch (err) {
                         console.error("Real-time email check failed:", err);
@@ -1116,6 +1149,8 @@
                 
                 custEmailInput.addEventListener('input', () => {
                     guestEmailVerified = false;
+                    isGuestDiscountEligible = false;
+                    updateSummary();
                     const sendBtn = document.getElementById('sendGuestOtpBtn');
                     if (sendBtn) {
                         sendBtn.disabled = false;

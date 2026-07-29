@@ -1,10 +1,10 @@
 <?php
 /**
  * File: api/auth/check_email.php
- * Purpose: A public endpoint query to check if a subscriber's email is already registered in the User table database.
- *          Used dynamically on the frontend wizard step 1 to prevent progressing with duplicates.
+ * Purpose: A public endpoint query to check if an email is registered in User or Customer tables.
+ *          Returns subscriber existence as well as guest booking_count and discount eligibility.
  * Input Params: GET parameter (email)
- * Output: JSON response returning {"status": "success", "exists": true|false}
+ * Output: JSON response with exists, booking_count, discount_eligible
  */
 
 header("Content-Type: application/json; charset=UTF-8");
@@ -32,6 +32,7 @@ if ($email_err !== true) {
 }
 
 try {
+    // 1. Check User table for registered subscribers
     $stmt = $conn->prepare("SELECT u.user_id, u.role, s.plan_status 
                             FROM User u 
                             LEFT JOIN Subscription s ON u.user_id = s.user_id 
@@ -40,15 +41,35 @@ try {
     $stmt->execute();
     $user = $stmt->fetch();
 
-    $exists = false;
-    if ($user) {
-        $exists = true;
+    $exists = $user ? true : false;
+
+    // 2. Ensure booking_count column exists on Customer table
+    try {
+        $checkCol = $conn->query("SHOW COLUMNS FROM Customer LIKE 'booking_count'");
+        if ($checkCol->rowCount() == 0) {
+            $conn->exec("ALTER TABLE Customer ADD COLUMN booking_count INT DEFAULT 0");
+        }
+    } catch (Exception $e) {
+        // Suppress column check errors if column already exists
     }
+
+    // 3. Query Customer table for guest booking count
+    $custStmt = $conn->prepare("SELECT customer_id, full_name, booking_count FROM Customer WHERE email = :email LIMIT 1");
+    $custStmt->bindValue(':email', $email, PDO::PARAM_STR);
+    $custStmt->execute();
+    $cust = $custStmt->fetch();
+
+    $booking_count = $cust ? (int)($cust['booking_count'] ?? 0) : 0;
+    $discount_eligible = ($booking_count >= 3);
 
     http_response_code(200);
     echo json_encode([
         "status" => "success",
-        "exists" => $exists
+        "exists" => $exists,
+        "is_guest" => $cust ? true : false,
+        "booking_count" => $booking_count,
+        "discount_eligible" => $discount_eligible,
+        "discount_percent" => $discount_eligible ? 10 : 0
     ]);
 } catch (PDOException $e) {
     error_log("Check email query failed: " . $e->getMessage());

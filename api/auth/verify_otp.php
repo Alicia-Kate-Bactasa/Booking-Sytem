@@ -2,7 +2,7 @@
 /**
  * File: api/auth/verify_otp.php
  * Purpose: Verifies the 6-digit OTP code inputted by the user.
- *          Supports both 'registration' and 'guest' types.
+ *          Supports 'registration', 'guest', and 'reset' / 'password_reset' types.
  */
 
 header("Content-Type: application/json; charset=UTF-8");
@@ -19,7 +19,14 @@ if (empty($email) || empty($code)) {
 }
 
 // Attempt rate limiting / brute-forcing protection
-$attempts_key = ($type === 'guest') ? 'guest_otp_attempts' : 'email_otp_attempts';
+if ($type === 'guest') {
+    $attempts_key = 'guest_otp_attempts';
+} else if ($type === 'reset' || $type === 'password_reset') {
+    $attempts_key = 'reset_otp_attempts';
+} else {
+    $attempts_key = 'email_otp_attempts';
+}
+
 if (!isset($_SESSION[$attempts_key])) {
     $_SESSION[$attempts_key] = 0;
 }
@@ -32,6 +39,11 @@ if ($_SESSION[$attempts_key] > 5) {
         unset($_SESSION['guest_otp_target']);
         unset($_SESSION['guest_otp_expires']);
         unset($_SESSION['guest_otp_verified']);
+    } else if ($type === 'reset' || $type === 'password_reset') {
+        unset($_SESSION['reset_otp']);
+        unset($_SESSION['reset_otp_target']);
+        unset($_SESSION['reset_otp_expires']);
+        unset($_SESSION['reset_otp_verified']);
     } else {
         unset($_SESSION['email_otp']);
         unset($_SESSION['email_otp_target']);
@@ -73,6 +85,33 @@ if ($type === 'guest') {
 
     // Mark as verified in session
     $_SESSION['guest_otp_verified'] = true;
+} else if ($type === 'reset' || $type === 'password_reset') {
+    if (!isset($_SESSION['reset_otp']) || !isset($_SESSION['reset_otp_target']) || !isset($_SESSION['reset_otp_expires'])) {
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "No verification session found. Please send code first."]);
+        exit();
+    }
+
+    if (time() > $_SESSION['reset_otp_expires']) {
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "Verification code has expired. Please request a new one."]);
+        exit();
+    }
+
+    if (strtolower($email) !== $_SESSION['reset_otp_target']) {
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "Email address mismatch."]);
+        exit();
+    }
+
+    if ($code !== $_SESSION['reset_otp']) {
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "Incorrect verification code. Please try again."]);
+        exit();
+    }
+
+    // Mark as verified in session
+    $_SESSION['reset_otp_verified'] = true;
 } else {
     if (!isset($_SESSION['email_otp']) || !isset($_SESSION['email_otp_target']) || !isset($_SESSION['email_otp_expires'])) {
         http_response_code(400);

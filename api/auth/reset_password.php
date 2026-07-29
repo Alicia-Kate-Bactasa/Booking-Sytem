@@ -1,8 +1,8 @@
 <?php
 /**
  * File: api/auth/reset_password.php
- * Purpose: Verifies a reset token and updates the user's password in the database.
- * Input Params: POST request (token, new_password)
+ * Purpose: Verifies a reset token or verified OTP session and updates the user's password in the database.
+ * Input Params: POST request (token OR email, new_password)
  * Output: JSON response indicating success or specific validation error.
  */
 
@@ -20,13 +20,14 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 $inputData = json_decode(file_get_contents("php://input"), true);
 $token = isset($inputData['token']) ? trim($inputData['token']) : null;
+$email = isset($inputData['email']) ? trim($inputData['email']) : null;
 $new_password = isset($inputData['new_password']) ? $inputData['new_password'] : null;
 
-if (empty($token) || empty($new_password)) {
+if ((empty($token) && empty($email)) || empty($new_password)) {
     http_response_code(400);
     echo json_encode([
         "status" => "error",
-        "message" => "Token and new password are required fields."
+        "message" => "Token or email, and new password are required fields."
     ]);
     exit();
 }
@@ -48,57 +49,79 @@ if (strlen($new_password) < 8 ||
 try {
     $conn->beginTransaction();
 
-    // 1. Fetch token and check expiry
-    $tokenQuery = "SELECT identifier AS email, expires_at FROM UserSecurityAction WHERE action_type = 'password_reset' AND token = :token LIMIT 1";
-    $tokenStmt = $conn->prepare($tokenQuery);
-    $tokenStmt->bindValue(':token', $token, PDO::PARAM_STR);
-    $tokenStmt->execute();
-    $resetReq = $tokenStmt->fetch();
+    if (!empty($token)) {
+        // 1. Fetch token and check expiry from UserSecurityAction
+        $tokenQuery = "SELECT identifier AS email, expires_at FROM UserSecurityAction WHERE action_type = 'password_reset' AND token = :token LIMIT 1";
+        $tokenStmt = $conn->prepare($tokenQuery);
+        $tokenStmt->bindValue(':token', $token, PDO::PARAM_STR);
+        $tokenStmt->execute();
+        $resetReq = $tokenStmt->fetch();
 
-    if (!$resetReq) {
-        $conn->rollBack();
-        http_response_code(400);
-        echo json_encode([
-            "status" => "error",
-            "message" => "Invalid or expired password reset token."
-        ]);
-        exit();
+        if (!$resetReq) {
+            $conn->rollBack();
+            http_response_code(400);
+            echo json_encode([
+                "status" => "error",
+                "message" => "Invalid or expired password reset token."
+            ]);
+            exit();
+        }
+
+        $today = date('Y-m-d H:i:s');
+        if ($resetReq['expires_at'] < $today) {
+            // Token has expired. Clean it up.
+            $cleanQuery = "DELETE FROM UserSecurityAction WHERE action_type = 'password_reset' AND token = :token";
+            $cleanStmt = $conn->prepare($cleanQuery);
+            $cleanStmt->bindValue(':token', $token, PDO::PARAM_STR);
+            $cleanStmt->execute();
+            
+            $conn->commit();
+            http_response_code(400);
+            echo json_encode([
+                "status" => "error",
+                "message" => "Your password reset token has expired. Please request a new one."
+            ]);
+            exit();
+        }
+
+        $email = $resetReq['email'];
+    } else {
+        // 2. Verify session OTP verification for email
+        if (!isset($_SESSION['reset_otp_verified']) || $_SESSION['reset_otp_verified'] !== true ||
+            !isset($_SESSION['reset_otp_target']) || $_SESSION['reset_otp_target'] !== strtolower($email)) {
+            $conn->rollBack();
+            http_response_code(400);
+            echo json_encode([
+                "status" => "error",
+                "message" => "Security Violation: Email verification via OTP is required before resetting password."
+            ]);
+            exit();
+        }
     }
 
-    $today = date('Y-m-d H:i:s');
-    if ($resetReq['expires_at'] < $today) {
-        // Token has expired. Clean it up.
-        $cleanQuery = "DELETE FROM UserSecurityAction WHERE action_type = 'password_reset' AND token = :token";
-        $cleanStmt = $conn->prepare($cleanQuery);
-        $cleanStmt->bindValue(':token', $token, PDO::PARAM_STR);
-        $cleanStmt->execute();
-        
-        $conn->commit();
-        http_response_code(400);
-        echo json_encode([
-            "status" => "error",
-            "message" => "Your password reset token has expired. Please request a new one."
-        ]);
-        exit();
-    }
-
-    $email = $resetReq['email'];
-
-    // 2. Hash new password
+    // 3. Hash new password
     $hashedPassword = password_hash($new_password, PASSWORD_BCRYPT);
 
-    // 3. Update password in User table
+    // 4. Update password in User table
     $updateQuery = "UPDATE User SET password = :password WHERE email = :email";
     $updateStmt = $conn->prepare($updateQuery);
     $updateStmt->bindValue(':password', $hashedPassword, PDO::PARAM_STR);
     $updateStmt->bindValue(':email', $email, PDO::PARAM_STR);
     $updateStmt->execute();
 
-    // 4. Delete the token so it cannot be reused
-    $deleteQuery = "DELETE FROM UserSecurityAction WHERE action_type = 'password_reset' AND identifier = :email";
-    $deleteStmt = $conn->prepare($deleteQuery);
-    $deleteStmt->bindValue(':email', $email, PDO::PARAM_STR);
-    $deleteStmt->execute();
+    // 5. Clean up reset tokens and session variables
+    if (!empty($token)) {
+        $deleteQuery = "DELETE FROM UserSecurityAction WHERE action_type = 'password_reset' AND identifier = :email";
+        $deleteStmt = $conn->prepare($deleteQuery);
+        $deleteStmt->bindValue(':email', $email, PDO::PARAM_STR);
+        $deleteStmt->execute();
+    } else {
+        unset($_SESSION['reset_otp']);
+        unset($_SESSION['reset_otp_target']);
+        unset($_SESSION['reset_otp_expires']);
+        unset($_SESSION['reset_otp_verified']);
+        unset($_SESSION['reset_otp_attempts']);
+    }
 
     $conn->commit();
 

@@ -342,15 +342,63 @@ try {
         }
     }
 
-    // 3. Create guest Customer
-    $custQuery = "INSERT INTO Customer (full_name, phone_number, email, customer_type) 
-                  VALUES (:full_name, :phone_number, :email, 'Regular')";
-    $custStmt = $conn->prepare($custQuery);
-    $custStmt->bindValue(':full_name', $client_name, PDO::PARAM_STR);
-    $custStmt->bindValue(':phone_number', $client_phone, PDO::PARAM_STR);
-    $custStmt->bindValue(':email', $client_email, PDO::PARAM_STR);
-    $custStmt->execute();
-    $customer_id = (int)$conn->lastInsertId();
+    // Ensure booking_count column exists
+    try {
+        $checkCol = $conn->query("SHOW COLUMNS FROM Customer LIKE 'booking_count'");
+        if ($checkCol->rowCount() == 0) {
+            $conn->exec("ALTER TABLE Customer ADD COLUMN booking_count INT DEFAULT 0");
+        }
+    } catch (Exception $e) {
+        // Suppress column check errors if column already exists
+    }
+
+    // 3. Find or Create guest Customer and handle booking_count / discount
+    $findCust = "SELECT customer_id, booking_count FROM Customer WHERE email = :email LIMIT 1";
+    $findStmt = $conn->prepare($findCust);
+    $findStmt->bindValue(':email', $client_email, PDO::PARAM_STR);
+    $findStmt->execute();
+    $existingCust = $findStmt->fetch();
+
+    $applied_discount = false;
+    if ($existingCust) {
+        $customer_id = (int)$existingCust['customer_id'];
+        $current_count = (int)($existingCust['booking_count'] ?? 0);
+
+        // Update existing customer contact details
+        $updateCust = "UPDATE Customer SET full_name = :full_name, phone_number = :phone_number WHERE customer_id = :customer_id";
+        $uStmt = $conn->prepare($updateCust);
+        $uStmt->bindValue(':full_name', $client_name, PDO::PARAM_STR);
+        $uStmt->bindValue(':phone_number', $client_phone, PDO::PARAM_STR);
+        $uStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+        $uStmt->execute();
+
+        if ($current_count >= 3) {
+            // Apply 10% discount to purchased_price
+            $purchased_price = round((float)$purchased_price * 0.90, 2);
+            $applied_discount = true;
+            // Reset booking_count back to 0
+            $new_count = 0;
+        } else {
+            // Increment booking_count
+            $new_count = $current_count + 1;
+        }
+
+        $countUpdate = "UPDATE Customer SET booking_count = :new_count WHERE customer_id = :customer_id";
+        $cuStmt = $conn->prepare($countUpdate);
+        $cuStmt->bindValue(':new_count', $new_count, PDO::PARAM_INT);
+        $cuStmt->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+        $cuStmt->execute();
+    } else {
+        // New guest customer: set initial booking_count = 1
+        $custQuery = "INSERT INTO Customer (full_name, phone_number, email, customer_type, booking_count) 
+                      VALUES (:full_name, :phone_number, :email, 'Regular', 1)";
+        $custStmt = $conn->prepare($custQuery);
+        $custStmt->bindValue(':full_name', $client_name, PDO::PARAM_STR);
+        $custStmt->bindValue(':phone_number', $client_phone, PDO::PARAM_STR);
+        $custStmt->bindValue(':email', $client_email, PDO::PARAM_STR);
+        $custStmt->execute();
+        $customer_id = (int)$conn->lastInsertId();
+    }
 
     // 4. Create Booking first (without invoice_id, but with user_id = NULL)
     $bookingQuery = "INSERT INTO Booking (customer_id, user_id, service_id, scheduled_date, time_slot, bay_number, purchased_price, booking_status) 
@@ -384,7 +432,8 @@ try {
     $paymentStmt->execute();
 
     // 7. Log system event
-    log_system_event($conn, 'Booking Created', "Guest booking ID {$booking_id} created for Customer ID {$customer_id} (Regular). Status: Pending Verification. Linked Invoice ID: {$invoice_id}.");
+    $discountLogStr = $applied_discount ? " (10% Loyalty Discount Applied, booking_count reset to 0)" : "";
+    log_system_event($conn, 'Booking Created', "Guest booking ID {$booking_id} created for Customer ID {$customer_id} (Regular). Status: Pending Verification. Linked Invoice ID: {$invoice_id}{$discountLogStr}.");
 
     $conn->commit();
 
