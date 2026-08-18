@@ -655,33 +655,45 @@
               Purpose: Shows available services and pricing even when remote data is unavailable.
           */
         function fetchAndRenderCatalogServices() {
+            let storedServices = localStorage.getItem('montage_services');
+            if (storedServices) {
+                try {
+                    masterCatalogServices = JSON.parse(storedServices);
+                    if (Array.isArray(masterCatalogServices) && masterCatalogServices.length > 0) {
+                        renderDOMCatalogs();
+                    }
+                } catch (e) {
+                    console.warn("Failed to parse cached services:", e);
+                }
+            }
+
+            if (masterCatalogServices.length === 0) {
+                useFallbackServices();
+            }
+
             const sb = typeof getSupabase === 'function' ? getSupabase() : null;
             if (sb) {
                 sb.from('services')
                     .select('*')
-                    .eq('is_active', true)
                     .then(({ data, error }) => {
                         if (!error && Array.isArray(data) && data.length > 0) {
-                            masterCatalogServices = data.map(s => ({
-                                name: s.service_name,
-                                price: parseFloat(s.service_price),
-                                duration: s.service_duration + ' Mins',
-                                desc: s.service_description
-                            }));
-                            localStorage.setItem('montage_services', JSON.stringify(masterCatalogServices));
-                            renderDOMCatalogs();
-                            return;
+                            const activeData = data.filter(s => s.is_active !== false);
+                            if (activeData.length > 0) {
+                                masterCatalogServices = activeData.map(s => ({
+                                    name: s.service_name,
+                                    price: parseFloat(s.service_price),
+                                    duration: (s.service_duration || 30) + ' Mins',
+                                    desc: s.service_description || 'Professional detailing package.'
+                                }));
+                                localStorage.setItem('montage_services', JSON.stringify(masterCatalogServices));
+                                renderDOMCatalogs();
+                            }
                         }
-                        throw new Error('Supabase fetch failed or empty');
                     })
                     .catch(err => {
-                        console.warn("Using fallback services due to Supabase error:", err);
-                        useFallbackServices();
+                        console.warn("Supabase services fetch notice:", err);
                     });
-                return;
             }
-
-            useFallbackServices();
         }
 
         function useFallbackServices() {
@@ -743,11 +755,13 @@
                 activeServiceState = masterCatalogServices[0].name;
                 activeServicePrice = masterCatalogServices[0].price;
                 activeServiceDuration = masterCatalogServices[0].duration;
-                document.getElementById('customServiceDisplay').innerText = `${activeServiceState} — ₱${activeServicePrice}`;
+                const serviceDisplay = document.getElementById('customServiceDisplay');
+                if (serviceDisplay) serviceDisplay.innerText = `${activeServiceState} — ₱${activeServicePrice}`;
                 updateSummary();
             }
         }
 
+        document.addEventListener('DOMContentLoaded', fetchAndRenderCatalogServices);
         window.onload = function() {
             fetchAndRenderCatalogServices();
         };

@@ -217,6 +217,8 @@ const defaultServices = [
             }
         };
 
+        document.addEventListener('DOMContentLoaded', loadServices);
+
         // Window storage listener to synchronize when requests change
         window.addEventListener('storage', function(event) {
             if (event.key === PENDING_SUBSCRIPTION_REQUESTS_KEY || event.key === APPROVED_SUBSCRIPTION_ACCOUNTS_KEY) {

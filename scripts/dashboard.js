@@ -728,34 +728,41 @@ const csrfToken = '';
         function fetchAndSyncDashboardDropdown() {
             let storedServices = localStorage.getItem('montage_services');
             if (storedServices) {
-                masterCatalogPayload = JSON.parse(storedServices);
-                renderSynchronizedComponents();
-                return;
+                try {
+                    masterCatalogPayload = JSON.parse(storedServices);
+                    if (Array.isArray(masterCatalogPayload) && masterCatalogPayload.length > 0) {
+                        renderSynchronizedComponents();
+                    }
+                } catch (e) {
+                    console.warn("Failed to parse cached dashboard services:", e);
+                }
+            }
+
+            if (!masterCatalogPayload || masterCatalogPayload.length === 0) {
+                useFallbackDashboardServices();
             }
 
             const sb = typeof getSupabase === 'function' ? getSupabase() : null;
             if (sb) {
-                sb.from('services').select('*').eq('is_active', true)
+                sb.from('services').select('*')
                     .then(({ data, error }) => {
                         if (!error && Array.isArray(data) && data.length > 0) {
-                            masterCatalogPayload = data.map(s => ({
-                                service_id: s.service_id,
-                                name: s.service_name,
-                                price: parseFloat(s.service_price),
-                                duration: s.service_duration + ' Mins',
-                                desc: s.service_description
-                            }));
-                            localStorage.setItem('montage_services', JSON.stringify(masterCatalogPayload));
-                            renderSynchronizedComponents();
-                            return;
+                            const activeData = data.filter(s => s.is_active !== false);
+                            if (activeData.length > 0) {
+                                masterCatalogPayload = activeData.map(s => ({
+                                    service_id: s.service_id,
+                                    name: s.service_name,
+                                    price: parseFloat(s.service_price),
+                                    duration: (s.service_duration || 30) + ' Mins',
+                                    desc: s.service_description || 'Professional detailing package.'
+                                }));
+                                localStorage.setItem('montage_services', JSON.stringify(masterCatalogPayload));
+                                renderSynchronizedComponents();
+                            }
                         }
-                        useFallbackDashboardServices();
                     })
-                    .catch(() => useFallbackDashboardServices());
-                return;
+                    .catch(() => {});
             }
-
-            useFallbackDashboardServices();
         }
 
         function useFallbackDashboardServices() {
@@ -824,6 +831,8 @@ const csrfToken = '';
             fetchAndSyncDashboardDropdown();
             syncProfileWithDatabase();
         };
+
+        document.addEventListener('DOMContentLoaded', fetchAndSyncDashboardDropdown);
 
         /* ===================== FEEDBACK FORM MODULE ===================== */
         let activeRating = 5;
