@@ -893,11 +893,25 @@ const defaultServices = [
         async function toggleServiceActive(index) {
             const service = masterCatalogServices[index];
             const serviceId = service.service_id;
-            const targetStatus = service.is_active ? 0 : 1;
+            const targetStatus = service.is_active ? false : true;
             const targetStatusLabel = targetStatus ? 'activate' : 'discontinue';
             
             if (await confirm(`Are you sure you want to ${targetStatusLabel} "${service.name}"?`)) {
                 try {
+                    const sb = typeof getSupabase === 'function' ? getSupabase() : null;
+                    if (sb && serviceId) {
+                        const { error: sbErr } = await sb
+                            .from('services')
+                            .update({ is_active: targetStatus })
+                            .eq('service_id', serviceId);
+
+                        if (!sbErr) {
+                            await alert(`Service package status updated.`);
+                            loadServices();
+                            return;
+                        }
+                    }
+
                     const res = await fetch('services/update_service.php', {
                         method: 'POST',
                         headers: {
@@ -910,15 +924,6 @@ const defaultServices = [
                             desc: service.desc,
                             duration: service.duration,
                             price: service.price,
-                            category: service.category,
-                            is_active: targetStatus
-                        })
-                    });
-
-                    if (res.status === 401 || res.status === 403) {
-                        await showErrorModal('Session expired or unauthorized. Please log in.');
-                        window.location.href = '../index.html';
-                        return;
                     }
 
                     const data = await res.json();
@@ -1098,14 +1103,30 @@ const defaultServices = [
             if (parsedDuration < 1) {
                 await showErrorModal('Service duration must be at least 1 minute.');
                 return;
-            }
-
-            if (isNaN(price) || price < 0) {
-                await showErrorModal('Service price cannot be negative.');
-                return;
+return;
             }
 
             try {
+                const sb = typeof getSupabase === 'function' ? getSupabase() : null;
+                if (sb) {
+                    const { error: sbErr } = await sb.from('services').insert([{
+                        service_name: name,
+                        service_description: desc,
+                        service_category: 'Detailing',
+                        service_duration: parsedDuration,
+                        service_price: price,
+                        is_active: true
+                    }]);
+
+                    if (!sbErr) {
+                        await alert('New service package created successfully.');
+                        toggleModal('newServiceModal');
+                        document.getElementById('newServiceModal')?.querySelector('form')?.reset();
+                        loadServices();
+                        return;
+                    }
+                }
+
                 const res = await fetch('services/create_service.php', {
                     method: 'POST',
                     headers: {
