@@ -138,8 +138,16 @@ $username = "YOUR_USERNAME_HERE";          // Your DCISM username is identical t
 $password = "YOUR_PASSWORD_HERE";          // REPLACE WITH THE PASSWORD YOU SET IN ADMIN.DCISM.ORG
 $conn = null;
 
+$db_driver = getenv('DB_DRIVER') ?: 'mysql';
+$port = getenv('DB_PORT') ?: ($db_driver === 'pgsql' ? '5432' : '3306');
+
 try {
-    $conn = new PDO("mysql:host=" . $host . ";dbname=" . $db_name . ";charset=utf8mb4", $username, $password);
+    if ($db_driver === 'pgsql') {
+        $dsn = "pgsql:host=" . $host . ";port=" . $port . ";dbname=" . $db_name . ";sslmode=require";
+    } else {
+        $dsn = "mysql:host=" . $host . ";dbname=" . $db_name . ";charset=utf8mb4";
+    }
+    $conn = new PDO($dsn, $username, $password);
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
     $conn->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);

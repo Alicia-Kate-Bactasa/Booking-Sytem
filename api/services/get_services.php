@@ -43,7 +43,7 @@ try {
                      service_category,
                      CONCAT(service_duration, ' Mins') AS duration, 
                      service_duration, 
-                     service_description AS `desc`, 
+                     service_description AS "desc", 
                      service_description AS description,
                      service_description,
                      is_active
