@@ -338,6 +338,37 @@
                 return;
             }
 
+            const sb = typeof getSupabase === 'function' ? getSupabase() : null;
+            if (sb) {
+                sb.auth.signInWithPassword({
+                    email: emailInput,
+                    password: passwordInput
+                })
+                .then(async ({ data: authData, error: authError }) => {
+                    if (authError) {
+                        throw new Error(authError.message || 'Authentication failed.');
+                    }
+                    const user = authData.user;
+                    const { data: profile } = await sb.from('profiles').select('*').eq('id', user.id).single();
+                    const role = profile ? profile.role : (user.user_metadata?.role || 'Customer');
+
+                    toggleModal('loginModal');
+                    if (role === 'Admin') {
+                        window.location.href = 'admin.html';
+                    } else {
+                        localStorage.setItem('subscriber_session_active', 'true');
+                        localStorage.setItem('subscriber_name', profile?.full_name || user.email.split('@')[0].toUpperCase());
+                        localStorage.setItem('subscriber_email', user.email);
+                        window.location.href = 'dashboard.html';
+                    }
+                })
+                .catch(err => {
+                    showErrorModal(err.message || 'Authentication failed.');
+                    console.error('Login error:', err);
+                });
+                return;
+            }
+
             fetch('api/auth/login.php', {
                 method: 'POST',
                 headers: {
@@ -361,14 +392,14 @@
                     const data = responseObj.data || responseObj;
                     toggleModal('loginModal');
                     if (data.role === 'Admin') {
-                        window.location.href = 'api/admin.php';
-                    } else if (data.role === 'Subscriber') {
+                        window.location.href = 'admin.html';
+                    } else {
                         localStorage.setItem('subscriber_session_active', 'true');
                         localStorage.setItem('subscriber_name', data.full_name || emailInput.split('@')[0].toUpperCase());
                         localStorage.setItem('subscriber_email', emailInput);
                         localStorage.setItem('customer_id', data.customer_id);
                         localStorage.setItem('subscriber_id', data.subscriber_id);
-                        window.location.href = 'api/dashboard.php';
+                        window.location.href = 'dashboard.html';
                     }
                 } else {
                     showErrorModal(responseObj.message || 'Authentication failed.');
@@ -555,6 +586,32 @@
               Purpose: Shows available services and pricing even when remote data is unavailable.
           */
         function fetchAndRenderCatalogServices() {
+            const sb = typeof getSupabase === 'function' ? getSupabase() : null;
+            if (sb) {
+                sb.from('services')
+                    .select('*')
+                    .eq('is_active', true)
+                    .then(({ data, error }) => {
+                        if (!error && Array.isArray(data) && data.length > 0) {
+                            masterCatalogServices = data.map(s => ({
+                                name: s.service_name,
+                                price: parseFloat(s.service_price),
+                                duration: s.service_duration + ' Mins',
+                                desc: s.service_description
+                            }));
+                            localStorage.setItem('montage_services', JSON.stringify(masterCatalogServices));
+                            renderDOMCatalogs();
+                            return;
+                        }
+                        throw new Error('Supabase fetch failed or empty');
+                    })
+                    .catch(err => {
+                        console.warn("Using fallback services due to Supabase error:", err);
+                        useFallbackServices();
+                    });
+                return;
+            }
+
             fetch('api/services/get_services.php')
                 .then(response => {
                     if (!response.ok) throw new Error('Database fetch failed.');
@@ -572,15 +629,19 @@
                 })
                 .catch(err => {
                     console.warn("Using fallback services due to connection failure:", err);
-                    masterCatalogServices = [
-                        { name: "Standard Car Wash", price: 250, duration: "30 Mins", desc: "An essential exterior foam cleaning treatment utilizing scratch-free microfiber wash mitts and deep wheel cleaning." },
-                        { name: "Deluxe Car Wash", price: 400, duration: "45 Mins", desc: "Full cabin deep cleaning, sterilization, leather restoration, fabric stain extraction, and anti-bac odor elimination treatments." },
-                        { name: "Premium Car Wash", price: 600, duration: "1 Hour", desc: "Our ultimate preservation suite incorporating full body glass coating protection layers, premium window treatments, and high-gloss wax." },
-                        { name: "Under Chassis Wash", price: 350, duration: "30 Mins", desc: "High-pressure multi-directional undercarriage flush targeting mud, corrosive elements, salt buildup, and road grime." }
-                    ];
-                    localStorage.setItem('montage_services', JSON.stringify(masterCatalogServices));
-                    renderDOMCatalogs();
+                    useFallbackServices();
                 });
+        }
+
+        function useFallbackServices() {
+            masterCatalogServices = [
+                { name: "Standard Car Wash", price: 250, duration: "30 Mins", desc: "An essential exterior foam cleaning treatment utilizing scratch-free microfiber wash mitts and deep wheel cleaning." },
+                { name: "Deluxe Car Wash", price: 400, duration: "45 Mins", desc: "Full cabin deep cleaning, sterilization, leather restoration, fabric stain extraction, and anti-bac odor elimination treatments." },
+                { name: "Premium Car Wash", price: 600, duration: "1 Hour", desc: "Our ultimate preservation suite incorporating full body glass coating protection layers, premium window treatments, and high-gloss wax." },
+                { name: "Under Chassis Wash", price: 350, duration: "30 Mins", desc: "High-pressure multi-directional undercarriage flush targeting mud, corrosive elements, salt buildup, and road grime." }
+            ];
+            localStorage.setItem('montage_services', JSON.stringify(masterCatalogServices));
+            renderDOMCatalogs();
         }
 
         function renderDOMCatalogs() {
