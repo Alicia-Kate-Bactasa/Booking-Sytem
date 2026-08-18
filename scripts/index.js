@@ -651,7 +651,13 @@
               Purpose: Shows available services and pricing even when remote data is unavailable.
           */
         async function fetchAndRenderCatalogServices() {
-            const sb = typeof getSupabase === 'function' ? getSupabase() : null;
+            let sb = typeof getSupabase === 'function' ? getSupabase() : null;
+            let attempts = 0;
+            while (!sb && attempts < 15) {
+                await new Promise(r => setTimeout(r, 100));
+                sb = typeof getSupabase === 'function' ? getSupabase() : null;
+                attempts++;
+            }
             if (!sb) return;
 
             try {
@@ -727,7 +733,10 @@
             }
         }
 
-        document.addEventListener('DOMContentLoaded', fetchAndRenderCatalogServices);
+        fetchAndRenderCatalogServices();
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', fetchAndRenderCatalogServices);
+        }
         window.onload = function() {
             fetchAndRenderCatalogServices();
         };

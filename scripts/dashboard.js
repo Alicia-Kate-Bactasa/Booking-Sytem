@@ -726,7 +726,13 @@ const csrfToken = '';
               Purpose: Populates the booking menu cards and dropdown items with live service data.
           */
         async function fetchAndSyncDashboardDropdown() {
-            const sb = typeof getSupabase === 'function' ? getSupabase() : null;
+            let sb = typeof getSupabase === 'function' ? getSupabase() : null;
+            let attempts = 0;
+            while (!sb && attempts < 15) {
+                await new Promise(r => setTimeout(r, 100));
+                sb = typeof getSupabase === 'function' ? getSupabase() : null;
+                attempts++;
+            }
             if (!sb) return;
 
             try {
@@ -805,7 +811,10 @@ const csrfToken = '';
             syncProfileWithDatabase();
         };
 
-        document.addEventListener('DOMContentLoaded', fetchAndSyncDashboardDropdown);
+        fetchAndSyncDashboardDropdown();
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', fetchAndSyncDashboardDropdown);
+        }
 
         /* ===================== FEEDBACK FORM MODULE ===================== */
         let activeRating = 5;

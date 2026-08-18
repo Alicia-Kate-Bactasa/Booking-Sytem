@@ -217,7 +217,10 @@ const defaultServices = [
             }
         };
 
-        document.addEventListener('DOMContentLoaded', loadServices);
+        loadServices();
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', loadServices);
+        }
 
         // Window storage listener to synchronize when requests change
         window.addEventListener('storage', function(event) {
@@ -635,7 +638,13 @@ const defaultServices = [
         let masterCatalogServices = [];
 
         async function loadServices() {
-            const sb = typeof getSupabase === 'function' ? getSupabase() : null;
+            let sb = typeof getSupabase === 'function' ? getSupabase() : null;
+            let attempts = 0;
+            while (!sb && attempts < 15) {
+                await new Promise(r => setTimeout(r, 100));
+                sb = typeof getSupabase === 'function' ? getSupabase() : null;
+                attempts++;
+            }
             if (!sb) return;
 
             try {
