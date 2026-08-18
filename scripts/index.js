@@ -109,17 +109,46 @@
                 return;
             }
 
-            const defaultSlots = [
-                { time_slot: "08:00:00", display_label: "08:00 AM" },
-                { time_slot: "09:00:00", display_label: "09:00 AM" },
-                { time_slot: "10:00:00", display_label: "10:00 AM" },
-                { time_slot: "11:00:00", display_label: "11:00 AM" },
-                { time_slot: "13:00:00", display_label: "01:00 PM" },
-                { time_slot: "14:00:00", display_label: "02:00 PM" },
-                { time_slot: "15:00:00", display_label: "03:00 PM" },
-                { time_slot: "16:00:00", display_label: "04:00 PM" },
-                { time_slot: "17:00:00", display_label: "05:00 PM" }
-            ];
+            function parseDurationMinutes(durationStr) {
+                if (typeof durationStr === 'number') return durationStr;
+                if (!durationStr) return 30;
+                const clean = durationStr.toString().toLowerCase();
+                if (clean.includes('hour') || clean.includes('hr')) {
+                    const val = parseFloat(clean);
+                    return isNaN(val) ? 60 : val * 60;
+                }
+                const val = parseInt(clean, 10);
+                return isNaN(val) ? 30 : val;
+            }
+
+            function buildDynamicTimeSlots(durationMinutes) {
+                const duration = parseDurationMinutes(durationMinutes);
+                const startMins = 8 * 60;
+                const endMins = 17 * 60;
+                const step = 30;
+
+                const slots = [];
+                for (let current = startMins; current + duration <= endMins; current += step) {
+                    if (current >= 720 && current < 780) continue;
+                    
+                    const hrs24 = Math.floor(current / 60);
+                    const mins = current % 60;
+                    const ampm = hrs24 >= 12 ? 'PM' : 'AM';
+                    const hrs12 = hrs24 % 12 === 0 ? 12 : hrs24 % 12;
+
+                    const padMins = mins < 10 ? '0' + mins : '' + mins;
+                    const padHrs24 = hrs24 < 10 ? '0' + hrs24 : '' + hrs24;
+                    const padHrs12 = hrs12 < 10 ? '0' + hrs12 : '' + hrs12;
+
+                    const time_slot = `${padHrs24}:${padMins}:00`;
+                    const display_label = `${padHrs12}:${padMins} ${ampm}`;
+
+                    slots.push({ time_slot, display_label });
+                }
+                return slots;
+            }
+
+            const defaultSlots = buildDynamicTimeSlots(activeServiceDuration);
 
             let bookedSlots = [];
             const sb = typeof getSupabase === 'function' ? getSupabase() : null;
