@@ -820,52 +820,40 @@
                 submitButton.textContent = 'Sending...';
             }
 
-            fetch('api/auth/csrf.php', { credentials: 'include' })
-                .then(r => {
-                    if (!r.ok) throw new Error('Could not initialize session security.');
-                    return r.json();
-                })
-                .then(csrfData => {
-                    const csrfToken = csrfData.csrf_token;
-                    return fetch('api/feedback/submit_feedback.php', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json',
-                            'X-CSRF-Token': csrfToken
-                        },
-                        credentials: 'include',
-                        body: JSON.stringify({
-                            name,
-                            booking_id: bookingId || null,
-                            service,
-                            rating,
-                            comments
-                        })
+            const sb = typeof getSupabase === 'function' ? getSupabase() : null;
+            if (sb) {
+                try {
+                    sb.from('feedbacks').insert([{
+                        booking_id: bookingId ? parseInt(bookingId, 10) : null,
+                        rating: parseInt(rating, 10),
+                        comments: comments
+                    }]).then(({ error }) => {
+                        if (!error) {
+                            alert('Thank you for your feedback!');
+                            form.reset();
+                            const detailsContainer = document.getElementById('feedbackBookingDetailsContainer');
+                            if (detailsContainer) detailsContainer.classList.add('hidden');
+                            setFeedbackRating(5);
+                            toggleModal('feedbackModal');
+                        } else {
+                            alert(error.message || 'Unable to submit feedback right now.');
+                        }
                     });
-                })
-                .then(async response => {
-                    const payload = await response.json().catch(() => ({}));
-                    if (!response.ok) {
-                        throw new Error(payload.message || 'Unable to submit feedback right now.');
-                    }
-
-                    alert(payload.message || 'Thank you for your feedback!');
-                    form.reset();
-                    const detailsContainer = document.getElementById('feedbackBookingDetailsContainer');
-                    if (detailsContainer) detailsContainer.classList.add('hidden');
-                    setFeedbackRating(5);
-                    toggleModal('feedbackModal');
-                })
-                .catch(error => {
-                    showErrorModal(error.message || 'Unable to submit feedback right now.');
-                })
-                .finally(() => {
+                } catch (sbErr) {
+                    console.error("Supabase feedback error:", sbErr);
+                } finally {
                     if (submitButton) {
                         submitButton.disabled = false;
                         submitButton.textContent = 'Send Feedback';
                     }
-                });
+                }
+                return;
+            }
+            alert('Supabase client is required for feedback submission.');
+            if (submitButton) {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Send Feedback';
+            }
         }
 
             window.setFeedbackRating = setFeedbackRating;

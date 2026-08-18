@@ -6,7 +6,7 @@
  *          renders feedback star UI widgets, and runs the Pay button renewal state machine.
  */
 
-const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+const csrfToken = '';
 
   /* ===================== DASHBOARD DATA / STATE =====================
            Feature: Active appointments, past history, and counters for completed sessions.

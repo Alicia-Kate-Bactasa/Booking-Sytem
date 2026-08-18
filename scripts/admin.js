@@ -6,7 +6,7 @@
  *          and validates the creation/modification of catalog service packages.
  */
 
-const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+const csrfToken = '';
 
 
 
