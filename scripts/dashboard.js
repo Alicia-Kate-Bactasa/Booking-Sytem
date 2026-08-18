@@ -18,10 +18,57 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
         let activeSubTabState = "active";
 
         function loadSubscriberAppointments(activeProfileName) {
+            const sb = typeof getSupabase === 'function' ? getSupabase() : null;
+            if (sb) {
+                return sb.auth.getUser().then(async ({ data: { user } }) => {
+                    if (!user) {
+                        return [];
+                    }
+                    const { data, error } = await sb
+                        .from('bookings')
+                        .select('*, services(*)')
+                        .eq('user_id', user.id);
+
+                    if (error || !data) {
+                        console.warn("Supabase bookings query empty or error:", error);
+                        currentAppointments = [];
+                        historyAppointments = [];
+                        renderAppointmentsTable();
+                        return [];
+                    }
+
+                    const mapped = data.map(app => {
+                        let type = 'cancelled';
+                        if (['Pending Verification', 'Confirmed', 'Pending', 'Paid', 'Scheduled'].includes(app.booking_status)) {
+                            type = 'pending';
+                        } else if (app.booking_status === 'Completed') {
+                            type = 'completed';
+                        }
+                        
+                        return {
+                            id: "MTG-" + app.booking_id,
+                            booking_id: parseInt(app.booking_id, 10),
+                            type: type,
+                            service: app.services?.service_name || 'Car Wash',
+                            date: app.scheduled_date,
+                            time: app.time_slot,
+                            price: app.purchased_price,
+                            client: activeProfileName || 'Member',
+                            userType: 'subscriber'
+                        };
+                    });
+                    
+                    currentAppointments = mapped.filter(app => app.type === 'pending');
+                    historyAppointments = mapped.filter(app => app.type === 'completed' || app.type === 'cancelled');
+                    renderAppointmentsTable();
+                    return mapped;
+                });
+            }
+
             return fetch('bookings/get_bookings.php')
                 .then(res => {
                     if (res.status === 401 || res.status === 403) {
-                        window.location.href = '../index.html';
+                        window.location.href = 'index.html';
                         return [];
                     }
                     if (!res.ok) throw new Error('API fetch failed');
