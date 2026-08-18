@@ -454,6 +454,26 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
             }
 
             try {
+                const sb = typeof getSupabase === 'function' ? getSupabase() : null;
+                if (sb) {
+                    const { error: sbErr } = await sb
+                        .from('bookings')
+                        .update({
+                            scheduled_date: targetDate,
+                            time_slot: targetTime,
+                            status_updated_at: new Date().toISOString()
+                        })
+                        .eq('booking_id', rawBookingId);
+
+                    if (!sbErr) {
+                        showErrorModal(`Appointment rescheduled successfully.`, true);
+                        toggleModal('rescheduleModal');
+                        const activeProfileName = localStorage.getItem('subscriber_name') || 'VIP Member';
+                        loadSubscriberAppointments(activeProfileName);
+                        return;
+                    }
+                }
+
                 const response = await fetch('bookings/reschedule_booking.php', {
                     method: 'POST',
                     headers: {
@@ -723,6 +743,21 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
                 const rawBookingId = parseInt(appId.replace(/\D/g, ''), 10);
                 
                 try {
+                    const sb = typeof getSupabase === 'function' ? getSupabase() : null;
+                    if (sb) {
+                        const { error: sbErr } = await sb
+                            .from('bookings')
+                            .update({ booking_status: 'Cancelled', status_updated_at: new Date().toISOString() })
+                            .eq('booking_id', rawBookingId);
+
+                        if (!sbErr) {
+                            await alert("Appointment cancelled successfully.");
+                            const activeProfileName = localStorage.getItem('subscriber_name') || 'VIP Member';
+                            loadSubscriberAppointments(activeProfileName);
+                            return;
+                        }
+                    }
+
                     const response = await fetch('bookings/cancel_booking.php', {
                         method: 'POST',
                         headers: {
@@ -752,6 +787,22 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
         async function executeSoftSubscriptionDowngrade() {
             toggleModal('cancelConfirmModal');
             try {
+                const sb = typeof getSupabase === 'function' ? getSupabase() : null;
+                if (sb) {
+                    const user = await getCurrentUser();
+                    if (user) {
+                        const { error: sbErr } = await sb
+                            .from('subscriptions')
+                            .update({ plan_status: 'Cancellation Pending' })
+                            .eq('user_id', user.id);
+                        if (!sbErr) {
+                            await alert("State Machine Updated: Subscription cancellation requested successfully.");
+                            location.reload();
+                            return;
+                        }
+                    }
+                }
+
                 const response = await fetch('subscriptions/cancel_subscription.php', {
                     method: 'POST',
                     headers: { 
