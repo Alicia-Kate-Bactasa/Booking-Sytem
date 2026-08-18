@@ -651,34 +651,35 @@
               Purpose: Shows available services and pricing even when remote data is unavailable.
           */
         function fetchAndRenderCatalogServices() {
+            // Render fallback/default services immediately so services are always displayed on screen
+            useFallbackServices();
+
             const sb = typeof getSupabase === 'function' ? getSupabase() : null;
             if (sb) {
-                sb.from('services')
-                    .select('*')
-                    .then(({ data, error }) => {
-                        if (!error && Array.isArray(data) && data.length > 0) {
-                            const activeData = data.filter(s => s.is_active !== false);
-                            if (activeData.length > 0) {
-                                masterCatalogServices = activeData.map(s => ({
-                                    name: s.service_name,
-                                    price: parseFloat(s.service_price),
-                                    duration: (s.service_duration || 30) + ' Mins',
-                                    desc: s.service_description || 'Professional detailing package.'
-                                }));
-                                renderDOMCatalogs();
-                                return;
+                try {
+                    sb.from('services')
+                        .select('*')
+                        .then(({ data, error }) => {
+                            if (!error && Array.isArray(data) && data.length > 0) {
+                                const activeData = data.filter(s => s.is_active !== false);
+                                if (activeData.length > 0) {
+                                    masterCatalogServices = activeData.map(s => ({
+                                        name: s.service_name,
+                                        price: parseFloat(s.service_price),
+                                        duration: (s.service_duration || 30) + ' Mins',
+                                        desc: s.service_description || 'Professional detailing package.'
+                                    }));
+                                    renderDOMCatalogs();
+                                }
                             }
-                        }
-                        useFallbackServices();
-                    })
-                    .catch(err => {
-                        console.warn("Supabase services fetch notice:", err);
-                        useFallbackServices();
-                    });
-                return;
+                        })
+                        .catch(err => {
+                            console.warn("Supabase background catalog query notice:", err);
+                        });
+                } catch (err) {
+                    console.warn("Supabase query error:", err);
+                }
             }
-
-            useFallbackServices();
         }
 
         function useFallbackServices() {

@@ -632,8 +632,19 @@ const defaultServices = [
               Feature: Editable service name, description, duration, and price fields stored in localStorage.
               Purpose: Lets the admin update catalog details while protecting referenced active bookings.
           */
-        let masterCatalogServices = [];
+        let masterCatalogServices = [
+            { service_id: 1, name: "Standard Car Wash", desc: "Essential exterior cleaning.", duration: 30, price: 250, category: "Detailing", is_active: true },
+            { service_id: 2, name: "Deluxe Car Wash", desc: "Upgraded wash with extra exterior care.", duration: 45, price: 400, category: "Detailing", is_active: true },
+            { service_id: 3, name: "Premium Car Wash", desc: "Highest-tier thorough wash including detailed trim care.", duration: 60, price: 600, category: "Detailing", is_active: true },
+            { service_id: 4, name: "Under Chassis Wash", desc: "High-pressure multi-directional flush.", duration: 30, price: 350, category: "Detailing", is_active: true }
+        ];
+
         async function loadServices() {
+            renderAdminServices();
+            if (typeof populateOnsiteServices === 'function') {
+                populateOnsiteServices();
+            }
+
             const sb = typeof getSupabase === 'function' ? getSupabase() : null;
             if (sb) {
                 try {
@@ -652,21 +663,10 @@ const defaultServices = [
                         if (typeof populateOnsiteServices === 'function') {
                             populateOnsiteServices();
                         }
-                        return;
                     }
                 } catch (e) {
                     console.warn("Supabase services query notice:", e);
                 }
-            }
-            masterCatalogServices = [
-                { service_id: 1, name: "Standard Car Wash", desc: "Essential exterior cleaning.", duration: 30, price: 250, category: "Detailing", is_active: true },
-                { service_id: 2, name: "Deluxe Car Wash", desc: "Upgraded wash with extra exterior care.", duration: 45, price: 400, category: "Detailing", is_active: true },
-                { service_id: 3, name: "Premium Car Wash", desc: "Highest-tier thorough wash including detailed trim care.", duration: 60, price: 600, category: "Detailing", is_active: true },
-                { service_id: 4, name: "Under Chassis Wash", desc: "High-pressure multi-directional flush.", duration: 30, price: 350, category: "Detailing", is_active: true }
-            ];
-            renderAdminServices();
-            if (typeof populateOnsiteServices === 'function') {
-                populateOnsiteServices();
             }
         }
         window.loadServices = loadServices;

@@ -726,31 +726,33 @@ const csrfToken = '';
               Purpose: Populates the booking menu cards and dropdown items with live service data.
           */
         function fetchAndSyncDashboardDropdown() {
+            // Render fallback services immediately so UI is populated
+            useFallbackDashboardServices();
+
             const sb = typeof getSupabase === 'function' ? getSupabase() : null;
             if (sb) {
-                sb.from('services').select('*')
-                    .then(({ data, error }) => {
-                        if (!error && Array.isArray(data) && data.length > 0) {
-                            const activeData = data.filter(s => s.is_active !== false);
-                            if (activeData.length > 0) {
-                                masterCatalogPayload = activeData.map(s => ({
-                                    service_id: s.service_id,
-                                    name: s.service_name,
-                                    price: parseFloat(s.service_price),
-                                    duration: (s.service_duration || 30) + ' Mins',
-                                    desc: s.service_description || 'Professional detailing package.'
-                                }));
-                                renderSynchronizedComponents();
-                                return;
+                try {
+                    sb.from('services').select('*')
+                        .then(({ data, error }) => {
+                            if (!error && Array.isArray(data) && data.length > 0) {
+                                const activeData = data.filter(s => s.is_active !== false);
+                                if (activeData.length > 0) {
+                                    masterCatalogPayload = activeData.map(s => ({
+                                        service_id: s.service_id,
+                                        name: s.service_name,
+                                        price: parseFloat(s.service_price),
+                                        duration: (s.service_duration || 30) + ' Mins',
+                                        desc: s.service_description || 'Professional detailing package.'
+                                    }));
+                                    renderSynchronizedComponents();
+                                }
                             }
-                        }
-                        useFallbackDashboardServices();
-                    })
-                    .catch(() => useFallbackDashboardServices());
-                return;
+                        })
+                        .catch(err => console.warn("Supabase dashboard services fetch notice:", err));
+                } catch (err) {
+                    console.warn("Dashboard service query error:", err);
+                }
             }
-
-            useFallbackDashboardServices();
         }
 
         function useFallbackDashboardServices() {
