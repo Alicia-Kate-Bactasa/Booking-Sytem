@@ -650,46 +650,27 @@
               Feature: Backend catalog loading with local fallback rendering for cards and dropdown options.
               Purpose: Shows available services and pricing even when remote data is unavailable.
           */
-        function fetchAndRenderCatalogServices() {
-            // Render fallback/default services immediately so services are always displayed on screen
-            useFallbackServices();
-
+        async function fetchAndRenderCatalogServices() {
             const sb = typeof getSupabase === 'function' ? getSupabase() : null;
-            if (sb) {
-                try {
-                    sb.from('services')
-                        .select('*')
-                        .then(({ data, error }) => {
-                            if (!error && Array.isArray(data) && data.length > 0) {
-                                const activeData = data.filter(s => s.is_active !== false);
-                                if (activeData.length > 0) {
-                                    masterCatalogServices = activeData.map(s => ({
-                                        name: s.service_name,
-                                        price: parseFloat(s.service_price),
-                                        duration: (s.service_duration || 30) + ' Mins',
-                                        desc: s.service_description || 'Professional detailing package.'
-                                    }));
-                                    renderDOMCatalogs();
-                                }
-                            }
-                        })
-                        .catch(err => {
-                            console.warn("Supabase background catalog query notice:", err);
-                        });
-                } catch (err) {
-                    console.warn("Supabase query error:", err);
-                }
-            }
-        }
+            if (!sb) return;
 
-        function useFallbackServices() {
-            masterCatalogServices = [
-                { name: "Standard Car Wash", price: 250, duration: "30 Mins", desc: "An essential exterior foam cleaning treatment utilizing scratch-free microfiber wash mitts and deep wheel cleaning." },
-                { name: "Deluxe Car Wash", price: 400, duration: "45 Mins", desc: "Full cabin deep cleaning, sterilization, leather restoration, fabric stain extraction, and anti-bac odor elimination treatments." },
-                { name: "Premium Car Wash", price: 600, duration: "1 Hour", desc: "Our ultimate preservation suite incorporating full body glass coating protection layers, premium window treatments, and high-gloss wax." },
-                { name: "Under Chassis Wash", price: 350, duration: "30 Mins", desc: "High-pressure multi-directional undercarriage flush targeting mud, corrosive elements, salt buildup, and road grime." }
-            ];
-            renderDOMCatalogs();
+            try {
+                const { data, error } = await sb.from('services').select('*');
+                if (!error && Array.isArray(data) && data.length > 0) {
+                    const activeData = data.filter(s => s.is_active !== false);
+                    if (activeData.length > 0) {
+                        masterCatalogServices = activeData.map(s => ({
+                            name: s.service_name,
+                            price: parseFloat(s.service_price),
+                            duration: (s.service_duration || 30) + ' Mins',
+                            desc: s.service_description || 'Professional detailing package.'
+                        }));
+                        renderDOMCatalogs();
+                    }
+                }
+            } catch (err) {
+                console.error("Database services load error:", err);
+            }
         }
 
         function renderDOMCatalogs() {

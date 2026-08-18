@@ -632,41 +632,31 @@ const defaultServices = [
               Feature: Editable service name, description, duration, and price fields stored in localStorage.
               Purpose: Lets the admin update catalog details while protecting referenced active bookings.
           */
-        let masterCatalogServices = [
-            { service_id: 1, name: "Standard Car Wash", desc: "Essential exterior cleaning.", duration: 30, price: 250, category: "Detailing", is_active: true },
-            { service_id: 2, name: "Deluxe Car Wash", desc: "Upgraded wash with extra exterior care.", duration: 45, price: 400, category: "Detailing", is_active: true },
-            { service_id: 3, name: "Premium Car Wash", desc: "Highest-tier thorough wash including detailed trim care.", duration: 60, price: 600, category: "Detailing", is_active: true },
-            { service_id: 4, name: "Under Chassis Wash", desc: "High-pressure multi-directional flush.", duration: 30, price: 350, category: "Detailing", is_active: true }
-        ];
+        let masterCatalogServices = [];
 
         async function loadServices() {
-            renderAdminServices();
-            if (typeof populateOnsiteServices === 'function') {
-                populateOnsiteServices();
-            }
-
             const sb = typeof getSupabase === 'function' ? getSupabase() : null;
-            if (sb) {
-                try {
-                    const { data } = await sb.from('services').select('*');
-                    if (data && data.length > 0) {
-                        masterCatalogServices = data.map(s => ({
-                            service_id: s.service_id,
-                            name: s.service_name,
-                            desc: s.service_description,
-                            duration: s.service_duration,
-                            price: parseFloat(s.service_price),
-                            category: s.service_category || 'Detailing',
-                            is_active: s.is_active !== false
-                        }));
-                        renderAdminServices();
-                        if (typeof populateOnsiteServices === 'function') {
-                            populateOnsiteServices();
-                        }
+            if (!sb) return;
+
+            try {
+                const { data, error } = await sb.from('services').select('*');
+                if (!error && Array.isArray(data) && data.length > 0) {
+                    masterCatalogServices = data.map(s => ({
+                        service_id: s.service_id,
+                        name: s.service_name,
+                        desc: s.service_description,
+                        duration: s.service_duration,
+                        price: parseFloat(s.service_price),
+                        category: s.service_category || 'Detailing',
+                        is_active: s.is_active !== false
+                    }));
+                    renderAdminServices();
+                    if (typeof populateOnsiteServices === 'function') {
+                        populateOnsiteServices();
                     }
-                } catch (e) {
-                    console.warn("Supabase services query notice:", e);
                 }
+            } catch (e) {
+                console.error("Database services query error:", e);
             }
         }
         window.loadServices = loadServices;
