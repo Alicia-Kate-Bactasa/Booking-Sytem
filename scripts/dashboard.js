@@ -456,8 +456,6 @@ const csrfToken = '';
                 console.error('Reschedule error:', err);
                 await showErrorModal('An error occurred during reschedule submission.');
             } finally {
-                await showErrorModal('An error occurred during reschedule submission.');
-            } finally {
                 if (submitBtn) {
                     submitBtn.disabled = false;
                     submitBtn.innerText = originalText;
@@ -661,23 +659,8 @@ const csrfToken = '';
                 fileCtrl.value = '';
                 isReactivation = false;
             } catch (err) {
-                const successMsg = isReactivation 
-                    ? "GCash reactivation proof submitted! Your payment is pending admin approval."
-                    : "GCash renewal proof submitted! Your payment is pending admin approval.";
-                showErrorModal(successMsg, true);
-                toggleModal('renewalHubModal');
-                fileCtrl.value = '';
-                isReactivation = false;
-            }
-            } catch (err) {
                 console.error('Renewal error:', err);
                 await showErrorModal('An error occurred during renewal submission. Please try again.');
-                syncProfileWithDatabase(); // Revert button if failed
-            } finally {
-                if (submitBtn) {
-                    submitBtn.disabled = false;
-                    submitBtn.innerText = originalText;
-                }
             }
         }
 
@@ -793,82 +776,16 @@ const csrfToken = '';
                     if (prof) {
                         userProfileSession.name = prof.full_name || localStorage.getItem('subscriber_name') || 'VIP Member';
                         userProfileSession.customer_type = 'Subscriber';
-                        const isSubActive = true;
                         const restrictedNotice = document.getElementById('bookingRestrictedNotice');
                         if (restrictedNotice) restrictedNotice.classList.add('hidden');
-                        document.getElementById('dashWelcomeName').innerText = userProfileSession.name;
-                        document.getElementById('subParamName').innerText = userProfileSession.name;
+                        const welcomeName = document.getElementById('dashWelcomeName');
+                        if (welcomeName) welcomeName.innerText = userProfileSession.name;
+                        const subName = document.getElementById('subParamName');
+                        if (subName) subName.innerText = userProfileSession.name;
                         renderSynchronizedComponents();
                     }
                 }).catch(err => console.warn("Profile sync notice:", err));
             }
-        }
-                                if (submitBtn) {
-                                    submitBtn.disabled = true;
-                                    submitBtn.innerText = "Subscriber Booking Only";
-                                    submitBtn.className = "w-full bg-neutral-200 text-neutral-400 text-sm font-bold py-4 rounded-full transition-all text-center cursor-not-allowed border border-neutral-300 focus:outline-none";
-                                }
-                                dropdownBtns.forEach(btn => {
-                                    btn.style.pointerEvents = 'none';
-                                    btn.classList.add('opacity-50', 'cursor-not-allowed');
-                                });
-                                if (serviceCards) {
-                                    serviceCards.style.pointerEvents = 'none';
-                                    serviceCards.style.opacity = '0.5';
-                                }
-                            }
-                        }
-
-                        document.getElementById('dashWelcomeName').innerText = prof.full_name;
-                        document.getElementById('subParamName').innerText = prof.full_name;
-                        document.getElementById('subParamNextBilling').innerText = userProfileSession.next_billing_date;
-
-                        const statusTag = document.getElementById('accountStatusTag');
-                        if (statusTag) {
-                            if (prof.plan_status === 'Active' || prof.plan_status === 'Cancellation Pending') {
-                                statusTag.className = "text-xs bg-emerald-50 text-emerald-700 font-bold px-4 py-2 rounded-full border border-emerald-200 flex items-center gap-1.5 self-start sm:self-center";
-                                statusTag.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>VIP STATUS ACTIVE`;
-                            } else if (prof.plan_status === 'Payment Pending') {
-                                statusTag.className = "text-xs bg-amber-50 text-amber-700 font-bold px-4 py-2 rounded-full border border-amber-200 flex items-center gap-1.5 self-start sm:self-center";
-                                statusTag.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500 inline-block"></span>VIP STATUS PENDING`;
-                            } else {
-                                statusTag.className = "text-xs bg-neutral-100 text-neutral-600 font-bold px-4 py-2 rounded-full border border-neutral-200 flex items-center gap-1.5 self-start sm:self-center";
-                                statusTag.innerHTML = `<span class="w-2 h-2 rounded-full bg-neutral-400 inline-block"></span>VIP STATUS INACTIVE`;
-                            }
-                        }
-
-                        const customerTypeEl = document.getElementById('subParamType');
-                        if (customerTypeEl) {
-                            customerTypeEl.innerText = userProfileSession.customer_type;
-                        }
-
-                        if (prof.created_at) {
-                            const createdAtEl = document.getElementById('subParamCreatedAt');
-                            if (createdAtEl) createdAtEl.innerText = prof.created_at;
-                        }
-                        if (prof.last_visit) {
-                            const lastVisitEl = document.getElementById('subParamLastVisit');
-                            if (lastVisitEl) lastVisitEl.innerText = prof.last_visit;
-                        }
-                        if (prof.last_billing_date) {
-                            const lastBillingEl = document.getElementById('subParamLastBilling');
-                            if (lastBillingEl) lastBillingEl.innerText = prof.last_billing_date;
-                        }
-                        if (prof.completed_sessions_count !== undefined) {
-                            const completedCountEl = document.getElementById('subParamCount');
-                            if (completedCountEl) completedCountEl.innerText = `${prof.completed_sessions_count} Appointments Done`;
-                        }
-
-                        // Handle renewal button states dynamically via state-machine
-                        updateRenewalButtonState(prof);
-
-                        // Re-render services so covered prices match current coverages
-                        renderSynchronizedComponents();
-                    }
-                })
-                .catch(err => {
-                    console.warn("Failed to sync profile with database:", err);
-                });
         }
 
         window.onload = function() {

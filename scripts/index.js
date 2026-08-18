@@ -1108,22 +1108,6 @@
                     } catch (err) {
                         console.warn("Real-time email check notice:", err);
                     }
-
-                            if (result.discount_eligible) {
-                                isGuestDiscountEligible = true;
-                                updateSummary();
-                                if (lastNotifiedDiscountEmail !== email) {
-                                    lastNotifiedDiscountEmail = email;
-                                    showErrorModal("🎉 Special Loyalty Promo Unlocked!\n\nYou've availed our promos 3 times! You get a 10% discount on this service. Avail 3 more times again to get discounted again!");
-                                }
-                            } else {
-                                isGuestDiscountEligible = false;
-                                updateSummary();
-                            }
-                        }
-                    } catch (err) {
-                        console.error("Real-time email check failed:", err);
-                    }
                 });
                 
                 custEmailInput.addEventListener('input', () => {

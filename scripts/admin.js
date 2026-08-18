@@ -644,23 +644,28 @@ const defaultServices = [
                             duration: s.service_duration,
                             price: parseFloat(s.service_price),
                             category: s.service_category || 'Detailing',
-                    console.warn("Failed to load services from database, using fallback:", err);
-                    masterCatalogServices = defaultServices.map((s, idx) => {
-                        return {
-                            service_id: idx + 1,
-                            name: s.name,
-                            desc: s.desc,
-                            duration: s.duration,
-                            price: s.price,
-                            category: 'Detailing',
-                            is_active: 1
-                        };
-                    });
-                    renderAdminServices();
-                    if (typeof populateOnsiteServices === 'function') {
-                        populateOnsiteServices();
+                            is_active: s.is_active !== false
+                        }));
+                        renderAdminServices();
+                        if (typeof populateOnsiteServices === 'function') {
+                            populateOnsiteServices();
+                        }
+                        return;
                     }
-                });
+                } catch (e) {
+                    console.warn("Supabase services query notice:", e);
+                }
+            }
+            masterCatalogServices = [
+                { service_id: 1, name: "Standard Car Wash", desc: "Essential exterior cleaning.", duration: 30, price: 250, category: "Detailing", is_active: true },
+                { service_id: 2, name: "Deluxe Car Wash", desc: "Upgraded wash with extra exterior care.", duration: 45, price: 400, category: "Detailing", is_active: true },
+                { service_id: 3, name: "Premium Car Wash", desc: "Highest-tier thorough wash including detailed trim care.", duration: 60, price: 600, category: "Detailing", is_active: true },
+                { service_id: 4, name: "Under Chassis Wash", desc: "High-pressure multi-directional flush.", duration: 30, price: 350, category: "Detailing", is_active: true }
+            ];
+            renderAdminServices();
+            if (typeof populateOnsiteServices === 'function') {
+                populateOnsiteServices();
+            }
         }
         window.loadServices = loadServices;
 
@@ -707,25 +712,12 @@ const defaultServices = [
                             </div>
                             <div class="flex items-center gap-2">
                                 <button onclick="toggleServiceActive(${index})" class="bg-white border border-neutral-200 hover:border-neutral-300 text-neutral-600 text-[10px] font-bold tracking-wider uppercase px-4 py-2 rounded-full transition-all focus:outline-none">
-                                    ${isActive ? 'Discontinue' : 'Activate'}
-                                </button>
-                                <button onclick="saveServiceModifications(${index})" class="bg-neutral-900 text-white text-[10px] font-bold tracking-wider uppercase px-4 py-2 rounded-full hover:bg-black transition-all shadow-sm focus:outline-none">
-                            is_active: s.is_active !== false
-                        }));
-                        renderServiceCatalogCards();
-                        return;
-                    }
-                } catch (e) {
-                    console.warn("Supabase services query notice:", e);
-                }
-            }
-            masterCatalogServices = [
-                { service_id: 1, name: "Standard Car Wash", desc: "Essential exterior cleaning.", duration: 30, price: 250, category: "Detailing", is_active: true },
-                { service_id: 2, name: "Deluxe Car Wash", desc: "Upgraded wash with extra exterior care.", duration: 45, price: 400, category: "Detailing", is_active: true },
-                { service_id: 3, name: "Premium Car Wash", desc: "Highest-tier thorough wash including detailed trim care.", duration: 60, price: 600, category: "Detailing", is_active: true },
-                { service_id: 4, name: "Under Chassis Wash", desc: "High-pressure multi-directional flush.", duration: 30, price: 350, category: "Detailing", is_active: true }
-            ];
-            renderServiceCatalogCards();
+                                <button onclick="saveServiceModifications(${index})" class="bg-neutral-900 text-white text-[10px] font-bold tracking-wider uppercase px-4 py-2 rounded-full hover:bg-black transition-all shadow-sm focus:outline-none">Save</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
         }
 
         async function toggleServiceActive(index) {
