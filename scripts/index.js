@@ -644,10 +644,6 @@
             if (event.key === PENDING_SUBSCRIPTION_REQUESTS_KEY || event.key === APPROVED_SUBSCRIPTION_ACCOUNTS_KEY) {
                 // No live UI on this page needs rerendering, but the listener keeps the flow consistent across tabs.
             }
-            if (event.key === 'montage_services') {
-                masterCatalogServices = JSON.parse(event.newValue || '[]');
-                renderDOMCatalogs();
-            }
         });
 
           /* ===================== LANDING PAGE CATALOG FETCH / RENDER =====================
@@ -655,22 +651,6 @@
               Purpose: Shows available services and pricing even when remote data is unavailable.
           */
         function fetchAndRenderCatalogServices() {
-            let storedServices = localStorage.getItem('montage_services');
-            if (storedServices) {
-                try {
-                    masterCatalogServices = JSON.parse(storedServices);
-                    if (Array.isArray(masterCatalogServices) && masterCatalogServices.length > 0) {
-                        renderDOMCatalogs();
-                    }
-                } catch (e) {
-                    console.warn("Failed to parse cached services:", e);
-                }
-            }
-
-            if (masterCatalogServices.length === 0) {
-                useFallbackServices();
-            }
-
             const sb = typeof getSupabase === 'function' ? getSupabase() : null;
             if (sb) {
                 sb.from('services')
@@ -685,15 +665,20 @@
                                     duration: (s.service_duration || 30) + ' Mins',
                                     desc: s.service_description || 'Professional detailing package.'
                                 }));
-                                localStorage.setItem('montage_services', JSON.stringify(masterCatalogServices));
                                 renderDOMCatalogs();
+                                return;
                             }
                         }
+                        useFallbackServices();
                     })
                     .catch(err => {
                         console.warn("Supabase services fetch notice:", err);
+                        useFallbackServices();
                     });
+                return;
             }
+
+            useFallbackServices();
         }
 
         function useFallbackServices() {
@@ -703,7 +688,6 @@
                 { name: "Premium Car Wash", price: 600, duration: "1 Hour", desc: "Our ultimate preservation suite incorporating full body glass coating protection layers, premium window treatments, and high-gloss wax." },
                 { name: "Under Chassis Wash", price: 350, duration: "30 Mins", desc: "High-pressure multi-directional undercarriage flush targeting mud, corrosive elements, salt buildup, and road grime." }
             ];
-            localStorage.setItem('montage_services', JSON.stringify(masterCatalogServices));
             renderDOMCatalogs();
         }
 

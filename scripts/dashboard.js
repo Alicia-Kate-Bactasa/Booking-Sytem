@@ -726,22 +726,6 @@ const csrfToken = '';
               Purpose: Populates the booking menu cards and dropdown items with live service data.
           */
         function fetchAndSyncDashboardDropdown() {
-            let storedServices = localStorage.getItem('montage_services');
-            if (storedServices) {
-                try {
-                    masterCatalogPayload = JSON.parse(storedServices);
-                    if (Array.isArray(masterCatalogPayload) && masterCatalogPayload.length > 0) {
-                        renderSynchronizedComponents();
-                    }
-                } catch (e) {
-                    console.warn("Failed to parse cached dashboard services:", e);
-                }
-            }
-
-            if (!masterCatalogPayload || masterCatalogPayload.length === 0) {
-                useFallbackDashboardServices();
-            }
-
             const sb = typeof getSupabase === 'function' ? getSupabase() : null;
             if (sb) {
                 sb.from('services').select('*')
@@ -756,13 +740,17 @@ const csrfToken = '';
                                     duration: (s.service_duration || 30) + ' Mins',
                                     desc: s.service_description || 'Professional detailing package.'
                                 }));
-                                localStorage.setItem('montage_services', JSON.stringify(masterCatalogPayload));
                                 renderSynchronizedComponents();
+                                return;
                             }
                         }
+                        useFallbackDashboardServices();
                     })
-                    .catch(() => {});
+                    .catch(() => useFallbackDashboardServices());
+                return;
             }
+
+            useFallbackDashboardServices();
         }
 
         function useFallbackDashboardServices() {
@@ -772,7 +760,6 @@ const csrfToken = '';
                 { name: "Premium Car Wash", price: 600, duration: "1 Hour", desc: "Highest-tier thorough wash including detailed trim care." },
                 { name: "Under Chassis Wash", price: 350, duration: "30 Mins", desc: "High-pressure multi-directional flush." }
             ];
-            localStorage.setItem('montage_services', JSON.stringify(masterCatalogPayload));
             renderSynchronizedComponents();
         }
 
