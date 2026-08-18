@@ -33,11 +33,45 @@ const defaultServices = [
         let pendingRequests = [];
 
         async function loadAppointments() {
+            const sb = typeof getSupabase === 'function' ? getSupabase() : null;
+            if (sb) {
+                try {
+                    const { data, error } = await sb
+                        .from('bookings')
+                        .select('*, services(*), profiles(*), customers(*)');
+
+                    if (!error && Array.isArray(data)) {
+                        appointmentsRegistry = data.map(app => {
+                            let type = 'cancelled';
+                            if (['Pending Verification', 'Confirmed', 'Pending', 'Paid', 'Scheduled'].includes(app.booking_status)) {
+                                type = 'pending';
+                            } else if (app.booking_status === 'Completed') {
+                                type = 'completed';
+                            }
+                            const clientName = app.profiles?.full_name || app.customers?.full_name || 'Client';
+                            return {
+                                id: "MTG-" + app.booking_id,
+                                booking_id: parseInt(app.booking_id, 10),
+                                type: type,
+                                service: app.services?.service_name || 'Service',
+                                date: app.scheduled_date,
+                                time: app.time_slot,
+                                client: clientName,
+                                userType: app.user_id ? 'subscriber' : 'regular'
+                            };
+                        });
+                        renderBookingSlideData();
+                        return;
+                    }
+                } catch (sbErr) {
+                    console.warn("Supabase bookings fetch failed, trying API fallback:", sbErr);
+                }
+            }
+
             try {
                 const res = await fetch('bookings/get_bookings.php');
                 if (res.status === 401 || res.status === 403) {
-                    await alert('Session unauthorized or expired. Redirecting to landing.');
-                    window.location.href = '../index.html';
+                    window.location.href = 'index.html';
                     return [];
                 }
                 if (!res.ok) throw new Error('API request failed');
@@ -45,8 +79,6 @@ const defaultServices = [
 
                 const data = (responseObj && responseObj.status === 'success') ? responseObj.data : (Array.isArray(responseObj) ? responseObj : []);
                 const approvedData = data.filter(app => {
-                    // Regular/guest bookings only appear in the bookings panel if payment is approved ('Paid')
-                    // Subscribers are pre-approved (payment_status is null)
                     if (app.payment_status !== null) {
                         return app.payment_status === 'Paid';
                     }
