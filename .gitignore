@@ -26,6 +26,9 @@ uploads/*
 
 # === Development Configuration Overrides ===
 .env
+.env.local
+config.js
+config.local.js
 api/config.local.php
 
 # Ignore the real database configuration file containing secrets
