@@ -533,7 +533,73 @@
 
 
             try {
-                // Post data to the database register endpoint
+                const sb = typeof getSupabase === 'function' ? getSupabase() : null;
+                if (sb) {
+                    const { data: authData, error: authError } = await sb.auth.signUp({
+                        email: emailVal,
+                        password: passwordVal,
+                        options: {
+                            data: {
+                                full_name: nameVal,
+                                role: 'Subscriber'
+                            }
+                        }
+                    });
+
+                    if (authError) {
+                        showErrorModal(authError.message || 'Registration failed.');
+                        return;
+                    }
+
+                    const userId = authData.user?.id;
+                    let proofUrl = 'pending';
+
+                    if (userId && paymentProofFile && sb.storage) {
+                        const filePath = `receipts/${userId}_${Date.now()}_${paymentProofFile.name}`;
+                        const { data: uploadData, error: uploadError } = await sb.storage
+                            .from('payment-proofs')
+                            .upload(filePath, paymentProofFile);
+                        if (!uploadError) {
+                            proofUrl = sb.storage.from('payment-proofs').getPublicUrl(filePath).data.publicUrl;
+                        }
+                    }
+
+                    if (userId) {
+                        const { data: subData } = await sb.from('subscriptions').insert([{
+                            user_id: userId,
+                            plan_tier: 'Unlimited Basic Wash',
+                            plan_status: 'Payment Pending'
+                        }]).select().single();
+
+                        if (subData) {
+                            const { data: invData } = await sb.from('invoices').insert([{
+                                subscription_id: subData.subscription_id,
+                                total_amount: 1500.00,
+                                invoice_type: 'Monthly Roster',
+                                invoice_status: 'Pending'
+                            }]).select().single();
+
+                            if (invData) {
+                                await sb.from('payments').insert([{
+                                    invoice_id: invData.invoice_id,
+                                    amount: 1500.00,
+                                    payment_method: 'GCash',
+                                    payment_status: 'Pending Approval',
+                                    proof_of_payment: proofUrl
+                                }]);
+                            }
+                        }
+                    }
+
+                    toggleModal('subPaymentModal');
+                    toggleModal('subPendingModal');
+                    const payForm = document.getElementById('subPaymentModal')?.querySelector('form');
+                    if (payForm) payForm.reset();
+                    const availForm = document.getElementById('availSubModal')?.querySelector('form');
+                    if (availForm) availForm.reset();
+                    return;
+                }
+
                 const response = await fetch('api/auth/register.php', {
                     method: 'POST',
                     body: formData
