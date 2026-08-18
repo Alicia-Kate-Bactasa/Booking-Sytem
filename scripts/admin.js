@@ -1237,11 +1237,11 @@ const defaultServices = [
         function buildAdminDynamicTimeSlots(durationMinutes) {
             const duration = parseInt(durationMinutes, 10) || 30;
             const startMins = 8 * 60;
-            const endMins = 17 * 60;
+            const endMins = 17 * 60; // Up to 5:00 PM start slot
             const step = 30;
 
             const slots = [];
-            for (let current = startMins; current + duration <= endMins; current += step) {
+            for (let current = startMins; current <= endMins; current += step) {
                 if (current >= 720 && current < 780) continue;
                 
                 const hrs24 = Math.floor(current / 60);
