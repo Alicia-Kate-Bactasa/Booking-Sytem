@@ -96,12 +96,46 @@ const defaultServices = [
             const sb = typeof getSupabase === 'function' ? getSupabase() : null;
             if (sb) {
                 try {
-                    const { data } = await sb.from('subscriptions').select('*, profiles(*)');
-                    if (data) {
-                        subscriberAccounts = data;
-                        executeAutomatedComplianceAuditLoop();
-                        return;
+                    const { data: subsData } = await sb.from('subscriptions').select('*, profiles(*)');
+                    const { data: profData } = await sb.from('profiles').select('*').eq('user_role', 'Subscriber');
+
+                    let list = [];
+                    let seenIds = new Set();
+
+                    if (Array.isArray(subsData)) {
+                        subsData.forEach(sub => {
+                            const uid = sub.user_id || sub.profiles?.id;
+                            if (uid) seenIds.add(uid);
+                            list.push({
+                                subscriber_id: sub.subscription_id,
+                                name: sub.profiles?.full_name || sub.profiles?.email || 'Subscriber',
+                                email: sub.profiles?.email || '',
+                                next_billing_date: sub.renews_at || new Date(Date.now() + 30*86400000).toISOString().split('T')[0],
+                                status: sub.plan_status === 'Active' ? 'Verified' : (sub.plan_status || 'Verified'),
+                                proof_image: sub.proof_url || '../assets/gcashQR.jpg'
+                            });
+                        });
                     }
+
+                    if (Array.isArray(profData)) {
+                        profData.forEach(prof => {
+                            if (!seenIds.has(prof.id)) {
+                                seenIds.add(prof.id);
+                                list.push({
+                                    subscriber_id: prof.id,
+                                    name: prof.full_name || prof.email || 'Subscriber',
+                                    email: prof.email || '',
+                                    next_billing_date: new Date(Date.now() + 30*86400000).toISOString().split('T')[0],
+                                    status: prof.subscription_status || 'Verified',
+                                    proof_image: '../assets/gcashQR.jpg'
+                                });
+                            }
+                        });
+                    }
+
+                    subscriberAccounts = list;
+                    executeAutomatedComplianceAuditLoop();
+                    return;
                 } catch (e) {
                     console.warn("Supabase subscribers query notice:", e);
                 }
@@ -712,7 +746,7 @@ const defaultServices = [
                                 <input type="number" id="edit-price-${index}" value="${service.price}" class="w-24 font-bold text-sm bg-transparent border-b border-transparent hover:border-neutral-300 focus:border-black focus:outline-none transition-all">
                             </div>
                             <div class="flex items-center gap-2">
-                                <button onclick="toggleServiceActive(${index})" class="bg-white border border-neutral-200 hover:border-neutral-300 text-neutral-600 text-[10px] font-bold tracking-wider uppercase px-4 py-2 rounded-full transition-all focus:outline-none">
+                                <button onclick="toggleServiceActive(${index})" class="bg-white border border-neutral-200 hover:border-neutral-300 ${isActive ? 'text-red-500 hover:bg-red-50' : 'text-emerald-600 hover:bg-emerald-50'} text-[10px] font-bold tracking-wider uppercase px-4 py-2 rounded-full transition-all focus:outline-none">${isActive ? 'Deactivate' : 'Activate'}</button>
                                 <button onclick="saveServiceModifications(${index})" class="bg-neutral-900 text-white text-[10px] font-bold tracking-wider uppercase px-4 py-2 rounded-full hover:bg-black transition-all shadow-sm focus:outline-none">Save</button>
                             </div>
                         </div>
