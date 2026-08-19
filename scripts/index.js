@@ -1046,7 +1046,15 @@
 
             const sb = typeof getSupabase === 'function' ? getSupabase() : null;
             if (sb && sb.auth) {
-                sb.auth.signInWithOtp({ email: emailVal }).catch(err => console.warn("Supabase OTP notice:", err));
+                // Use pure One-Time OTP mode without creating auth user account
+                sb.auth.signInWithOtp({ 
+                    email: emailVal,
+                    options: { shouldCreateUser: false }
+                }).catch(err => {
+                    console.warn("Supabase guest OTP notice:", err);
+                    // Fallback attempt without options
+                    sb.auth.signInWithOtp({ email: emailVal }).catch(e => console.warn("Supabase OTP fallback notice:", e));
+                });
             }
 
             const otpSection = document.getElementById('guestOtpVerificationSection');
@@ -1054,7 +1062,7 @@
             
             const otpMsg = document.getElementById('guestOtpMessage');
             if (otpMsg) {
-                otpMsg.innerText = `Verification code sent to your email! Please check your inbox.`;
+                otpMsg.innerText = `One-Time Verification code sent to your email! Please check your inbox.`;
                 otpMsg.className = "text-[10px] text-emerald-600 font-semibold mt-1 ml-3";
                 otpMsg.classList.remove('hidden');
             }
@@ -1073,8 +1081,8 @@
             const verifyBtn = document.getElementById('verifyGuestOtpBtn');
             const otpMsg = document.getElementById('guestOtpMessage');
 
-            if (!otpVal || otpVal.length !== 6 || !/^\d+$/.test(otpVal)) {
-                showErrorModal('Please enter a valid 6-digit numeric verification code.');
+            if (!otpVal || otpVal.length < 4 || otpVal.length > 8) {
+                showErrorModal('Please enter a valid verification code.');
                 return;
             }
 
