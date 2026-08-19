@@ -16,7 +16,11 @@
 
 
         // Master Catalog Collection Schema map matching specifications exactly
-        let masterCatalogServices = [];
+        let masterCatalogServices = [
+            { name: "Standard Car Wash", price: 250, duration: "60 Mins", desc: "Essential exterior cleaning and surface dirt removal." },
+            { name: "Deluxe Car Wash", price: 400, duration: "60 Mins", desc: "Upgraded wash with extra exterior care, wheel cleaning, and tire dressing." },
+            { name: "Premium Car Wash", price: 600, duration: "60 Mins", desc: "Our highest-tier thorough wash including detailed trim care." }
+        ];
 
         let activeServiceState = "";
         let activeServicePrice = 0;
@@ -716,12 +720,6 @@
               Feature: Backend catalog loading with local fallback rendering for cards and dropdown options.
               Purpose: Shows available services and pricing even when remote data is unavailable.
           */
-        let masterCatalogServices = [
-            { name: "Standard Car Wash", price: 250, duration: "60 Mins", desc: "Essential exterior cleaning and surface dirt removal." },
-            { name: "Deluxe Car Wash", price: 400, duration: "60 Mins", desc: "Upgraded wash with extra exterior care, wheel cleaning, and tire dressing." },
-            { name: "Premium Car Wash", price: 600, duration: "60 Mins", desc: "Our highest-tier thorough wash including detailed trim care." }
-        ];
-
         async function fetchAndRenderCatalogServices() {
             let sb = typeof getSupabase === 'function' ? getSupabase() : null;
             renderDOMCatalogs(); // Immediate initial render from defaults
