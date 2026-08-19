@@ -714,8 +714,16 @@
               Feature: Backend catalog loading with local fallback rendering for cards and dropdown options.
               Purpose: Shows available services and pricing even when remote data is unavailable.
           */
+        let masterCatalogServices = [
+            { name: "Standard Car Wash", price: 250, duration: "60 Mins", desc: "Essential exterior cleaning and surface dirt removal." },
+            { name: "Deluxe Car Wash", price: 400, duration: "60 Mins", desc: "Upgraded wash with extra exterior care, wheel cleaning, and tire dressing." },
+            { name: "Premium Car Wash", price: 600, duration: "60 Mins", desc: "Our highest-tier thorough wash including detailed trim care." }
+        ];
+
         async function fetchAndRenderCatalogServices() {
             let sb = typeof getSupabase === 'function' ? getSupabase() : null;
+            renderDOMCatalogs(); // Immediate initial render from defaults
+
             let attempts = 0;
             while (!sb && attempts < 15) {
                 await new Promise(r => setTimeout(r, 100));
@@ -745,7 +753,7 @@
 
         function renderDOMCatalogs() {
             const menuCardsContainer = document.getElementById('index-services-container');
-            const wizardDropdownWrapper = document.getElementById('dropdown-services-wrapper');
+            const wizardDropdownWrapper = document.getElementById('serviceDropdownMenu') || document.getElementById('dropdown-services-wrapper');
             const feedbackSelect = document.getElementById('feedbackService');
 
             if (menuCardsContainer) menuCardsContainer.innerHTML = '';
@@ -779,7 +787,7 @@
 
                 if (wizardDropdownWrapper) {
                     const optionButtonHTML = `
-                        <button type="button" onclick="selectCustomItem('${service.name}', ${service.price}, '${service.duration}', '${service.name} — ₱${service.price}')" class="w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors flex justify-between items-center">
+                        <button type="button" onclick="selectCustomItem('${service.name}', ${service.price}, '${service.duration}', '${service.name} — ₱${service.price}')" class="w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors flex justify-between items-center border-b border-neutral-100 last:border-0">
                             <span>${service.name}</span><span class="text-neutral-400 font-bold">₱${service.price}</span>
                         </button>
                     `;
@@ -787,7 +795,7 @@
                 }
             });
 
-            if (masterCatalogServices.length > 0) {
+            if (masterCatalogServices.length > 0 && !activeServiceState) {
                 activeServiceState = masterCatalogServices[0].name;
                 activeServicePrice = masterCatalogServices[0].price;
                 activeServiceDuration = masterCatalogServices[0].duration;
