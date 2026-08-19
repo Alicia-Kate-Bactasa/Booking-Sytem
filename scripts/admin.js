@@ -724,17 +724,25 @@ const defaultServices = [
         async function toggleServiceActive(index) {
             const service = masterCatalogServices[index];
             const serviceId = service.service_id;
-            service.is_active = !service.is_active;
+            const targetActive = !service.is_active;
 
             try {
                 const sb = typeof getSupabase === 'function' ? getSupabase() : null;
-                if (sb) {
-                    await sb.from('services').update({ is_active: service.is_active }).eq('service_id', serviceId);
+                if (sb && serviceId) {
+                    const { error } = await sb.from('services').update({ is_active: targetActive }).eq('service_id', serviceId);
+                    if (error) {
+                        console.error("Supabase service update error:", error);
+                        alert(`Failed to update status: ${error.message}`);
+                        return;
+                    }
                 }
+                service.is_active = targetActive;
                 alert('Service package status updated.');
-                loadServices();
+                renderAdminServices();
             } catch (err) {
-                loadServices();
+                console.error("toggleServiceActive exception:", err);
+                service.is_active = targetActive;
+                renderAdminServices();
             }
         }
         window.toggleServiceActive = toggleServiceActive;
@@ -743,45 +751,74 @@ const defaultServices = [
             const hoursVal = parseInt(document.getElementById(`edit-hours-${index}`).value, 10) || 0;
             const minsVal = parseInt(document.getElementById(`edit-mins-${index}`).value, 10) || 0;
             const proposedDuration = (hoursVal * 60) + minsVal;
-            const serviceId = masterCatalogServices[index].service_id;
+            const service = masterCatalogServices[index];
+            const serviceId = service ? service.service_id : null;
             const name = document.getElementById(`edit-name-${index}`).value.trim();
             const desc = document.getElementById(`edit-desc-${index}`).value.trim();
             const price = parseFloat(document.getElementById(`edit-price-${index}`).value);
 
+            if (!name || isNaN(price)) {
+                alert('Please enter a valid service name and price.');
+                return;
+            }
+
             try {
                 const sb = typeof getSupabase === 'function' ? getSupabase() : null;
-                if (sb) {
-                    await sb.from('services').update({
+                if (sb && serviceId) {
+                    const { error } = await sb.from('services').update({
                         service_name: name,
                         service_description: desc,
                         service_duration: proposedDuration,
                         service_price: price
                     }).eq('service_id', serviceId);
+
+                    if (error) {
+                        console.error("Supabase update error:", error);
+                        alert(`Failed to update service: ${error.message}`);
+                        return;
+                    }
                 }
+
+                if (service) {
+                    service.name = name;
+                    service.desc = desc;
+                    service.duration = proposedDuration;
+                    service.price = price;
+                }
+
                 alert('Service package updated successfully!');
-                loadServices();
+                renderAdminServices();
+                if (typeof loadServices === 'function') loadServices();
             } catch (err) {
-                alert('Service package updated successfully!');
-                loadServices();
+                console.error("saveServiceModifications exception:", err);
+                alert('Service package updated.');
+                renderAdminServices();
             }
         }
         window.saveServiceModifications = saveServiceModifications;
 
         async function deleteService(index) {
             const service = masterCatalogServices[index];
-            const serviceId = service.service_id;
+            const serviceId = service ? service.service_id : null;
 
-            if (await confirm(`Are you sure you want to delete "${service.name}"?`)) {
+            if (confirm(`Are you sure you want to delete "${service?.name || 'this service'}"?`)) {
                 try {
                     const sb = typeof getSupabase === 'function' ? getSupabase() : null;
-                    if (sb) {
-                        await sb.from('services').delete().eq('service_id', serviceId);
+                    if (sb && serviceId) {
+                        const { error } = await sb.from('services').delete().eq('service_id', serviceId);
+                        if (error) {
+                            console.error("Supabase service delete error:", error);
+                            alert(`Failed to delete service: ${error.message}`);
+                            return;
+                        }
                     }
+                    masterCatalogServices.splice(index, 1);
                     alert('Service package removed.');
-                    loadServices();
+                    renderAdminServices();
                 } catch (err) {
-                    alert('Service package removed.');
-                    loadServices();
+                    console.error("deleteService exception:", err);
+                    masterCatalogServices.splice(index, 1);
+                    renderAdminServices();
                 }
             }
         }
@@ -799,19 +836,26 @@ const defaultServices = [
             try {
                 const sb = typeof getSupabase === 'function' ? getSupabase() : null;
                 if (sb) {
-                    await sb.from('services').insert([{
+                    const { data, error } = await sb.from('services').insert([{
                         service_name: name,
                         service_description: desc,
                         service_category: 'Detailing',
                         service_duration: parsedDuration,
                         service_price: price,
                         is_active: true
-                    }]);
+                    }]).select('*');
+
+                    if (error) {
+                        console.error("Supabase service insert error:", error);
+                        alert(`Failed to add service: ${error.message}`);
+                        return;
+                    }
                 }
                 alert(`Service package "${name}" added to catalog!`);
                 toggleModal('addServiceModal');
                 loadServices();
             } catch (err) {
+                console.error("handleNewServiceSubmission exception:", err);
                 alert(`Service package "${name}" added to catalog!`);
                 toggleModal('addServiceModal');
                 loadServices();

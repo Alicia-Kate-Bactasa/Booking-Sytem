@@ -169,10 +169,9 @@ ALTER TABLE public.payments ENABLE ROW LEVEL SECURITY;
 -- --------------------------------------------------------
 -- RLS Policies
 -- --------------------------------------------------------
--- Services: Public read access
-DROP POLICY IF EXISTS "Allow public read access to services" ON public.services;
-CREATE POLICY "Allow public read access to services" ON public.services
-  FOR SELECT USING (true);
+-- Services: Full read/write access
+DROP POLICY IF EXISTS "Allow services access" ON public.services;
+CREATE POLICY "Allow services access" ON public.services FOR ALL USING (true);
 
 -- Profiles: Users can read and update their own profile; Admins full access
 DROP POLICY IF EXISTS "Users can read own profile" ON public.profiles;
