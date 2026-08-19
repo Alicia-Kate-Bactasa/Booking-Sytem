@@ -96,38 +96,45 @@ const defaultServices = [
             const sb = typeof getSupabase === 'function' ? getSupabase() : null;
             if (sb) {
                 try {
-                    // Only load APPROVED active/verified subscriptions (exclude pending payment reviews)
-                    const { data: subsData } = await sb.from('subscriptions').select('*, profiles(*)').neq('plan_status', 'Payment Pending').neq('plan_status', 'Pending');
-                    const { data: profData } = await sb.from('profiles').select('*').eq('user_role', 'Subscriber').eq('subscription_status', 'Active');
+                    // Fetch all subscriptions and all user profiles
+                    const { data: subsData } = await sb.from('subscriptions').select('*, profiles(*)');
+                    const { data: profData } = await sb.from('profiles').select('*');
 
                     let list = [];
                     let seenIds = new Set();
 
+                    // 1. Process explicit subscriptions
                     if (Array.isArray(subsData)) {
                         subsData.forEach(sub => {
                             const uid = sub.user_id || sub.profiles?.id;
                             if (uid) seenIds.add(uid);
+                            const nameVal = sub.profiles?.full_name || sub.profiles?.email || 'Subscriber Member';
+                            const emailVal = sub.profiles?.email || '';
+                            const isPending = sub.plan_status === 'Payment Pending' || sub.plan_status === 'Pending';
                             list.push({
                                 subscriber_id: sub.subscription_id,
-                                name: sub.profiles?.full_name || sub.profiles?.email || 'Subscriber',
-                                email: sub.profiles?.email || '',
+                                name: nameVal,
+                                email: emailVal,
                                 next_billing_date: sub.renews_at || new Date(Date.now() + 30*86400000).toISOString().split('T')[0],
-                                status: sub.plan_status === 'Active' ? 'Verified' : (sub.plan_status || 'Verified'),
+                                status: isPending ? 'Pending Approval' : (sub.plan_status === 'Active' ? 'Verified' : (sub.plan_status || 'Verified')),
                                 proof_image: sub.proof_url || '../assets/gcashQR.jpg'
                             });
                         });
                     }
 
+                    // 2. Process all registered signed-in profiles
                     if (Array.isArray(profData)) {
                         profData.forEach(prof => {
                             if (!seenIds.has(prof.id)) {
                                 seenIds.add(prof.id);
+                                const nameVal = prof.full_name || prof.email || 'Registered User';
+                                const subStatus = prof.subscription_status || 'Registered';
                                 list.push({
                                     subscriber_id: prof.id,
-                                    name: prof.full_name || prof.email || 'Subscriber',
+                                    name: nameVal,
                                     email: prof.email || '',
                                     next_billing_date: new Date(Date.now() + 30*86400000).toISOString().split('T')[0],
-                                    status: prof.subscription_status || 'Verified',
+                                    status: subStatus === 'Active' ? 'Verified' : subStatus,
                                     proof_image: '../assets/gcashQR.jpg'
                                 });
                             }
@@ -996,10 +1003,12 @@ const defaultServices = [
                     statusBadgeStyle = 'bg-emerald-50 text-emerald-700 border border-emerald-100 font-bold';
                 } else if (displayStatus === 'Overdue') {
                     statusBadgeStyle = 'bg-red-50 text-red-700 border border-red-100 font-extrabold';
+                } else if (displayStatus === 'Pending Approval' || displayStatus === 'Pending' || displayStatus === 'Registered') {
+                    statusBadgeStyle = 'bg-amber-50 text-amber-700 border border-amber-100 font-bold';
                 } else if (displayStatus === 'Expired' || displayStatus === 'Inactive') {
                     statusBadgeStyle = 'bg-neutral-100 text-neutral-600 border border-neutral-200 font-bold';
                 } else {
-                    statusBadgeStyle = 'bg-red-50 text-red-600 border border-red-100 font-bold';
+                    statusBadgeStyle = 'bg-neutral-100 text-neutral-600 border border-neutral-200 font-bold';
                 }
 
                 const canDowngrade = displayStatus === 'Overdue';
