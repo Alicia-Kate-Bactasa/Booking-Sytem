@@ -894,15 +894,17 @@
                 return;
             }
 
-            const demoCode = Math.floor(100000 + Math.random() * 900000).toString();
-            window._regOtpCode = demoCode;
+            const sb = typeof getSupabase === 'function' ? getSupabase() : null;
+            if (sb && sb.auth) {
+                sb.auth.signInWithOtp({ email: emailVal }).catch(err => console.warn("Supabase OTP notice:", err));
+            }
 
             const otpSection = document.getElementById('otpVerificationSection');
             if (otpSection) otpSection.classList.remove('hidden');
             
             const otpMsg = document.getElementById('otpMessage');
             if (otpMsg) {
-                otpMsg.innerText = `Verification code generated! (Code: ${demoCode})`;
+                otpMsg.innerText = `Verification code sent to your email! Please check your inbox.`;
                 otpMsg.className = "text-[10px] text-emerald-600 font-semibold mt-1 ml-3";
                 otpMsg.classList.remove('hidden');
             }
@@ -965,15 +967,17 @@
                 return;
             }
 
-            const demoCode = Math.floor(100000 + Math.random() * 900000).toString();
-            window._guestOtpCode = demoCode;
+            const sb = typeof getSupabase === 'function' ? getSupabase() : null;
+            if (sb && sb.auth) {
+                sb.auth.signInWithOtp({ email: emailVal }).catch(err => console.warn("Supabase OTP notice:", err));
+            }
 
             const otpSection = document.getElementById('guestOtpVerificationSection');
             if (otpSection) otpSection.classList.remove('hidden');
             
             const otpMsg = document.getElementById('guestOtpMessage');
             if (otpMsg) {
-                otpMsg.innerText = `Verification code generated! (Code: ${demoCode})`;
+                otpMsg.innerText = `Verification code sent to your email! Please check your inbox.`;
                 otpMsg.className = "text-[10px] text-emerald-600 font-semibold mt-1 ml-3";
                 otpMsg.classList.remove('hidden');
             }
