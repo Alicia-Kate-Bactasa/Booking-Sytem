@@ -69,8 +69,14 @@
         }
 
         function navigateToSubscription() {
-            toggleModal('loginModal');
-            window.location.href = '#subscription';
+            const loginModal = document.getElementById('loginModal');
+            if (loginModal && !loginModal.classList.contains('hidden')) {
+                loginModal.classList.add('hidden');
+            }
+            const subModal = document.getElementById('availSubModal');
+            if (subModal) {
+                subModal.classList.remove('hidden');
+            }
         }
 
         function toggleCustomDropdown(menuId) {
