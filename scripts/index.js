@@ -203,24 +203,46 @@
                 if (overlappingCount < TOTAL_BAYS) {
                     const time_slot = formatMinsToTimeSlot(candidateStart);
                     const end_time_slot = formatMinsToTimeSlot(candidateEnd);
-                    const display_label = `${formatMinsToLabel(candidateStart)} – ${formatMinsToLabel(candidateEnd)} (${currentDurationMins}m)`;
-                    slots.push({ time_slot, end_time_slot, display_label });
+                    const display_label = `${formatMinsToLabel(candidateStart)} – ${formatMinsToLabel(candidateEnd)}`;
+                    const isMorning = candidateStart < 720;
+                    slots.push({ time_slot, end_time_slot, display_label, isMorning });
                 }
             }
 
             timeContainer.innerHTML = '';
             if (slots.length === 0) {
                 timeContainer.innerHTML = `<p class="p-4 text-xs text-red-500 font-semibold text-center">Fully Booked for this date and duration</p>`;
-            } else {
-                slots.forEach(slot => {
-                    const btn = document.createElement('button');
-                    btn.type = 'button';
-                    btn.className = "w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors uppercase tracking-wider flex justify-between items-center";
-                    btn.innerHTML = `<span>${slot.display_label}</span><span class="text-[10px] text-emerald-600 font-bold">Available</span>`;
-                    btn.onclick = () => selectCustomTime(slot.time_slot, slot.display_label);
-                    timeContainer.appendChild(btn);
-                });
+                return;
             }
+
+            const morningSlots = slots.filter(s => s.isMorning);
+            const afternoonSlots = slots.filter(s => !s.isMorning);
+
+            function createGroupHTML(title, icon, groupSlots) {
+                if (groupSlots.length === 0) return '';
+                let html = `
+                    <div class="mb-3.5 last:mb-0">
+                        <div class="text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-2 flex items-center gap-1.5 px-1">
+                            <span>${icon}</span> <span>${title}</span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                `;
+                groupSlots.forEach(slot => {
+                    html += `
+                        <button type="button" onclick="selectCustomTime('${slot.time_slot}', '${slot.display_label}')" class="w-full text-left px-3.5 py-2.5 bg-neutral-50 hover:bg-black hover:text-white border border-neutral-200/80 rounded-xl text-xs font-semibold transition-all flex justify-between items-center group/btn shadow-2xs">
+                            <span class="font-mono tracking-tight text-[11px]">${slot.display_label}</span>
+                            <span class="text-[9px] font-bold uppercase text-emerald-600 group-hover/btn:text-emerald-300">Available</span>
+                        </button>
+                    `;
+                });
+                html += `</div></div>`;
+                return html;
+            }
+
+            let fullHTML = '';
+            if (morningSlots.length > 0) fullHTML += createGroupHTML('Morning Slots', '☀️', morningSlots);
+            if (afternoonSlots.length > 0) fullHTML += createGroupHTML('Afternoon Slots', '🌤️', afternoonSlots);
+            timeContainer.innerHTML = fullHTML;
         }
 
         function selectCustomItem(value, price, duration, label) {
