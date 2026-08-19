@@ -173,16 +173,11 @@ ALTER TABLE public.payments ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Allow services access" ON public.services;
 CREATE POLICY "Allow services access" ON public.services FOR ALL USING (true);
 
--- Profiles: Users can read and update their own profile; Admins full access
-DROP POLICY IF EXISTS "Users can read own profile" ON public.profiles;
-CREATE POLICY "Users can read own profile" ON public.profiles
-  FOR SELECT USING (auth.uid() = id);
+-- Profiles: Full read/write access
+DROP POLICY IF EXISTS "Allow profiles access" ON public.profiles;
+CREATE POLICY "Allow profiles access" ON public.profiles FOR ALL USING (true);
 
-DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
-CREATE POLICY "Users can update own profile" ON public.profiles
-  FOR UPDATE USING (auth.uid() = id);
-
--- Bookings: Public insert (for guest bookings) & user read/insert own bookings
+-- Bookings: Public insert & user read/insert own bookings
 DROP POLICY IF EXISTS "Allow public booking insert" ON public.bookings;
 CREATE POLICY "Allow public booking insert" ON public.bookings
   FOR INSERT WITH CHECK (true);
@@ -204,18 +199,9 @@ DROP POLICY IF EXISTS "Allow public customer select" ON public.customers;
 CREATE POLICY "Allow public customer select" ON public.customers
   FOR SELECT USING (true);
 
--- Subscriptions: Public insert/read
-DROP POLICY IF EXISTS "Allow subscriptions select" ON public.subscriptions;
-CREATE POLICY "Allow subscriptions select" ON public.subscriptions
-  FOR SELECT USING (true);
-
-DROP POLICY IF EXISTS "Allow subscriptions insert" ON public.subscriptions;
-CREATE POLICY "Allow subscriptions insert" ON public.subscriptions
-  FOR INSERT WITH CHECK (true);
-
-DROP POLICY IF EXISTS "Allow subscriptions update" ON public.subscriptions;
-CREATE POLICY "Allow subscriptions update" ON public.subscriptions
-  FOR UPDATE USING (true);
+-- Subscriptions: Full read/write access
+DROP POLICY IF EXISTS "Allow subscriptions access" ON public.subscriptions;
+CREATE POLICY "Allow subscriptions access" ON public.subscriptions FOR ALL USING (true);
 
 -- Invoices & Payments: Public select/insert/update
 DROP POLICY IF EXISTS "Allow invoices access" ON public.invoices;
