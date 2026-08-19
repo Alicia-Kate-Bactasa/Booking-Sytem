@@ -10,12 +10,7 @@ const csrfToken = '';
 
 
 
-const defaultServices = [
-            { name: "Standard Car Wash", price: 250, duration: "30 Mins", desc: "An essential exterior foam cleaning treatment utilizing scratch-free microfiber wash mitts and deep wheel cleaning.", last_updated_at: "July 05, 2026 9:00 AM" },
-            { name: "Deluxe Car Wash", price: 400, duration: "45 Mins", desc: "Full cabin deep cleaning, sterilization, leather restoration, fabric stain extraction, and anti-bac odor elimination treatments.", last_updated_at: "July 05, 2026 9:00 AM" },
-            { name: "Premium Car Wash", price: 600, duration: "1 Hour", desc: "Our ultimate preservation suite incorporating full body glass coating protection layers, premium window treatments, and high-gloss wax.", last_updated_at: "July 05, 2026 9:00 AM" },
-            { name: "Under Chassis Wash", price: 350, duration: "30 Mins", desc: "High-pressure multi-directional undercarriage flush targeting mud, corrosive elements, salt buildup, and road grime.", last_updated_at: "July 05, 2026 9:00 AM" }
-        ];
+const defaultServices = [];
 
         /* ===================== ADMIN DATA / STATE =====================
            Feature: Appointment registry, invoice ledger, and subscriber account records.
@@ -1057,7 +1052,7 @@ const defaultServices = [
                 }
 
                 const canDowngrade = displayStatus === 'Overdue';
-                const proofImgUrl = account.proof_image || "https://images.unsplash.com/photo-1554415707-6e8cfc93fe23?auto=format&fit=crop&q=80&w=400";
+                const proofImgUrl = account.proof_image || '';
 
                 complianceTable.innerHTML += `
                     <tr class="hover:bg-neutral-50/60 transition-colors">
@@ -1198,7 +1193,7 @@ const defaultServices = [
             }
 
             subscriberRosters.forEach(r => {
-                const proofImgUrl = r.img || "https://images.unsplash.com/photo-1554415707-6e8cfc93fe23?auto=format&fit=crop&q=80&w=400";
+                const proofImgUrl = r.img || '';
                 let statusBadgeStyle = 'bg-neutral-100 text-neutral-800 border border-neutral-200';
                 if (r.status === 'paid') {
                     statusBadgeStyle = 'bg-emerald-50 text-emerald-700 border border-emerald-100 font-bold';
