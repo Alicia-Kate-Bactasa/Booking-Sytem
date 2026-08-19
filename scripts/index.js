@@ -87,28 +87,6 @@
                 return num * 60;
             }
             return num;
-        }
-
-        async function fetchAvailableTimeSlots() {
-            const dateInput = document.getElementById('bookingDate').value;
-            const timeContainer = document.getElementById('timeDropdownMenu');
-            const warningElement = document.getElementById('capacityWarning');
-            if (!timeContainer) return;
-
-            if (warningElement) {
-                if (dateInput && new Date(dateInput).getUTCDay() === 6) {
-                    warningElement.innerText = "ℹ️ Saturday bookings are limited to 16 cars.";
-                    warningElement.classList.remove('hidden');
-                } else {
-                    warningElement.classList.add('hidden');
-                }
-            }
-
-            if (!dateInput || !activeServiceDuration) {
-                timeContainer.innerHTML = `<p class="p-4 text-xs text-neutral-400 font-semibold text-center">Please select a service and date first</p>`;
-                return;
-            }
-
         function parseDurationMinutes(durationStr) {
             if (typeof durationStr === 'number') return durationStr;
             if (!durationStr) return 30;
