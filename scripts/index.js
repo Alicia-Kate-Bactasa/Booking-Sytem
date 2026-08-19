@@ -87,6 +87,8 @@
                 return num * 60;
             }
             return num;
+        }
+
         function parseDurationMinutes(durationStr) {
             if (typeof durationStr === 'number') return durationStr;
             if (!durationStr) return 30;
