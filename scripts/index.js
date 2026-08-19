@@ -988,8 +988,8 @@
             const verifyBtn = document.getElementById('verifyOtpBtn');
             const otpMsg = document.getElementById('otpMessage');
 
-            if (!otpVal || otpVal.length !== 6 || !/^\d+$/.test(otpVal)) {
-                showErrorModal('Please enter a valid 6-digit numeric verification code.');
+            if (!otpVal || otpVal.length < 4 || otpVal.length > 8) {
+                showErrorModal('Please enter the verification code sent to your email.');
                 return;
             }
 
@@ -1001,13 +1001,15 @@
                         token: otpVal,
                         type: 'email'
                     });
-                    if (error && !otpVal.startsWith('123')) {
-                        console.warn("Supabase registration verifyOtp notice:", error);
-                        showErrorModal(error.message || 'Verification failed. Invalid or expired code.');
+                    if (error) {
+                        console.warn("Supabase registration verifyOtp error:", error);
+                        showErrorModal('Verification failed. The code typed does not match the code sent to your email or has expired.');
                         return;
                     }
                 } catch (err) {
                     console.error("verifyOtp error:", err);
+                    showErrorModal('Verification error. Please verify the code typed matches your email code.');
+                    return;
                 }
             }
 
@@ -1052,7 +1054,6 @@
                     options: { shouldCreateUser: false }
                 }).catch(err => {
                     console.warn("Supabase guest OTP notice:", err);
-                    // Fallback attempt without options
                     sb.auth.signInWithOtp({ email: emailVal }).catch(e => console.warn("Supabase OTP fallback notice:", e));
                 });
             }
@@ -1082,7 +1083,7 @@
             const otpMsg = document.getElementById('guestOtpMessage');
 
             if (!otpVal || otpVal.length < 4 || otpVal.length > 8) {
-                showErrorModal('Please enter a valid verification code.');
+                showErrorModal('Please enter the verification code sent to your email.');
                 return;
             }
 
@@ -1094,13 +1095,15 @@
                         token: otpVal,
                         type: 'email'
                     });
-                    if (error && !otpVal.startsWith('123')) {
+                    if (error) {
                         console.warn("Supabase guest verifyOtp notice:", error);
-                        showErrorModal(error.message || 'Verification failed. Invalid or expired code.');
+                        showErrorModal('Verification failed. The code typed does not match the code sent to your email or has expired.');
                         return;
                     }
                 } catch (err) {
                     console.error("Guest verifyOtp error:", err);
+                    showErrorModal('Verification error. Please verify the code typed matches your email code.');
+                    return;
                 }
             }
 
