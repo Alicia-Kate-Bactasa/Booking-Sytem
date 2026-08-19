@@ -221,17 +221,17 @@
             function createGroupHTML(title, groupSlots) {
                 if (groupSlots.length === 0) return '';
                 let html = `
-                    <div>
-                        <div class="text-[10px] font-extrabold uppercase tracking-[0.2em] text-neutral-400 pb-2 border-b border-neutral-100 mb-3.5">
+                    <div class="space-y-3">
+                        <div class="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 pb-2 border-b border-neutral-100">
                             ${title}
                         </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 `;
                 groupSlots.forEach(slot => {
                     html += `
-                        <button type="button" onclick="selectCustomTime('${slot.time_slot}', '${slot.display_label}')" class="w-full text-left px-4 py-3 bg-neutral-50 hover:bg-neutral-900 hover:text-white border border-neutral-200/90 rounded-2xl text-xs font-medium transition-all flex items-center justify-between group/btn shadow-xs">
-                            <span class="font-semibold text-xs tracking-tight">${slot.display_label}</span>
-                            <span class="text-[9px] font-bold uppercase tracking-wider text-emerald-600 group-hover/btn:text-emerald-400 bg-emerald-50 group-hover/btn:bg-white/10 px-2 py-0.5 rounded-full">Available</span>
+                        <button type="button" onclick="selectCustomTime('${slot.time_slot}', '${slot.display_label}')" class="w-full text-left px-5 py-3.5 bg-neutral-50 hover:bg-neutral-900 hover:text-white border border-neutral-200/90 rounded-2xl text-xs font-semibold transition-all flex items-center justify-between group/btn shadow-xs hover:shadow-md hover:-translate-y-0.5">
+                            <span class="font-bold text-xs tracking-tight">${slot.display_label}</span>
+                            <span class="text-[9px] font-bold uppercase tracking-widest text-emerald-600 group-hover/btn:text-emerald-400 bg-emerald-50 group-hover/btn:bg-white/10 px-2.5 py-1 rounded-full shrink-0 ml-2">Available</span>
                         </button>
                     `;
                 });
