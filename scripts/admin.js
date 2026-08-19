@@ -96,8 +96,9 @@ const defaultServices = [
             const sb = typeof getSupabase === 'function' ? getSupabase() : null;
             if (sb) {
                 try {
-                    const { data: subsData } = await sb.from('subscriptions').select('*, profiles(*)');
-                    const { data: profData } = await sb.from('profiles').select('*').eq('user_role', 'Subscriber');
+                    // Only load APPROVED active/verified subscriptions (exclude pending payment reviews)
+                    const { data: subsData } = await sb.from('subscriptions').select('*, profiles(*)').neq('plan_status', 'Payment Pending').neq('plan_status', 'Pending');
+                    const { data: profData } = await sb.from('profiles').select('*').eq('user_role', 'Subscriber').eq('subscription_status', 'Active');
 
                     let list = [];
                     let seenIds = new Set();
@@ -148,17 +149,18 @@ const defaultServices = [
             const sb = typeof getSupabase === 'function' ? getSupabase() : null;
             if (sb) {
                 try {
-                    const { data } = await sb.from('subscriptions').select('*, profiles(*), payments(*)').eq('plan_status', 'Payment Pending');
+                    const { data } = await sb.from('subscriptions').select('*, profiles(*), payments(*)').or('plan_status.eq.Payment Pending,plan_status.eq.Pending');
                     if (data) {
                         pendingRequests = data.map(sub => ({
                             id: `SUB-${sub.subscription_id}`,
                             subscription_id: sub.subscription_id,
+                            user_id: sub.user_id || sub.profiles?.id,
                             name: sub.profiles?.full_name || sub.profiles?.email || 'Subscriber',
                             email: sub.profiles?.email || '',
-                            phone: 'N/A',
-                            proof_image: '../assets/gcashQR.jpg',
+                            phone: sub.profiles?.phone_number || 'N/A',
+                            proof_image: sub.proof_url || '../assets/gcashQR.jpg',
                             created_at: sub.created_at,
-                            payment_type: 'Monthly Renewal'
+                            payment_type: 'Subscription Plan'
                         }));
                         renderPendingSubscriptions();
                         return;
@@ -327,14 +329,22 @@ const defaultServices = [
 
             try {
                 const sb = typeof getSupabase === 'function' ? getSupabase() : null;
-                if (sb && req.subscription_id) {
-                    await sb.from('subscriptions').update({ plan_status: 'Active' }).eq('subscription_id', req.subscription_id);
+                if (sb) {
+                    if (req.subscription_id) {
+                        await sb.from('subscriptions').update({ plan_status: 'Active' }).eq('subscription_id', req.subscription_id);
+                    }
+                    if (req.user_id) {
+                        await sb.from('profiles').update({ subscription_status: 'Active', user_role: 'Subscriber' }).eq('id', req.user_id);
+                    } else if (req.email) {
+                        await sb.from('profiles').update({ subscription_status: 'Active', user_role: 'Subscriber' }).eq('email', req.email);
+                    }
                 }
-                alert(`Subscription request for ${req.name} has been approved.`);
+                alert(`Payment approved! ${req.name}'s subscription is now active.`);
                 loadPendingSubscriptions();
                 loadSubscribers();
             } catch (err) {
-                alert(`Subscription request for ${req.name} has been approved.`);
+                console.error("approveSubscription error:", err);
+                alert(`Payment approved! ${req.name}'s subscription is now active.`);
                 loadPendingSubscriptions();
                 loadSubscribers();
             }
