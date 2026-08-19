@@ -108,10 +108,13 @@ CREATE TABLE IF NOT EXISTS public.bookings (
   service_id BIGINT REFERENCES public.services(service_id) NOT NULL,
   scheduled_date DATE NOT NULL,
   time_slot VARCHAR(50) NOT NULL,
+  end_time_slot VARCHAR(50) DEFAULT NULL,
   bay_number INT NOT NULL DEFAULT 1,
   purchased_price DECIMAL(10,2) NOT NULL,
-  booking_status VARCHAR(30) CHECK (booking_status IN ('Pending', 'Pending Verification', 'Confirmed', 'Completed', 'Cancelled', 'No-Show', 'Paid', 'Scheduled')) NOT NULL DEFAULT 'Pending',
-  status_updated_at TIMESTAMPTZ DEFAULT NOW()
+  booking_status VARCHAR(30) CHECK (booking_status IN ('Pending', 'Pending Verification', 'Confirmed', 'Completed', 'Cancelled', 'No-Show', 'Paid', 'Scheduled', 'Held')) NOT NULL DEFAULT 'Pending',
+  hold_expires_at TIMESTAMPTZ DEFAULT NULL,
+  status_updated_at TIMESTAMPTZ DEFAULT NOW(),
+  CONSTRAINT unique_booking_slot_per_bay UNIQUE (scheduled_date, time_slot, bay_number)
 );
 
 -- --------------------------------------------------------
@@ -225,3 +228,22 @@ CREATE POLICY "Allow payments access" ON public.payments FOR ALL USING (true);
 -- Feedbacks: Public insert & select
 DROP POLICY IF EXISTS "Allow feedbacks access" ON public.feedbacks;
 CREATE POLICY "Allow feedbacks access" ON public.feedbacks FOR ALL USING (true);
+
+-- --------------------------------------------------------
+-- Realtime Replication Enablement
+-- --------------------------------------------------------
+ALTER PUBLICATION supabase_realtime ADD TABLE public.bookings;
+
+-- --------------------------------------------------------
+-- Automatic Expired Hold Release Function
+-- --------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.release_expired_holds()
+RETURNS VOID AS $$
+BEGIN
+  UPDATE public.bookings
+  SET booking_status = 'Cancelled'
+  WHERE booking_status = 'Held' 
+    AND hold_expires_at IS NOT NULL 
+    AND hold_expires_at < NOW();
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
