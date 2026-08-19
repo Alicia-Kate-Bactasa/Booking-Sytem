@@ -93,6 +93,10 @@ const defaultServices = [
         }
 
         async function loadSubscribers() {
+            let list = [];
+            let seenIds = new Set();
+            let seenEmails = new Set();
+
             const sb = typeof getSupabase === 'function' ? getSupabase() : null;
             if (sb) {
                 try {
@@ -100,16 +104,14 @@ const defaultServices = [
                     const { data: subsData } = await sb.from('subscriptions').select('*, profiles(*)');
                     const { data: profData } = await sb.from('profiles').select('*');
 
-                    let list = [];
-                    let seenIds = new Set();
-
                     // 1. Process explicit subscriptions
                     if (Array.isArray(subsData)) {
                         subsData.forEach(sub => {
                             const uid = sub.user_id || sub.profiles?.id;
-                            if (uid) seenIds.add(uid);
-                            const nameVal = sub.profiles?.full_name || sub.profiles?.email || 'Subscriber Member';
                             const emailVal = sub.profiles?.email || '';
+                            if (uid) seenIds.add(uid);
+                            if (emailVal) seenEmails.add(emailVal.toLowerCase());
+                            const nameVal = sub.profiles?.full_name || sub.profiles?.email || 'Subscriber Member';
                             const isPending = sub.plan_status === 'Payment Pending' || sub.plan_status === 'Pending';
                             list.push({
                                 subscriber_id: sub.subscription_id,
@@ -122,17 +124,19 @@ const defaultServices = [
                         });
                     }
 
-                    // 2. Process all registered signed-in profiles
+                    // 2. Process all registered signed-in profiles from Supabase
                     if (Array.isArray(profData)) {
                         profData.forEach(prof => {
-                            if (!seenIds.has(prof.id)) {
+                            const emailVal = prof.email || '';
+                            if (!seenIds.has(prof.id) && (!emailVal || !seenEmails.has(emailVal.toLowerCase()))) {
                                 seenIds.add(prof.id);
+                                if (emailVal) seenEmails.add(emailVal.toLowerCase());
                                 const nameVal = prof.full_name || prof.email || 'Registered User';
                                 const subStatus = prof.subscription_status || 'Registered';
                                 list.push({
                                     subscriber_id: prof.id,
                                     name: nameVal,
-                                    email: prof.email || '',
+                                    email: emailVal,
                                     next_billing_date: new Date(Date.now() + 30*86400000).toISOString().split('T')[0],
                                     status: subStatus === 'Active' ? 'Verified' : subStatus,
                                     proof_image: '../assets/gcashQR.jpg'
@@ -140,43 +144,87 @@ const defaultServices = [
                             }
                         });
                     }
-
-                    subscriberAccounts = list;
-                    executeAutomatedComplianceAuditLoop();
-                    return;
                 } catch (e) {
                     console.warn("Supabase subscribers query notice:", e);
                 }
             }
-            subscriberAccounts = [];
+
+            // 3. Process signed-in users from local shared state
+            const localUsers = JSON.parse(localStorage.getItem('montage_users')) || [];
+            localUsers.forEach(user => {
+                const eLower = (user.email || '').toLowerCase();
+                if (eLower && !seenEmails.has(eLower)) {
+                    seenEmails.add(eLower);
+                    list.push({
+                        subscriber_id: user.id || `USR-${Date.now()}`,
+                        name: user.name || user.email.split('@')[0].toUpperCase(),
+                        email: user.email,
+                        next_billing_date: new Date(Date.now() + 30*86400000).toISOString().split('T')[0],
+                        status: 'Registered',
+                        proof_image: '../assets/gcashQR.jpg'
+                    });
+                }
+            });
+
+            const activeEmail = localStorage.getItem('subscriber_email');
+            const activeName = localStorage.getItem('subscriber_name');
+            if (activeEmail && !seenEmails.has(activeEmail.toLowerCase())) {
+                seenEmails.add(activeEmail.toLowerCase());
+                list.push({
+                    subscriber_id: `USR-${Date.now()}`,
+                    name: activeName || activeEmail.split('@')[0].toUpperCase(),
+                    email: activeEmail,
+                    next_billing_date: new Date(Date.now() + 30*86400000).toISOString().split('T')[0],
+                    status: 'Registered',
+                    proof_image: '../assets/gcashQR.jpg'
+                });
+            }
+
+            subscriberAccounts = list;
             executeAutomatedComplianceAuditLoop();
         }
 
         async function loadPendingSubscriptions() {
+            let list = [];
+            let seenEmails = new Set();
+
             const sb = typeof getSupabase === 'function' ? getSupabase() : null;
             if (sb) {
                 try {
                     const { data } = await sb.from('subscriptions').select('*, profiles(*), payments(*)').or('plan_status.eq.Payment Pending,plan_status.eq.Pending');
-                    if (data) {
-                        pendingRequests = data.map(sub => ({
-                            id: `SUB-${sub.subscription_id}`,
-                            subscription_id: sub.subscription_id,
-                            user_id: sub.user_id || sub.profiles?.id,
-                            name: sub.profiles?.full_name || sub.profiles?.email || 'Subscriber',
-                            email: sub.profiles?.email || '',
-                            phone: sub.profiles?.phone_number || 'N/A',
-                            proof_image: sub.proof_url || '../assets/gcashQR.jpg',
-                            created_at: sub.created_at,
-                            payment_type: 'Subscription Plan'
-                        }));
-                        renderPendingSubscriptions();
-                        return;
+                    if (Array.isArray(data)) {
+                        data.forEach(sub => {
+                            const eVal = sub.profiles?.email || '';
+                            if (eVal) seenEmails.add(eVal.toLowerCase());
+                            list.push({
+                                id: `SUB-${sub.subscription_id}`,
+                                subscription_id: sub.subscription_id,
+                                user_id: sub.user_id || sub.profiles?.id,
+                                name: sub.profiles?.full_name || sub.profiles?.email || 'Subscriber',
+                                email: eVal,
+                                phone: sub.profiles?.phone_number || 'N/A',
+                                proof_image: sub.proof_url || '../assets/gcashQR.jpg',
+                                created_at: sub.created_at,
+                                payment_type: 'Subscription Plan'
+                            });
+                        });
                     }
                 } catch (e) {
                     console.warn("Supabase pending subs query notice:", e);
                 }
             }
-            pendingRequests = [];
+
+            // Sync from local shared state
+            const localPending = JSON.parse(localStorage.getItem('montage_pending_subscriptions')) || [];
+            localPending.forEach(p => {
+                const eLower = (p.email || '').toLowerCase();
+                if (eLower && !seenEmails.has(eLower)) {
+                    seenEmails.add(eLower);
+                    list.push(p);
+                }
+            });
+
+            pendingRequests = list;
             renderPendingSubscriptions();
         }
 

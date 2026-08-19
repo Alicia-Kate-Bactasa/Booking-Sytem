@@ -498,9 +498,23 @@
                     if (role === 'Admin') {
                         window.location.href = 'admin.html';
                     } else {
+                        const nameVal = profile?.full_name || user.email.split('@')[0].toUpperCase();
+                        const emailVal = user.email;
                         localStorage.setItem('subscriber_session_active', 'true');
-                        localStorage.setItem('subscriber_name', profile?.full_name || user.email.split('@')[0].toUpperCase());
-                        localStorage.setItem('subscriber_email', user.email);
+                        localStorage.setItem('subscriber_name', nameVal);
+                        localStorage.setItem('subscriber_email', emailVal);
+
+                        let usersList = JSON.parse(localStorage.getItem('montage_users')) || [];
+                        if (!usersList.some(u => u.email === emailVal)) {
+                            usersList.push({
+                                id: user.id || `USR-${Date.now()}`,
+                                name: nameVal,
+                                email: emailVal,
+                                login_time: new Date().toISOString()
+                            });
+                            localStorage.setItem('montage_users', JSON.stringify(usersList));
+                        }
+
                         window.location.href = 'dashboard.html';
                     }
                 })
@@ -517,9 +531,22 @@
                 window.location.href = 'admin.html';
             } else {
                 toggleModal('loginModal');
+                const nameVal = emailInput.split('@')[0].toUpperCase();
                 localStorage.setItem('subscriber_session_active', 'true');
-                localStorage.setItem('subscriber_name', emailInput.split('@')[0].toUpperCase());
+                localStorage.setItem('subscriber_name', nameVal);
                 localStorage.setItem('subscriber_email', emailInput);
+
+                let usersList = JSON.parse(localStorage.getItem('montage_users')) || [];
+                if (!usersList.some(u => u.email === emailInput)) {
+                    usersList.push({
+                        id: `USR-${Date.now()}`,
+                        name: nameVal,
+                        email: emailInput,
+                        login_time: new Date().toISOString()
+                    });
+                    localStorage.setItem('montage_users', JSON.stringify(usersList));
+                }
+
                 window.location.href = 'dashboard.html';
             }
         }
@@ -700,6 +727,21 @@
                         }
                     }
 
+                    let pendingList = JSON.parse(localStorage.getItem('montage_pending_subscriptions')) || [];
+                    if (!pendingList.some(p => p.email === emailVal)) {
+                        pendingList.push({
+                            id: `SUB-${Date.now()}`,
+                            subscription_id: Date.now(),
+                            name: nameVal,
+                            email: emailVal,
+                            phone: 'N/A',
+                            proof_image: proofUrl !== 'pending' ? proofUrl : '../assets/gcashQR.jpg',
+                            created_at: new Date().toISOString(),
+                            payment_type: 'Subscription Plan'
+                        });
+                        localStorage.setItem('montage_pending_subscriptions', JSON.stringify(pendingList));
+                    }
+
                     toggleModal('subPaymentModal');
                     toggleModal('subPendingModal');
                     const payForm = document.getElementById('subPaymentModal')?.querySelector('form');
@@ -707,6 +749,21 @@
                     const availForm = document.getElementById('availSubModal')?.querySelector('form');
                     if (availForm) availForm.reset();
                     return;
+                }
+
+                let pendingList = JSON.parse(localStorage.getItem('montage_pending_subscriptions')) || [];
+                if (!pendingList.some(p => p.email === emailVal)) {
+                    pendingList.push({
+                        id: `SUB-${Date.now()}`,
+                        subscription_id: Date.now(),
+                        name: nameVal,
+                        email: emailVal,
+                        phone: 'N/A',
+                        proof_image: '../assets/gcashQR.jpg',
+                        created_at: new Date().toISOString(),
+                        payment_type: 'Subscription Plan'
+                    });
+                    localStorage.setItem('montage_pending_subscriptions', JSON.stringify(pendingList));
                 }
 
                 toggleModal('subPaymentModal');
