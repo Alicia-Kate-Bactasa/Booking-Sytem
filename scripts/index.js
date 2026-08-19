@@ -542,13 +542,13 @@
                 return;
             }
 
-            // Check if email already exists in Supabase
+            // Check if active subscriber account already exists in Supabase
             try {
                 const sb = typeof getSupabase === 'function' ? getSupabase() : null;
                 if (sb) {
-                    const { data: existingProfile } = await sb.from('profiles').select('id').eq('email', emailVal).maybeSingle();
-                    if (existingProfile) {
-                        showErrorModal('An account with this email address already exists. Please use another email.');
+                    const { data: existingProfile } = await sb.from('profiles').select('id, user_role, subscription_status').eq('email', emailVal).maybeSingle();
+                    if (existingProfile && existingProfile.user_role === 'Subscriber' && existingProfile.subscription_status === 'Active') {
+                        showErrorModal('An account with this email address already exists and is active. Please log in instead.');
                         return;
                     }
                 }
