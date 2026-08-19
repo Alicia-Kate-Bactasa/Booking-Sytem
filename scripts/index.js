@@ -218,20 +218,20 @@
             const morningSlots = slots.filter(s => s.isMorning);
             const afternoonSlots = slots.filter(s => !s.isMorning);
 
-            function createGroupHTML(title, icon, groupSlots) {
+            function createGroupHTML(title, groupSlots) {
                 if (groupSlots.length === 0) return '';
                 let html = `
-                    <div class="mb-3.5 last:mb-0">
-                        <div class="text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-2 flex items-center gap-1.5 px-1">
-                            <span>${icon}</span> <span>${title}</span>
+                    <div>
+                        <div class="text-[10px] font-extrabold uppercase tracking-[0.2em] text-neutral-400 pb-2 border-b border-neutral-100 mb-3.5">
+                            ${title}
                         </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 `;
                 groupSlots.forEach(slot => {
                     html += `
-                        <button type="button" onclick="selectCustomTime('${slot.time_slot}', '${slot.display_label}')" class="w-full text-left px-3.5 py-2.5 bg-neutral-50 hover:bg-black hover:text-white border border-neutral-200/80 rounded-xl text-xs font-semibold transition-all flex justify-between items-center group/btn shadow-2xs">
-                            <span class="font-mono tracking-tight text-[11px]">${slot.display_label}</span>
-                            <span class="text-[9px] font-bold uppercase text-emerald-600 group-hover/btn:text-emerald-300">Available</span>
+                        <button type="button" onclick="selectCustomTime('${slot.time_slot}', '${slot.display_label}')" class="w-full text-left px-4 py-3 bg-neutral-50 hover:bg-neutral-900 hover:text-white border border-neutral-200/90 rounded-2xl text-xs font-medium transition-all flex items-center justify-between group/btn shadow-xs">
+                            <span class="font-semibold text-xs tracking-tight">${slot.display_label}</span>
+                            <span class="text-[9px] font-bold uppercase tracking-wider text-emerald-600 group-hover/btn:text-emerald-400 bg-emerald-50 group-hover/btn:bg-white/10 px-2 py-0.5 rounded-full">Available</span>
                         </button>
                     `;
                 });
@@ -240,8 +240,8 @@
             }
 
             let fullHTML = '';
-            if (morningSlots.length > 0) fullHTML += createGroupHTML('Morning Slots', '☀️', morningSlots);
-            if (afternoonSlots.length > 0) fullHTML += createGroupHTML('Afternoon Slots', '🌤️', afternoonSlots);
+            if (morningSlots.length > 0) fullHTML += createGroupHTML('Morning Schedule (8:00 AM – 12:00 PM)', morningSlots);
+            if (afternoonSlots.length > 0) fullHTML += createGroupHTML('Afternoon Schedule (1:00 PM – 5:00 PM)', afternoonSlots);
             timeContainer.innerHTML = fullHTML;
         }
 
