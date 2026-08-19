@@ -109,73 +109,130 @@
                 return;
             }
 
-            function parseDurationMinutes(durationStr) {
-                if (typeof durationStr === 'number') return durationStr;
-                if (!durationStr) return 30;
-                const clean = durationStr.toString().toLowerCase();
-                if (clean.includes('hour') || clean.includes('hr')) {
-                    const val = parseFloat(clean);
-                    return isNaN(val) ? 60 : val * 60;
+        function parseDurationMinutes(durationStr) {
+            if (typeof durationStr === 'number') return durationStr;
+            if (!durationStr) return 30;
+            const clean = durationStr.toString().toLowerCase();
+            if (clean.includes('hour') || clean.includes('hr')) {
+                const val = parseFloat(clean);
+                return isNaN(val) ? 60 : val * 60;
+            }
+            const val = parseInt(clean, 10);
+            return isNaN(val) ? 30 : val;
+        }
+
+        function formatMinsToLabel(mins) {
+            const hrs24 = Math.floor(mins / 60);
+            const m = mins % 60;
+            const ampm = hrs24 >= 12 ? 'PM' : 'AM';
+            const hrs12 = hrs24 % 12 === 0 ? 12 : hrs24 % 12;
+            const padM = m < 10 ? '0' + m : '' + m;
+            const padH12 = hrs12 < 10 ? '0' + hrs12 : '' + hrs12;
+            return `${padH12}:${padM} ${ampm}`;
+        }
+
+        function formatMinsToTimeSlot(mins) {
+            const hrs24 = Math.floor(mins / 60);
+            const m = mins % 60;
+            const padM = m < 10 ? '0' + m : '' + m;
+            const padH24 = hrs24 < 10 ? '0' + hrs24 : '' + hrs24;
+            return `${padH24}:${padM}:00`;
+        }
+
+        function parseTimeToMinutes(timeStr) {
+            if (!timeStr) return 0;
+            if (timeStr.includes('AM') || timeStr.includes('PM')) {
+                const parts = timeStr.trim().split(' ');
+                const timeParts = parts[0].split(':');
+                let h = parseInt(timeParts[0], 10);
+                const m = parseInt(timeParts[1], 10);
+                if (parts[1] === 'PM' && h < 12) h += 12;
+                if (parts[1] === 'AM' && h === 12) h = 0;
+                return h * 60 + m;
+            }
+            const parts = timeStr.split(':');
+            const h = parseInt(parts[0], 10);
+            const m = parseInt(parts[1], 10);
+            return h * 60 + (isNaN(m) ? 0 : m);
+        }
+
+        async function fetchAvailableTimeSlots() {
+            const dateInput = document.getElementById('bookingDate').value;
+            const timeContainer = document.getElementById('timeDropdownMenu');
+            const warningElement = document.getElementById('capacityWarning');
+            if (!timeContainer) return;
+
+            if (warningElement) {
+                if (dateInput && new Date(dateInput).getUTCDay() === 6) {
+                    warningElement.innerText = "ℹ️ Saturday bookings are limited to 16 cars.";
+                    warningElement.classList.remove('hidden');
+                } else {
+                    warningElement.classList.add('hidden');
                 }
-                const val = parseInt(clean, 10);
-                return isNaN(val) ? 30 : val;
             }
 
-            function buildDynamicTimeSlots(durationMinutes) {
-                const duration = parseDurationMinutes(durationMinutes);
-                const startMins = 8 * 60;
-                const endMins = 17 * 60; // Up to 5:00 PM start slot
-                const step = 30;
-
-                const slots = [];
-                for (let current = startMins; current <= endMins; current += step) {
-                    if (current >= 720 && current < 780) continue;
-                    
-                    const hrs24 = Math.floor(current / 60);
-                    const mins = current % 60;
-                    const ampm = hrs24 >= 12 ? 'PM' : 'AM';
-                    const hrs12 = hrs24 % 12 === 0 ? 12 : hrs24 % 12;
-
-                    const padMins = mins < 10 ? '0' + mins : '' + mins;
-                    const padHrs24 = hrs24 < 10 ? '0' + hrs24 : '' + hrs24;
-                    const padHrs12 = hrs12 < 10 ? '0' + hrs12 : '' + hrs12;
-
-                    const time_slot = `${padHrs24}:${padMins}:00`;
-                    const display_label = `${padHrs12}:${padMins} ${ampm}`;
-
-                    slots.push({ time_slot, display_label });
-                }
-                return slots;
+            if (!dateInput || !activeServiceDuration) {
+                timeContainer.innerHTML = `<p class="p-4 text-xs text-neutral-400 font-semibold text-center">Please select a service and date first</p>`;
+                return;
             }
 
-            const defaultSlots = buildDynamicTimeSlots(activeServiceDuration);
+            const currentDurationMins = parseDurationMinutes(activeServiceDuration);
+            const startDayMins = 8 * 60;  // 8:00 AM
+            const endDayMins = 17 * 60;   // 5:00 PM last start window
+            const stepInterval = currentDurationMins <= 30 ? 20 : 30; // Adapt step interval to service length
+            const TOTAL_BAYS = 2; // Montage Studio Bay capacity
 
-            let bookedSlots = [];
+            let existingBookings = [];
             const sb = typeof getSupabase === 'function' ? getSupabase() : null;
             if (sb) {
                 try {
                     const { data: bData } = await sb.from('bookings')
-                        .select('time_slot')
+                        .select('time_slot, end_time_slot, booking_status, services(service_duration)')
                         .eq('scheduled_date', dateInput)
-                        .neq('booking_status', 'Cancelled');
+                        .not('booking_status', 'in', '("Cancelled","No-Show")');
                     if (bData) {
-                        bookedSlots = bData.map(b => b.time_slot);
+                        existingBookings = bData.map(b => {
+                            const bStart = parseTimeToMinutes(b.time_slot);
+                            const bDuration = b.services?.service_duration ? parseDurationMinutes(b.services.service_duration) : 60;
+                            const bEnd = b.end_time_slot ? parseTimeToMinutes(b.end_time_slot) : (bStart + bDuration);
+                            return { start: bStart, end: bEnd };
+                        });
                     }
                 } catch (err) {
                     console.warn("Supabase slot availability notice:", err);
                 }
             }
 
-            const slots = defaultSlots.filter(s => !bookedSlots.includes(s.time_slot) && !bookedSlots.includes(s.display_label));
+            const slots = [];
+            for (let currentMins = startDayMins; currentMins <= endDayMins; currentMins += stepInterval) {
+                const candidateStart = currentMins;
+                const candidateEnd = currentMins + currentDurationMins;
+
+                // Lunch break exclusion rule (12:00 PM - 1:00 PM)
+                if ((candidateStart >= 720 && candidateStart < 780) || (candidateEnd > 720 && candidateStart < 780)) {
+                    continue;
+                }
+
+                // Check overlap against existing bookings
+                const overlappingCount = existingBookings.filter(b => (candidateStart < b.end && candidateEnd > b.start)).length;
+
+                if (overlappingCount < TOTAL_BAYS) {
+                    const time_slot = formatMinsToTimeSlot(candidateStart);
+                    const end_time_slot = formatMinsToTimeSlot(candidateEnd);
+                    const display_label = `${formatMinsToLabel(candidateStart)} – ${formatMinsToLabel(candidateEnd)} (${currentDurationMins}m)`;
+                    slots.push({ time_slot, end_time_slot, display_label });
+                }
+            }
+
             timeContainer.innerHTML = '';
             if (slots.length === 0) {
-                timeContainer.innerHTML = `<p class="p-4 text-xs text-red-500 font-semibold text-center">Fully Booked for this date</p>`;
+                timeContainer.innerHTML = `<p class="p-4 text-xs text-red-500 font-semibold text-center">Fully Booked for this date and duration</p>`;
             } else {
                 slots.forEach(slot => {
                     const btn = document.createElement('button');
                     btn.type = 'button';
-                    btn.className = "w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors uppercase tracking-wider";
-                    btn.innerText = slot.display_label;
+                    btn.className = "w-full text-left px-6 py-3.5 text-xs font-semibold text-dark hover:bg-neutral-50 transition-colors uppercase tracking-wider flex justify-between items-center";
+                    btn.innerHTML = `<span>${slot.display_label}</span><span class="text-[10px] text-emerald-600 font-bold">Available</span>`;
                     btn.onclick = () => selectCustomTime(slot.time_slot, slot.display_label);
                     timeContainer.appendChild(btn);
                 });
