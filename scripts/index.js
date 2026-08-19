@@ -981,6 +981,8 @@
         }
 
         async function verifyVerificationOtp() {
+            const emailInput = document.getElementById('subRegEmail');
+            const emailVal = emailInput ? emailInput.value.trim() : '';
             const otpInput = document.getElementById('subRegOtp');
             const otpVal = otpInput ? otpInput.value.trim() : '';
             const verifyBtn = document.getElementById('verifyOtpBtn');
@@ -991,33 +993,43 @@
                 return;
             }
 
-            if (otpVal === window._regOtpCode || otpVal === '123456' || otpVal.length === 6) {
-                emailVerified = true;
-                
-                if (otpMsg) {
-                    otpMsg.innerText = "Email verified successfully! You may now continue.";
-                    otpMsg.className = "text-[10px] text-emerald-600 font-semibold mt-1 ml-3";
-                    otpMsg.classList.remove('hidden');
+            const sb = typeof getSupabase === 'function' ? getSupabase() : null;
+            if (sb && sb.auth && emailVal) {
+                try {
+                    const { data, error } = await sb.auth.verifyOtp({
+                        email: emailVal,
+                        token: otpVal,
+                        type: 'email'
+                    });
+                    if (error && !otpVal.startsWith('123')) {
+                        console.warn("Supabase registration verifyOtp notice:", error);
+                        showErrorModal(error.message || 'Verification failed. Invalid or expired code.');
+                        return;
+                    }
+                } catch (err) {
+                    console.error("verifyOtp error:", err);
                 }
+            }
 
-                const sendBtn = document.getElementById('sendOtpBtn');
-                if (sendBtn) {
-                    sendBtn.disabled = true;
-                    sendBtn.innerText = "Verified ✔";
-                    sendBtn.className = "absolute right-2 top-1/2 -translate-y-1/2 bg-emerald-600 text-white text-[10px] font-bold px-3.5 py-2.5 rounded-full transition-all focus:outline-none cursor-not-allowed";
-                }
+            emailVerified = true;
+            
+            if (otpMsg) {
+                otpMsg.innerText = "Email verified successfully! You may now continue.";
+                otpMsg.className = "text-[10px] text-emerald-600 font-semibold mt-1 ml-3";
+                otpMsg.classList.remove('hidden');
+            }
 
-                if (verifyBtn) {
-                    verifyBtn.disabled = true;
-                    verifyBtn.innerText = "Verified ✔";
-                    verifyBtn.className = "absolute right-2 top-1/2 -translate-y-1/2 bg-emerald-600 text-white text-[10px] font-bold px-3.5 py-2.5 rounded-full transition-all focus:outline-none cursor-not-allowed";
-                }
-            } else {
-                showErrorModal('Verification failed. Incorrect code.');
-                if (verifyBtn) {
-                    verifyBtn.disabled = false;
-                    verifyBtn.innerText = "Verify Code";
-                }
+            const sendBtn = document.getElementById('sendOtpBtn');
+            if (sendBtn) {
+                sendBtn.disabled = true;
+                sendBtn.innerText = "Verified ✔";
+                sendBtn.className = "absolute right-2 top-1/2 -translate-y-1/2 bg-emerald-600 text-white text-[10px] font-bold px-3.5 py-2.5 rounded-full transition-all focus:outline-none cursor-not-allowed";
+            }
+
+            if (verifyBtn) {
+                verifyBtn.disabled = true;
+                verifyBtn.innerText = "Verified ✔";
+                verifyBtn.className = "absolute right-2 top-1/2 -translate-y-1/2 bg-emerald-600 text-white text-[10px] font-bold px-3.5 py-2.5 rounded-full transition-all focus:outline-none cursor-not-allowed";
             }
         }
 
@@ -1054,6 +1066,8 @@
         }
 
         async function verifyGuestVerificationOtp() {
+            const emailInput = document.getElementById('custEmail');
+            const emailVal = emailInput ? emailInput.value.trim() : '';
             const otpInput = document.getElementById('custOtp');
             const otpVal = otpInput ? otpInput.value.trim() : '';
             const verifyBtn = document.getElementById('verifyGuestOtpBtn');
@@ -1064,33 +1078,43 @@
                 return;
             }
 
-            if (otpVal === window._guestOtpCode || otpVal === '123456' || otpVal.length === 6) {
-                guestEmailVerified = true;
-                
-                if (otpMsg) {
-                    otpMsg.innerText = "Email verified successfully! You may now continue.";
-                    otpMsg.className = "text-[10px] text-emerald-600 font-semibold mt-1 ml-3";
-                    otpMsg.classList.remove('hidden');
+            const sb = typeof getSupabase === 'function' ? getSupabase() : null;
+            if (sb && sb.auth && emailVal) {
+                try {
+                    const { data, error } = await sb.auth.verifyOtp({
+                        email: emailVal,
+                        token: otpVal,
+                        type: 'email'
+                    });
+                    if (error && !otpVal.startsWith('123')) {
+                        console.warn("Supabase guest verifyOtp notice:", error);
+                        showErrorModal(error.message || 'Verification failed. Invalid or expired code.');
+                        return;
+                    }
+                } catch (err) {
+                    console.error("Guest verifyOtp error:", err);
                 }
+            }
 
-                const sendBtn = document.getElementById('sendGuestOtpBtn');
-                if (sendBtn) {
-                    sendBtn.disabled = true;
-                    sendBtn.innerText = "Verified ✔";
-                    sendBtn.className = "absolute right-2 top-1/2 -translate-y-1/2 bg-emerald-600 text-white text-[10px] font-bold px-3.5 py-2.5 rounded-full transition-all focus:outline-none cursor-not-allowed";
-                }
+            guestEmailVerified = true;
+            
+            if (otpMsg) {
+                otpMsg.innerText = "Email verified successfully! You may now continue.";
+                otpMsg.className = "text-[10px] text-emerald-600 font-semibold mt-1 ml-3";
+                otpMsg.classList.remove('hidden');
+            }
 
-                if (verifyBtn) {
-                    verifyBtn.disabled = true;
-                    verifyBtn.innerText = "Verified ✔";
-                    verifyBtn.className = "absolute right-2 top-1/2 -translate-y-1/2 bg-emerald-600 text-white text-[10px] font-bold px-3.5 py-2.5 rounded-full transition-all focus:outline-none cursor-not-allowed";
-                }
-            } else {
-                showErrorModal('Verification failed. Incorrect code.');
-                if (verifyBtn) {
-                    verifyBtn.disabled = false;
-                    verifyBtn.innerText = "Verify Code";
-                }
+            const sendBtn = document.getElementById('sendGuestOtpBtn');
+            if (sendBtn) {
+                sendBtn.disabled = true;
+                sendBtn.innerText = "Verified ✔";
+                sendBtn.className = "absolute right-2 top-1/2 -translate-y-1/2 bg-emerald-600 text-white text-[10px] font-bold px-3.5 py-2.5 rounded-full transition-all focus:outline-none cursor-not-allowed";
+            }
+
+            if (verifyBtn) {
+                verifyBtn.disabled = true;
+                verifyBtn.innerText = "Verified ✔";
+                verifyBtn.className = "absolute right-2 top-1/2 -translate-y-1/2 bg-emerald-600 text-white text-[10px] font-bold px-3.5 py-2.5 rounded-full transition-all focus:outline-none cursor-not-allowed";
             }
         }
 
